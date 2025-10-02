@@ -11,12 +11,13 @@ class Inkworm extends ConsumerWidget {
     return Scaffold(
       appBar: null,
       body: SafeArea(
-        child: Container(child: Padding(
+        child: Container(
+          height: MediaQuery.of(context).size.height,
+          width: MediaQuery.of(context).size.width,
           padding: const EdgeInsets.only(top: 6, bottom: 6),
           child: CustomPaint(
             painter: PageRenderer(),
           ),
-        ),
         ),
       ),
     );

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
 
 class PageRenderer extends CustomPainter {
-  final bool useTextPainter = false;
+  final bool useTextPainter = true;
   const PageRenderer();
 
   @override
@@ -34,7 +34,6 @@ Curabitur sed dictum sem, et sollicitudin dolor. Sed semper elit est, at ferment
 Mauris nec nunc ex. Morbi pellentesque scelerisque ligula, vel accumsan ligula rutrum nec. Pellentesque quis nulla ligula. Duis diam arcu, iaculis nec sem sit amet, malesuada consectetur arcu. Ut a nisi faucibus, pulvinar nisl sit amet, dignissim eros. Ut tortor metus, bibendum a congue fermentum, efficitur sed nisl. Donec vel placerat magna, in placerat ligula. Sed dignissim pulvinar mauris non tristique.
 """;
 
-    final start100 = DateTime.now();
     for (int i = 0; i < 100; i++) {
       if (useTextPainter) {
         final TextPainter textPainter = TextPainter(
@@ -68,12 +67,6 @@ Mauris nec nunc ex. Morbi pellentesque scelerisque ligula, vel accumsan ligula r
         canvas.drawParagraph(paragraph, const Offset(12.0, 36.0));
       }
     }
-    final total = DateTime
-        .now()
-        .difference(start100)
-        .inMicroseconds;
-    print("Using ${useTextPainter ? 'TextPainter' : 'Paragraph'}: total $total microseconds for rendering 100 times");
-
     // You definitely should check out https://api.flutter.dev/flutter/dart-ui/Canvas-class.html and related
   }
 
