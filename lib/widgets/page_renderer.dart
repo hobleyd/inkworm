@@ -2,14 +2,12 @@ import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
 
 class PageRenderer extends CustomPainter {
-  final bool useTextPainter = true;
+  final bool useTextPainter = false;
   const PageRenderer();
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Background to expose where the canvas is
-    canvas.drawRect(Offset(0, 0) & size, Paint()
-      ..color = Colors.red[100]!);
+    canvas.drawRect(Offset(0, 0) & size, Paint()..color = Colors.red[100]!);
 
     // Since text is overflowing, you have two options: clipping before drawing text or/and defining max lines.
     canvas.clipRect(Offset(0, 0) & size);
@@ -34,14 +32,12 @@ Curabitur sed dictum sem, et sollicitudin dolor. Sed semper elit est, at ferment
 Mauris nec nunc ex. Morbi pellentesque scelerisque ligula, vel accumsan ligula rutrum nec. Pellentesque quis nulla ligula. Duis diam arcu, iaculis nec sem sit amet, malesuada consectetur arcu. Ut a nisi faucibus, pulvinar nisl sit amet, dignissim eros. Ut tortor metus, bibendum a congue fermentum, efficitur sed nisl. Donec vel placerat magna, in placerat ligula. Sed dignissim pulvinar mauris non tristique.
 """;
 
-    for (int i = 0; i < 100; i++) {
       if (useTextPainter) {
         final TextPainter textPainter = TextPainter(
             text: TextSpan(text: text, style: style), // TextSpan could be whole TextSpans tree :)
             textAlign: TextAlign.justify,
             //maxLines: 25, // In both TextPainter and Paragraph there is no option to define max height, but there is `maxLines`
-            textDirection: TextDirection
-                .ltr // It is necessary for some weird reason... IMO should be LTR for default since well-known international languages (english, esperanto) are written left to right.
+            textDirection: TextDirection.ltr
         )
           ..layout(maxWidth: size.width - 12.0 - 12.0); // TextPainter doesn't need to have specified width (would use infinity if not defined).
         // BTW: using the TextPainter you can check size the text take to be rendered (without `paint`ing it).
@@ -66,7 +62,6 @@ Mauris nec nunc ex. Morbi pellentesque scelerisque ligula, vel accumsan ligula r
           ..layout(ui.ParagraphConstraints(width: size.width - 12.0 - 12.0)); // Paragraph need to have specified width :/
         canvas.drawParagraph(paragraph, const Offset(12.0, 36.0));
       }
-    }
     // You definitely should check out https://api.flutter.dev/flutter/dart-ui/Canvas-class.html and related
   }
 
