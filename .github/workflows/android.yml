@@ -1,4 +1,4 @@
-name: paladin-android-ci
+name: inkworm-android-ci
 
 on: [workflow_dispatch, push]
 
