@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import 'epub.dart';
+import 'paragraph.dart';
+
 // Pseudo code:
 // Ensure we have the current height of the page as well as the absolute height of the Canvas.
 // measure the height of the TextSpan provided; if it fits on the page, add it.
@@ -11,38 +14,69 @@ import 'package:flutter/material.dart';
 // This will require careful testing.
 
 class EpubPage {
-  final double maxHeight;
-  final double maxWidth;
   double _currentHeight = 0;
 
-  List<TextSpan> spans = [];
+  List<Paragraph> spans = [];
 
-  EpubPage({required this.maxHeight, required this.maxWidth});
+  EpubPage();
 
   TextSpan? addText(TextSpan span, List<TextSpan> footnotes) {
-    TextPainter painter = TextPainter(text: span, textScaler: TextScaler.linear(1), textDirection: TextDirection.ltr,);
-    painter.layout(maxWidth: maxWidth);
+    TextPainter painter = TextPainter(text: span, maxLines: null, textScaler: TextScaler.linear(1), textDirection: TextDirection.ltr,);
+    painter.layout(maxWidth: Epub.instance.canvasWidth - Epub.instance.leftIndent - Epub.instance.rightIndent);
 
-    if (_currentHeight + painter.size.height <= maxHeight) {
-      spans.add(span);
-      _currentHeight += painter.size.height;
+    double computedHeight = painter.size.height;
+
+    if (_currentHeight + computedHeight < Epub.instance.canvasHeight) {
+      spans.add(Paragraph(span: span, x: Epub.instance.leftIndent, y: _currentHeight));
+      _currentHeight += computedHeight - (painter.preferredLineHeight/2);
       return null;
     }
 
     return splitText(span, painter);
   }
 
-  TextSpan splitText(TextSpan span, TextPainter painter, double computedHeight) {
-    double heightRemaining = maxHeight - _currentHeight;
+  void clear() {
+    spans.clear();
+  }
 
+  List<String> splitAtLeftSpace(String text, int index) {
+    if (index <= 0) {
+      return ['', text];
+    }
+
+    if (index >= text.length) {
+      return [text, ''];
+    }
+
+    int spaceIndex = text.lastIndexOf(' ', index - 1);
+
+    // If no space found to the left, split at the beginning
+    if (spaceIndex == -1) {
+      return ['', text];
+    }
+
+    // Split at the space
+    String leftChunk = text.substring(0, spaceIndex);
+    String rightChunk = text.substring(spaceIndex + 1);
+
+    return [leftChunk, rightChunk];
+  }
+
+  TextSpan splitText(TextSpan span, TextPainter painter) {
+    double heightRemaining = Epub.instance.canvasHeight - _currentHeight;
+
+    debugPrint('Splitting text:\n${span.text}\nremaining height: $heightRemaining, height: ${painter.height}');
     double charWidth = 0.48 * 12; // TODO: this coefficient is dodgy
     double charHeight = painter.preferredLineHeight;
-    int charInLine = maxWidth ~/ charWidth;
+    int charInLine = Epub.instance.canvasWidth ~/ charWidth;
     int lines = heightRemaining ~/ charHeight;
 
-    int splitStart = (charInLine * lines).toInt();
-    spans.add(TextSpan(text: span.text!.substring(0, splitStart), style: span.style));
+    int splitStart = (charInLine * (lines)).toInt();
+    List<String> splitList = splitAtLeftSpace(span.text!.trim(), splitStart);
 
-    return TextSpan(text: span.text!.substring(splitStart), style: span.style!);
+    debugPrint('chars: $charInLine, lines: $lines\nX${splitList[0]}X\nX${splitList[1]}X');
+    spans.add(Paragraph(span: TextSpan(text: splitList[0], style: span.style,), x: 0, y: _currentHeight));
+
+    return TextSpan(text: splitList[1], style: span.style!);
   }
 }

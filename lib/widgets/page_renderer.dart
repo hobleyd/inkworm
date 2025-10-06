@@ -1,68 +1,47 @@
-import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
+
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../epub/epub.dart';
+import '../epub/paragraph.dart';
 
 class PageRenderer extends CustomPainter {
   final bool useTextPainter = false;
-  const PageRenderer();
+  List<Paragraph> spans = [];
+
+  PageRenderer(WidgetRef ref, int pageNumber) {
+    spans = Epub.instance[0][pageNumber].spans;
+  }
 
   @override
   void paint(Canvas canvas, Size size) {
     canvas.drawRect(Offset(0, 0) & size, Paint()..color = Colors.red[100]!);
-
-    // Since text is overflowing, you have two options: clipping before drawing text or/and defining max lines.
     canvas.clipRect(Offset(0, 0) & size);
 
-    final TextStyle style = TextStyle(
-      color: Colors.black,
-      backgroundColor: Colors.green[100],
-      decorationStyle: TextDecorationStyle.dotted,
-      decorationColor: Colors.green,
-      decorationThickness: 0.25,
-      // TODO Add more for testing ;)
-    );
-    final String text = """
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis pharetra lobortis faucibus. Vestibulum efficitur, velit nec accumsan aliquam, lectus elit congue nulla, ac venenatis purus mi vel risus. Ut auctor consequat nibh in sodales. Aenean eget dolor dictum, imperdiet turpis nec, interdum diam. Sed vitae mauris hendrerit, tempus orci sit amet, placerat eros. Nulla dignissim, orci quis congue maximus, eros arcu mattis magna, vitae interdum lacus lorem nec velit. Aliquam a diam at metus pulvinar efficitur. Fusce in augue eget ligula pharetra iaculis. Nunc id dui in magna aliquet hendrerit. Nullam eu enim lacus.
-
-Nullam aliquam elementum velit vel tincidunt. Cras dui ex, lobortis sit amet tortor ut, rutrum maximus tortor. Nulla faucibus tellus nisi, non dapibus nisi aliquam sed. Morbi sed dignissim libero. Fusce dignissim leo nec libero placerat, id consectetur augue interdum. Praesent ut massa nisl. Praesent id pulvinar ex. In egestas nec ligula et blandit.
-
-Cras sed finibus diam. Quisque odio nisl, fermentum et ante vitae, sollicitudin sodales risus. Mauris varius semper lectus, id gravida nibh sodales eget. Pellentesque aliquam, velit quis fringilla rhoncus, neque orci semper tellus, quis interdum odio justo sit amet dui. Nam tristique aliquam purus, in facilisis lacus facilisis sed. Nullam pulvinar ultrices molestie. Cras ac erat porta enim bibendum semper.
-
-Curabitur sed dictum sem, et sollicitudin dolor. Sed semper elit est, at fermentum purus bibendum nec. Donec scelerisque diam sit amet ante cursus cursus in scelerisque tellus. Pellentesque nec nibh id mi euismod efficitur in ac lorem. Pellentesque scelerisque fermentum vestibulum. Cras molestie lobortis dolor vel faucibus. Vivamus hendrerit est vitae tellus commodo accumsan. Phasellus ut finibus nulla. Nam sed massa turpis.
-
-Mauris nec nunc ex. Morbi pellentesque scelerisque ligula, vel accumsan ligula rutrum nec. Pellentesque quis nulla ligula. Duis diam arcu, iaculis nec sem sit amet, malesuada consectetur arcu. Ut a nisi faucibus, pulvinar nisl sit amet, dignissim eros. Ut tortor metus, bibendum a congue fermentum, efficitur sed nisl. Donec vel placerat magna, in placerat ligula. Sed dignissim pulvinar mauris non tristique.
-""";
-
+    for (Paragraph para in spans) {
       if (useTextPainter) {
-        final TextPainter textPainter = TextPainter(
-            text: TextSpan(text: text, style: style), // TextSpan could be whole TextSpans tree :)
-            textAlign: TextAlign.justify,
-            //maxLines: 25, // In both TextPainter and Paragraph there is no option to define max height, but there is `maxLines`
-            textDirection: TextDirection.ltr
-        )
-          ..layout(maxWidth: size.width - 12.0 - 12.0); // TextPainter doesn't need to have specified width (would use infinity if not defined).
-        // BTW: using the TextPainter you can check size the text take to be rendered (without `paint`ing it).
-        textPainter.paint(canvas, const Offset(12.0, 36.0));
+        final TextPainter textPainter = TextPainter(text: para.span, textAlign: TextAlign.justify, textDirection: TextDirection.ltr);
+        textPainter.layout(maxWidth: Epub.instance.canvasWidth - Epub.instance.leftIndent - Epub.instance.rightIndent);
+        textPainter.paint(canvas, Offset(Epub.instance.leftIndent, para.y));
       }
       else {
         final ui.ParagraphBuilder paragraphBuilder = ui.ParagraphBuilder(
             ui.ParagraphStyle(
-              fontSize: style.fontSize,
-              // There unfortunately are some things to be copied from your common TextStyle to ParagraphStyle :C
-              fontFamily: style.fontFamily,
-              // IDK why it is like this, this is somewhat weird especially when there is `pushStyle` which can use the TextStyle...
-              fontStyle: style.fontStyle,
-              fontWeight: style.fontWeight,
-              textAlign: TextAlign.justify,
-              //maxLines: 25,
+              fontFamily: para.span.style!.fontFamily,
+              fontSize:   para.span.style!.fontSize,
+              fontStyle:  para.span.style!.fontStyle,
+              fontWeight: para.span.style!.fontWeight,
+              textAlign:  TextAlign.justify,
             )
         )
-          ..pushStyle(style.getTextStyle()) // To use multiple styles, you must make use of the builder and `pushStyle` and then `addText` (or optionally `pop`).
-          ..addText(text);
+          ..pushStyle(para.span.style!.getTextStyle()) // To use multiple styles, you must make use of the builder and `pushStyle` and then `addText` (or optionally `pop`).
+          ..addText(para.span.text!);
         final ui.Paragraph paragraph = paragraphBuilder.build()
-          ..layout(ui.ParagraphConstraints(width: size.width - 12.0 - 12.0)); // Paragraph need to have specified width :/
-        canvas.drawParagraph(paragraph, const Offset(12.0, 36.0));
+          ..layout(ui.ParagraphConstraints(width: size.width - 12.0 - 12.0));
+        canvas.drawParagraph(paragraph, Offset(12.0, para.y));
       }
-    // You definitely should check out https://api.flutter.dev/flutter/dart-ui/Canvas-class.html and related
+    }
   }
 
   @override

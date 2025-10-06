@@ -7,19 +7,30 @@ import 'epub_page.dart';
  */
 class EpubChapter {
   final int chapterNumber;
+
   final List<EpubPage> _pages = [];
 
-  EpubChapter({required this.chapterNumber});
+  EpubChapter({required this.chapterNumber,});
+
+  operator [](int index) => _pages[index];
 
   void addTextToCurrentPage(TextSpan span) {
     if (_pages.isEmpty) {
       _pages.add(EpubPage());
     }
 
-    TextSpan? overflow = _pages.last.addText(span);
+    TextSpan? overflow = _pages.last.addText(span, []);
     if (overflow != null) {
       _pages.add(EpubPage());
       addTextToCurrentPage(overflow);
     }
+  }
+
+  void clear() {
+    for (var page in _pages) {
+      page.clear();
+    }
+
+    _pages.clear();
   }
 }
