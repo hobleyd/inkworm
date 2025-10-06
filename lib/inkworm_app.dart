@@ -14,7 +14,7 @@ class InkwormApp extends ConsumerWidget {
     Epub.instance.parse(context, ""); // TODO: accept filename from Intent.
 
     return MaterialApp(
-      title: 'Paladin',
+      title: 'Inkworm',
       home: Inkworm(pageNumber: 0),
       theme: ref.watch(themeProvider),
     );
