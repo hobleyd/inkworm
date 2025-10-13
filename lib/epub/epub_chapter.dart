@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'epub_page.dart';
+import 'elements/epub_page.dart';
+import 'elements/line.dart';
 
 /*
  * A Chapter contains a list of Pages
@@ -19,10 +20,10 @@ class EpubChapter {
       _pages.add(EpubPage());
     }
 
-    TextSpan? overflow = _pages.last.addText(span, []);
-    if (overflow != null) {
+    List<Line> overflow = _pages.last.addText(span, []);
+    if (overflow.isNotEmpty) {
       _pages.add(EpubPage());
-      addTextToCurrentPage(overflow);
+      _pages.last.addLines(overflow);
     }
   }
 

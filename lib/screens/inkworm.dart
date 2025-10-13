@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:inkworm/epub/epub_chapter.dart';
 
+import '../epub/constants.dart';
+import '../epub/epub.dart';
 import '../widgets/page_renderer.dart';
 
 class Inkworm extends ConsumerStatefulWidget {
@@ -16,12 +19,14 @@ class _Inkworm extends ConsumerState<Inkworm> {
 
   @override
   Widget build(BuildContext context) {
+    List<EpubChapter> chapters = ref.watch(epubProvider);
+
     return Scaffold(
       appBar: null,
       body: SafeArea(
         child: Container(
-          height: MediaQuery.of(context).size.height,
-          width: MediaQuery.of(context).size.width,
+          height: PageConstants.canvasHeight,
+          width: PageConstants.canvasWidth,
           padding: const EdgeInsets.only(top: 6, bottom: 6),
           child: GestureDetector(
               onTapUp: (TapUpDetails details) {
@@ -39,9 +44,9 @@ class _Inkworm extends ConsumerState<Inkworm> {
                   }
                 });
                     },
-            child: CustomPaint(
-              painter: PageRenderer(ref, displayedPage),
-            ),
+            child: chapters.isEmpty
+              ? Text("waiting to parse book")
+              : CustomPaint(painter: PageRenderer(ref, displayedPage),),
           ),
         ),
       ),
@@ -50,6 +55,10 @@ class _Inkworm extends ConsumerState<Inkworm> {
 
   @override
   void initState() {
+    super.initState();
+
     displayedPage = widget.pageNumber;
+
+    Future.delayed(Duration(seconds: 0), () => ref.read(epubProvider.notifier).parse(context, ""));
   }
 }

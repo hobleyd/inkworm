@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:inkworm/epub/epub_chapter.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-class Epub  {
+import 'epub_chapter.dart';
+
+part 'epub.g.dart';
+
+@Riverpod(keepAlive: true)
+class Epub extends _$Epub {
   String book = "x";
-  double canvasHeight = 0;
-  double canvasWidth = 0;
-  double leftIndent = 12;
-  double rightIndent = 12;
 
   final List<EpubChapter> _chapters = [];
 
-  Epub._();
-  static final instance = Epub._();
+  @override
+  List<EpubChapter> build() {
+    return [];
+  }
 
   operator [](int index) => _chapters[index];
 
@@ -31,52 +34,52 @@ class Epub  {
     _chapters.clear();
   }
 
-  void parse(BuildContext context, String filename) {
+  Future<void> parse(BuildContext context, String filename) async {
     clear();
 
     book = filename;
     addText(
-        TextSpan(text: """
-    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis pharetra lobortis faucibus. Vestibulum efficitur, velit nec accumsan aliquam, lectus elit congue nulla, ac venenatis purus mi vel risus. Ut auctor consequat nibh in sodales. Aenean eget dolor dictum, imperdiet turpis nec, interdum diam. Sed vitae mauris hendrerit, tempus orci sit amet, placerat eros. Nulla dignissim, orci quis congue maximus, eros arcu mattis magna, vitae interdum lacus lorem nec velit. Aliquam a diam at metus pulvinar efficitur. Fusce in augue eget ligula pharetra iaculis. Nunc id dui in magna aliquet hendrerit. Nullam eu enim lacus.
-    """,
+        TextSpan(text: """The cutter passed from sunlit brilliance to soot-black shadow with the knife-edge suddenness possible only in space, and the tall, broad-shouldered woman in the black and gold of the Royal Manticoran Navy gazed out the armorplast port at the battle-steel beauty of her command and frowned.""",
             style: Theme
                 .of(context)
                 .textTheme
                 .bodySmall!));
     addText(
         TextSpan(text: """
-    Nullam aliquam elementum velit vel tincidunt. Cras dui ex, lobortis sit amet tortor ut, rutrum maximus tortor. Nulla faucibus tellus nisi, non dapibus nisi aliquam sed. Morbi sed dignissim libero. Fusce dignissim leo nec libero placerat, id consectetur augue interdum. Praesent ut massa nisl. Praesent id pulvinar ex. In egestas nec ligula et blandit.
+The six-limbed cream-and-gray treecat on her shoulder shifted his balance as she raised her right hand and pointed.
     """, style: Theme
             .of(context)
             .textTheme
             .bodySmall!));
     addText(
         TextSpan(text: """
-    Cras sed finibus diam. Quisque odio nisl, fermentum et ante vitae, sollicitudin sodales risus. Mauris varius semper lectus, id gravida nibh sodales eget. Pellentesque aliquam, velit quis fringilla rhoncus, neque orci semper tellus, quis interdum odio justo sit amet dui. Nam tristique aliquam purus, in facilisis lacus facilisis sed. Nullam pulvinar ultrices molestie. Cras ac erat porta enim bibendum semper.
+"I thought we'd discussed replacing Beta Fourteen with Commander Antrim, Andy," she said, and the short, dapper lieutenant commander beside her winced at her soprano voice's total lack of inflection.    """, style: Theme
+            .of(context)
+            .textTheme
+            .bodySmall!));
+    addText(
+        TextSpan(text: """
+"Yes, Ma'am. We did." He tapped keys on his memo pad and checked the display. "We discussed it on the sixteenth, Skipper, before you went on leave, and he promised to get back to us."
     """, style: Theme
             .of(context)
             .textTheme
             .bodySmall!));
     addText(
         TextSpan(text: """
-    Curabitur sed dictum sem, et sollicitudin dolor. Sed semper elit est, at fermentum purus bibendum nec. Donec scelerisque diam sit amet ante cursus cursus in scelerisque tellus. Pellentesque nec nibh id mi euismod efficitur in ac lorem. Pellentesque scelerisque fermentum vestibulum. Cras molestie lobortis dolor vel faucibus. Vivamus hendrerit est vitae tellus commodo accumsan. Phasellus ut finibus nulla. Nam sed massa turpis.
-    """, style: Theme
+"You've had a lot of other things on your plate, too," she said, and Andreas Venizelos hid another—and much more painful—wince. Honor Harrington seldom rapped her officers in the teeth, but he would almost have preferred to have her hand him his head. Her quiet, understanding tone sounded entirely too much as if she were finding excuses for him.    """,
+            style: Theme
             .of(context)
             .textTheme
             .bodySmall!));
     addText(
         TextSpan(text: """
-    Mauris nec nunc ex. Morbi pellentesque scelerisque ligula, vel accumsan ligula rutrum nec. Pellentesque quis nulla ligula. Duis diam arcu, iaculis nec sem sit amet, malesuada consectetur arcu. Ut a nisi faucibus, pulvinar nisl sit amet, dignissim eros. Ut tortor metus, bibendum a congue fermentum, efficitur sed nisl. Donec vel placerat magna, in placerat ligula. Sed dignissim pulvinar mauris non tristique.
-    """, style: Theme
-            .of(context)
+"Maybe so, Ma'am, but I still should've kept after him," he said. "We both know how these yard types hate node replacements." He tapped a note into his pad. "I'll com him as soon as we get back aboard Vulcan."
+""", style: Theme.of(context)
             .textTheme
             .bodySmall!));
+
+    state = List.from(_chapters);
   }
 
-  void setConstraints({required double height, required double width}) {
-    if (height != canvasHeight || width != canvasWidth) {
-      canvasHeight = height;
-      canvasWidth = width;
-    }
-  }
+
 }

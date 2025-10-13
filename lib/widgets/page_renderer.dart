@@ -1,17 +1,18 @@
-import 'dart:ui' as ui;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:inkworm/epub/constants.dart';
+import 'package:inkworm/epub/elements/separators/space_separator.dart';
 
+import '../epub/elements/line.dart';
+import '../epub/elements/line_element.dart';
 import '../epub/epub.dart';
-import '../epub/paragraph.dart';
 
 class PageRenderer extends CustomPainter {
-  final bool useTextPainter = false;
-  List<Paragraph> spans = [];
+  final bool useTextPainter = true;
+  List<Line> lines = [];
 
   PageRenderer(WidgetRef ref, int pageNumber) {
-    spans = Epub.instance[0][pageNumber].spans;
+    lines = ref.read(epubProvider)[0][pageNumber].lines;
   }
 
   @override
@@ -19,27 +20,15 @@ class PageRenderer extends CustomPainter {
     canvas.drawRect(Offset(0, 0) & size, Paint()..color = Colors.red[100]!);
     canvas.clipRect(Offset(0, 0) & size);
 
-    for (Paragraph para in spans) {
-      if (useTextPainter) {
-        final TextPainter textPainter = TextPainter(text: para.span, textAlign: TextAlign.justify, textDirection: TextDirection.ltr);
-        textPainter.layout(maxWidth: Epub.instance.canvasWidth - Epub.instance.leftIndent - Epub.instance.rightIndent);
-        textPainter.paint(canvas, Offset(Epub.instance.leftIndent, para.y));
-      }
-      else {
-        final ui.ParagraphBuilder paragraphBuilder = ui.ParagraphBuilder(
-            ui.ParagraphStyle(
-              fontFamily: para.span.style!.fontFamily,
-              fontSize:   para.span.style!.fontSize,
-              fontStyle:  para.span.style!.fontStyle,
-              fontWeight: para.span.style!.fontWeight,
-              textAlign:  TextAlign.justify,
-            )
-        )
-          ..pushStyle(para.span.style!.getTextStyle()) // To use multiple styles, you must make use of the builder and `pushStyle` and then `addText` (or optionally `pop`).
-          ..addText(para.span.text!);
-        final ui.Paragraph paragraph = paragraphBuilder.build()
-          ..layout(ui.ParagraphConstraints(width: size.width - 12.0 - 12.0));
-        canvas.drawParagraph(paragraph, Offset(12.0, para.y));
+    for (Line line in lines) {
+      double xPos = PageConstants.leftIndent + line.textIndent;
+      for (LineElement el in line.elements) {
+        if (el is! SpaceSeparator) {
+          final TextPainter textPainter = TextPainter(text: el.element, textAlign: TextAlign.justify, textDirection: TextDirection.ltr);
+          textPainter.layout(maxWidth: PageConstants.canvasWidth - PageConstants.leftIndent - PageConstants.rightIndent);
+          textPainter.paint(canvas, Offset(xPos, line.yPos));
+        }
+        xPos += el.width;
       }
     }
   }
