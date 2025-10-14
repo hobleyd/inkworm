@@ -15,12 +15,14 @@ abstract class LineElement {
   LineElement();
 
   void getTextConstraints(InlineSpan span) {
-    TextPainter painter = TextPainter(text: span, maxLines: null, textScaler: TextScaler.linear(1), textDirection: TextDirection.ltr,);
+    TextPainter painter = TextPainter(text: span, textDirection: TextDirection.ltr,);
     painter.layout(maxWidth: PageConstants.canvasWidth - PageConstants.leftIndent - PageConstants.rightIndent);
 
     height = painter.height;
     width  = painter.width;
   }
+
+  void paint(Canvas c, double xPos, double yPos);
 
   @override
   String toString() {

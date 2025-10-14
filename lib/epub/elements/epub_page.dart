@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:inkworm/epub/elements/separators/non_breaking_space_separator.dart';
 
 
 import '../constants.dart';
+import 'line_element.dart';
+import 'separators/hyphen_separator.dart';
 import 'separators/space_separator.dart';
 import 'line.dart';
 import 'word.dart';
@@ -28,6 +31,7 @@ class EpubPage {
       lines.add(Line(yPos: 0));
     } else {
       getActiveLines().last.finish();
+      debugPrint('line: ${getActiveLines().last}');
 
       // If we need to move to a new page, add these to the overflow list and let the calling process worry about creating a new page.
       Line line = Line(yPos: getActiveLines().last.yPos + getActiveLines().last.height);
@@ -59,29 +63,31 @@ class EpubPage {
       addLine(true);
     }
 
-    // TODO: deal with hyphens
-    for (String word in span.text!.split(' ')) {
-      Word w = Word(word: TextSpan(text: word.trim(), style: span.style));
-      if (getActiveLines().last.willFit(w)) {
-        addWord(word: w, style: span.style!);
+    // Split the span into text and spaces or hyphens - such that we can modify the width of the latter two in order to support justification.
+    RegExp regex = RegExp(r"\w+(?:'\w+)*|\s+|[^\w\s']");
+    final List<String> words = regex.allMatches(span.text!).map((match) => match.group(0)!).toList();
+    for (String word in words) {
+      LineElement el = switch (word) {
+        '-' || '\u{2014}'  => HyphenSeparator(style: span.style!),
+        ' '                => SpaceSeparator(style: span.style!),
+        '\u{00A0}'         => NonBreakingSpaceSeparator(style: span.style!),
+         _                 => Word(word: TextSpan(text: word.trim(), style: span.style)),
+      };
+
+      if (getActiveLines().last.willFit(el)) {
+        getActiveLines().last.addElement(el);
       } else {
         addLine(false);
-        addWord(word: w, style: span.style!);
+        if (el is! SpaceSeparator) {
+          getActiveLines().last.addElement(el);
+        }
       }
     }
+
     getActiveLines().last.alignment = LineAlignment.left;
     addLine(true);
 
     return overflow;
-  }
-
-  void addWord({required Word word, required TextStyle style}) {
-    getActiveLines().last.addElement(word);
-
-    SpaceSeparator s = SpaceSeparator(style: style);
-    if (lines.last.willFit(s)) {
-      getActiveLines().last.addElement(s);
-    }
   }
 
   void clear() {

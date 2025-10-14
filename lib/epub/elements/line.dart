@@ -1,8 +1,9 @@
-
 import 'dart:math';
 
 import '../constants.dart';
+import 'separators/non_breaking_space_separator.dart';
 import 'separators/separator.dart';
+import 'separators/space_separator.dart';
 import 'line_element.dart';
 
 enum LineAlignment { left, right, centre, justify }
@@ -21,12 +22,19 @@ class Line {
 
   List<LineElement> elements = [];
 
-  get canvasWidth => PageConstants.canvasWidth - PageConstants.leftIndent - PageConstants.rightIndent;
+  double get canvasWidth => PageConstants.canvasWidth - PageConstants.leftIndent - PageConstants.rightIndent;
 
   Line({required this.yPos,});
 
   void addElement(LineElement e) {
     assert(willFit(e));
+
+    // We don't add multiple spaces together unless they are non-breaking.
+    if (e is SpaceSeparator) {
+      if (elements.isNotEmpty && (elements.last is SpaceSeparator || elements.last is NonBreakingSpaceSeparator)) {
+        return;
+      }
+    }
 
     if (!e.isDropCaps) {
       // Only adjust the line height if this is not a dropcaps element. For obvious reasons.
@@ -75,7 +83,7 @@ class Line {
 
   @override
   String toString() {
-    String result = "$textIndent: ";
+    String result = "$yPos(${PageConstants.canvasWidth}/${PageConstants.canvasHeight}: ";
     for (var el in elements) {
       result += '$el';
     }

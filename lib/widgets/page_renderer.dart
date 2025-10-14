@@ -17,17 +17,12 @@ class PageRenderer extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    canvas.drawRect(Offset(0, 0) & size, Paint()..color = Colors.red[100]!);
     canvas.clipRect(Offset(0, 0) & size);
 
     for (Line line in lines) {
       double xPos = PageConstants.leftIndent + line.textIndent;
       for (LineElement el in line.elements) {
-        if (el is! SpaceSeparator) {
-          final TextPainter textPainter = TextPainter(text: el.element, textAlign: TextAlign.justify, textDirection: TextDirection.ltr);
-          textPainter.layout(maxWidth: PageConstants.canvasWidth - PageConstants.leftIndent - PageConstants.rightIndent);
-          textPainter.paint(canvas, Offset(xPos, line.yPos));
-        }
+        el.paint(canvas, xPos, line.yPos);
         xPos += el.width;
       }
     }

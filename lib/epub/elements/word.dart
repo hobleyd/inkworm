@@ -17,7 +17,14 @@ class Word extends LineElement {
   }
 
   @override
+  void paint(Canvas c, double xPos, double yPos) {
+    final TextPainter textPainter = TextPainter(text: word, textDirection: TextDirection.ltr);
+    textPainter.layout(maxWidth: width);
+    textPainter.paint(c, Offset(xPos, yPos));
+  }
+
+  @override
   String toString() {
-    return word.toPlainText();
+    return '${word.toPlainText()} ($width)';
   }
 }

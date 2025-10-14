@@ -40,10 +40,7 @@ class Epub extends _$Epub {
     book = filename;
     addText(
         TextSpan(text: """The cutter passed from sunlit brilliance to soot-black shadow with the knife-edge suddenness possible only in space, and the tall, broad-shouldered woman in the black and gold of the Royal Manticoran Navy gazed out the armorplast port at the battle-steel beauty of her command and frowned.""",
-            style: Theme
-                .of(context)
-                .textTheme
-                .bodySmall!));
+            style: Theme.of(context).textTheme.bodySmall!));
     addText(
         TextSpan(text: """
 The six-limbed cream-and-gray treecat on her shoulder shifted his balance as she raised her right hand and pointed.
