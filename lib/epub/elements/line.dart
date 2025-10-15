@@ -83,7 +83,7 @@ class Line {
 
   @override
   String toString() {
-    String result = "$yPos(${PageConstants.canvasWidth}/${PageConstants.canvasHeight}: ";
+    String result = "$yPos: ${alignment == LineAlignment.justify ? 'justify' : 'left'}: $textIndent: ";
     for (var el in elements) {
       result += '$el';
     }
