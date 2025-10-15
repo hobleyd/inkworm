@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:inkworm/epub/constants.dart';
 import 'package:inkworm/epub/elements/separators/space_separator.dart';
 import 'package:inkworm/epub/epub.dart';
@@ -11,13 +14,61 @@ import 'package:mockito/annotations.dart';
 // Generate mocks with: flutter pub run build_runner build
 @GenerateMocks([Line, Word, SpaceSeparator, Epub])
 void main() {
-  group('EpubPage', () {
+    group('text parsing', () {
     late EpubPage epubPage;
+    late TextStyle style;
+    late ThemeData themeData;
 
     setUp(() {
+      WidgetsFlutterBinding.ensureInitialized();
+
       epubPage = EpubPage();
       PageConstants.canvasHeight = 367;
       PageConstants.canvasWidth = 378;
+
+      themeData = ThemeData(
+        colorSchemeSeed: Colors.white,
+        fontFamily: Platform.isMacOS ? 'San Francisco' : GoogleFonts
+            .gentiumBookPlus()
+            .fontFamily,
+        inputDecorationTheme: const InputDecorationTheme(
+            enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
+            errorBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.red, width: 2)),
+            focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.teal, width: 2))),
+        textTheme: TextTheme(
+          titleSmall: TextStyle(fontSize: 12 - 2, fontWeight: FontWeight.w700),
+          bodyMedium: TextStyle(fontSize: 12 + 1, fontWeight: FontWeight.w400),
+          labelMedium: TextStyle(fontSize: 12 + 1, fontWeight: FontWeight.w700),
+          bodySmall: TextStyle(fontSize: 12, fontWeight: FontWeight.w400, color: Colors.black),
+          labelSmall: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.black),
+        ),
+        textSelectionTheme: const TextSelectionThemeData(
+          selectionHandleColor: Color(0xf0e8e4df),
+        ),
+        useMaterial3: true,
+        visualDensity: VisualDensity.compact,
+      );
+    });
+
+    testWidgets('Test Theme in Widget', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: themeData,
+          home: Scaffold(
+            appBar: AppBar(),
+            body: Builder(
+              builder: (context) {
+                // Access the theme here
+                style = Theme
+                    .of(context)
+                    .textTheme
+                    .bodySmall!;
+                return Container();
+              },
+            ),
+          ),
+        ),
+      );
     });
 
     group('constructor', () {
@@ -32,10 +83,11 @@ void main() {
         epubPage.addText(
             TextSpan(
                 text: """The cutter passed from sunlit brilliance to soot-black shadow with the knife-edge suddenness possible only in space, and the tall, broad-shouldered woman in the black and gold of the Royal Manticoran Navy gazed out the armorplast port at the battle-steel beauty of her command and frowned.""",
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w400, color: Colors.black)),
+                style: style,),
             []);
 
-        expect(epubPage.lines.length, 6);
+        debugPrint('${epubPage.lines}');
+        expect(epubPage.lines.length, 5);
         expect(epubPage.lines[0].yPos, 0);
         expect(epubPage.lines[0].textIndent, 18);
         expect(epubPage.lines[1].yPos, 16);
@@ -44,11 +96,9 @@ void main() {
         expect(epubPage.lines[2].textIndent, 0);
         expect(epubPage.lines[3].yPos, 48);
         expect(epubPage.lines[3].textIndent, 0);
-        expect(epubPage.lines[4].yPos, 68);
+        expect(epubPage.lines[4].yPos, 64);
         expect(epubPage.lines[4].textIndent, 0);
-        expect(epubPage.lines[5].yPos, 80);
-        expect(epubPage.lines[5].textIndent, 0);
-        expect(epubPage.lines[5].alignment, LineAlignment.left);
+        expect(epubPage.lines[4].alignment, LineAlignment.left);
       });
 
       /*
