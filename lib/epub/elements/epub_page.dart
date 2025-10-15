@@ -59,9 +59,7 @@ class EpubPage {
 
   // This will add a paragraph of text, line by line, to the current Page.
   List<Line> addText(TextSpan span, List<TextSpan> footnotes) {
-    if (lines.isEmpty) {
       addLine(true);
-    }
 
     // Split the span into text and spaces or hyphens - such that we can modify the width of the latter two in order to support justification.
     RegExp regex = RegExp(r"\w+(?:'\w+)*|\s+|[^\w\s']");
@@ -79,13 +77,13 @@ class EpubPage {
       } else {
         addLine(false);
         if (el is! SpaceSeparator) {
+          // No need to add spaces to a new line.
           getActiveLines().last.addElement(el);
         }
       }
     }
 
     getActiveLines().last.alignment = LineAlignment.left;
-    addLine(true);
 
     return overflow;
   }
