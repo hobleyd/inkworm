@@ -1,9 +1,11 @@
 import 'dart:io';
 
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:inkworm/epub/constants.dart';
+import 'package:inkworm/epub/elements/separators/hyphen_separator.dart';
 import 'package:inkworm/epub/elements/separators/space_separator.dart';
 import 'package:inkworm/epub/epub.dart';
 import 'package:inkworm/epub/elements/line.dart';
@@ -23,14 +25,12 @@ void main() {
       WidgetsFlutterBinding.ensureInitialized();
 
       epubPage = EpubPage();
-      PageConstants.canvasHeight = 367;
+      PageConstants.canvasHeight = 80;
       PageConstants.canvasWidth = 378;
 
       themeData = ThemeData(
         colorSchemeSeed: Colors.white,
-        fontFamily: Platform.isMacOS ? 'San Francisco' : GoogleFonts
-            .gentiumBookPlus()
-            .fontFamily,
+        fontFamily: GoogleFonts.gentiumBookPlus().fontFamily,
         inputDecorationTheme: const InputDecorationTheme(
             enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
             errorBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.red, width: 2)),
@@ -59,10 +59,7 @@ void main() {
             body: Builder(
               builder: (context) {
                 // Access the theme here
-                style = Theme
-                    .of(context)
-                    .textTheme
-                    .bodySmall!;
+                style = Theme.of(context).textTheme.bodySmall!;
                 return Container();
               },
             ),
@@ -86,10 +83,15 @@ void main() {
                 style: style,),
             []);
 
-        debugPrint('${epubPage.lines}');
+        Map<Type, int> line0 = groupBy(epubPage.lines[0].elements, (e) => e.runtimeType).map((k, v) => MapEntry(k, v.length));
+
         expect(epubPage.lines.length, 5);
         expect(epubPage.lines[0].yPos, 0);
         expect(epubPage.lines[0].textIndent, 18);
+        expect(line0[(Word)], 10);
+        expect(line0[(SpaceSeparator)], 8);
+        expect(line0[(HyphenSeparator)], 1);
+        expect(line0[(Word)], 10);
         expect(epubPage.lines[1].yPos, 16);
         expect(epubPage.lines[1].textIndent, 0);
         expect(epubPage.lines[2].yPos, 32);
@@ -99,48 +101,15 @@ void main() {
         expect(epubPage.lines[4].yPos, 64);
         expect(epubPage.lines[4].textIndent, 0);
         expect(epubPage.lines[4].alignment, LineAlignment.left);
+
+        epubPage.addText(
+            TextSpan(
+              text: """The six-limbed cream-and-gray treecat on her shoulder shifted his balance as she raised her right hand and pointed.""",
+              style: style,),
+            []);
+
+        expect(epubPage.overflow.length, 2);
       });
-
-      /*
-      test('should move line to overflow when exceeding canvas height', () {
-        PageConstants.canvasHeight = 100;
-
-        epubPage.addLine(false);
-        epubPage.lines.first.height = 120.0; // Exceeds canvas height
-
-        epubPage.addLine(false);
-
-        expect(epubPage.overflow.length, 1);
-        expect(epubPage.overflow.first.yPos, 0);
-      });
-    });
-
-    group('addLines', () {
-      test('should add all provided lines to the page', () {
-        final linesToAdd = [
-          Line(yPos: 0),
-          Line(yPos: 20),
-          Line(yPos: 40),
-        ];
-
-        epubPage.addLines(linesToAdd);
-
-        expect(epubPage.lines.length, 3);
-        expect(epubPage.lines[0].yPos, 0);
-        expect(epubPage.lines[1].yPos, 20);
-        expect(epubPage.lines[2].yPos, 40);
-      });
-
-      test('should append to existing lines', () {
-        epubPage.addLine(false);
-        final initialCount = epubPage.lines.length;
-
-        final linesToAdd = [Line(yPos: 10), Line(yPos: 20)];
-        epubPage.addLines(linesToAdd);
-
-        expect(epubPage.lines.length, initialCount + 2);
-      });
-       */
     });
   });
 }
