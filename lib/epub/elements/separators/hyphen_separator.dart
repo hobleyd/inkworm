@@ -17,11 +17,8 @@ class HyphenSeparator extends Separator {
   }
 
   @override
-  void paint(Canvas c, double xPos, double yPos) {
-    // TODO: treat a hyphen as a variable width element when considering justification.
-    final TextPainter textPainter = TextPainter(text: hyphen, textDirection: TextDirection.ltr);
-    textPainter.layout(maxWidth: width);
-    textPainter.paint(c, Offset(xPos, yPos));
+  void paint(Canvas c, double height, double xPos, double yPos) {
+    c.drawLine(Offset(xPos, yPos+(height/2)+1), Offset(xPos+width, yPos+(height/2)+1), Paint.new()..color = Colors.black);
   }
 
   @override

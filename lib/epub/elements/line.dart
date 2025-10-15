@@ -73,7 +73,7 @@ class Line {
   }
 
   void finish() {
-    while (elements.last is Separator) {
+    while (elements.last is SpaceSeparator) {
       elements.removeLast();
       _separatorCount--;
     }
@@ -83,7 +83,7 @@ class Line {
 
   @override
   String toString() {
-    String result = "$yPos: ${alignment == LineAlignment.justify ? 'justify' : 'left'}: $textIndent: ";
+    String result = "$yPos: ";
     for (var el in elements) {
       result += '$el';
     }

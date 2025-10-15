@@ -31,7 +31,6 @@ class EpubPage {
       lines.add(Line(yPos: 0));
     } else {
       getActiveLines().last.finish();
-      debugPrint('line: ${getActiveLines().last}');
 
       // If we need to move to a new page, add these to the overflow list and let the calling process worry about creating a new page.
       Line line = Line(yPos: getActiveLines().last.yPos + getActiveLines().last.height);
@@ -62,8 +61,7 @@ class EpubPage {
       addLine(true);
 
     // Split the span into text and spaces or hyphens - such that we can modify the width of the latter two in order to support justification.
-    RegExp regex = RegExp(r"\w+(?:'\w+)*|\s+|[^\w\s']");
-    final List<String> words = regex.allMatches(span.text!).map((match) => match.group(0)!).toList();
+    final List<String> words = splitSpan(span.text!);
     for (String word in words) {
       LineElement el = switch (word) {
         '-' || '\u{2014}'  => HyphenSeparator(style: span.style!),
@@ -94,5 +92,30 @@ class EpubPage {
 
   List<Line> getActiveLines() {
     return overflow.isNotEmpty ? overflow : lines;
+  }
+
+  List<String> splitSpan(String span) {
+    List<String> result = [];
+    String current = "";
+
+    for (int i = 0; i < span.length; i++) {
+      String char = span[i];
+
+      if (char == '-' || char == '\u{2014}' || char == ' ' || char == '\u{00A0}') {
+        if (current.isNotEmpty) {
+          result.add(current);
+          current = "";
+        }
+        result.add(char);
+      } else {
+        current += char;
+      }
+    }
+
+    if (current.isNotEmpty) {
+      result.add(current);
+    }
+
+    return result;
   }
 }

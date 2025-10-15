@@ -25,8 +25,8 @@ class _Inkworm extends ConsumerState<Inkworm> {
       appBar: null,
       body: SafeArea(
         child: Container(
-          height: PageConstants.canvasHeight,
-          width: PageConstants.canvasWidth,
+          height: double.maxFinite,
+          width: double.maxFinite,
           padding: const EdgeInsets.only(top: 6, bottom: 6),
           child: GestureDetector(
               onTapUp: (TapUpDetails details) {
@@ -44,9 +44,7 @@ class _Inkworm extends ConsumerState<Inkworm> {
                   }
                 });
                     },
-            child: chapters.isEmpty
-              ? Text("waiting to parse book")
-              : CustomPaint(painter: PageRenderer(ref, displayedPage),),
+            child: CustomPaint(painter: PageRenderer(ref, displayedPage),),
           ),
         ),
       ),
@@ -58,7 +56,5 @@ class _Inkworm extends ConsumerState<Inkworm> {
     super.initState();
 
     displayedPage = widget.pageNumber;
-
-    Future.delayed(Duration(seconds: 0), () => ref.read(epubProvider.notifier).parse(context, ""));
   }
 }

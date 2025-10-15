@@ -14,6 +14,7 @@ abstract class LineElement {
 
   LineElement();
 
+  // TODO: refactor this when we come to images
   void getTextConstraints(InlineSpan span) {
     TextPainter painter = TextPainter(text: span, textDirection: TextDirection.ltr,);
     painter.layout(maxWidth: PageConstants.canvasWidth - PageConstants.leftIndent - PageConstants.rightIndent);
@@ -22,7 +23,7 @@ abstract class LineElement {
     width  = painter.width;
   }
 
-  void paint(Canvas c, double xPos, double yPos);
+  void paint(Canvas c, double height, double xPos, double yPos);
 
   @override
   String toString() {

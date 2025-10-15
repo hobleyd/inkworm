@@ -17,7 +17,7 @@ class NonBreakingSpaceSeparator extends Separator {
   }
 
   @override
-  void paint(Canvas c, double xPos, double yPos) {
+  void paint(Canvas c, double height, double xPos, double yPos) {
     // No need to do anything for a Space character!
   }
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'epub/constants.dart';
+import 'epub/epub.dart';
 import 'providers/theme.dart' hide Theme;
 import 'screens/inkworm.dart';
 
@@ -10,9 +11,9 @@ class InkwormApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    PageConstants.setConstraints(height: MediaQuery.of(context).size.height, width: MediaQuery.of(context).size.width);
+    ref.read(pageConstantsProvider.notifier).setContext(context);
 
-    return MaterialApp(
+     return MaterialApp(
       title: 'Inkworm',
       home: Inkworm(pageNumber: 0),
       theme: ref.watch(themeProvider),

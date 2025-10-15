@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:inkworm/epub/constants.dart';
-import 'package:inkworm/epub/elements/separators/space_separator.dart';
 
 import '../epub/elements/line.dart';
 import '../epub/elements/line_element.dart';
@@ -11,18 +10,25 @@ class PageRenderer extends CustomPainter {
   final bool useTextPainter = true;
   List<Line> lines = [];
 
+  late WidgetRef _ref;
+
   PageRenderer(WidgetRef ref, int pageNumber) {
-    lines = ref.read(epubProvider)[0][pageNumber].lines;
+    _ref = ref;
+
+    if (ref.read(epubProvider).isNotEmpty) {
+      lines = ref.read(epubProvider)[0][pageNumber].lines;
+    }
   }
 
   @override
   void paint(Canvas canvas, Size size) {
+    _ref.read(pageConstantsProvider.notifier).setConstraints(width: size.width, height: size.height);
     canvas.clipRect(Offset(0, 0) & size);
 
     for (Line line in lines) {
       double xPos = PageConstants.leftIndent + line.textIndent;
       for (LineElement el in line.elements) {
-        el.paint(canvas, xPos, line.yPos);
+        el.paint(canvas, line.height, xPos, line.yPos);
         xPos += el.width;
       }
     }
