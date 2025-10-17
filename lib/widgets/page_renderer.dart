@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:inkworm/epub/constants.dart';
 
+import '../epub/constants.dart';
 import '../epub/elements/line.dart';
 import '../epub/elements/line_element.dart';
-import '../epub/epub.dart';
 
 class PageRenderer extends CustomPainter {
   final bool useTextPainter = true;
@@ -15,9 +14,9 @@ class PageRenderer extends CustomPainter {
   PageRenderer(WidgetRef ref, int pageNumber) {
     _ref = ref;
 
-    if (ref.read(epubProvider).isNotEmpty) {
-      lines = ref.read(epubProvider)[0][pageNumber].lines;
-    }
+    //if (ref.read(epubProvider).isNotEmpty) {
+     // lines = ref.read(epubProvider)[0][pageNumber].lines;
+    //}
   }
 
   @override

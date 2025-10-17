@@ -1,60 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:inkworm/epub/epub_chapter.dart';
 
-import '../epub/constants.dart';
 import '../epub/epub.dart';
-import '../widgets/page_renderer.dart';
+import '../models/epub_book.dart';
+import '../widgets/page_canvas.dart';
+import '../widgets/progress_bar.dart';
 
-class Inkworm extends ConsumerStatefulWidget {
-  int pageNumber = 0;
-  Inkworm({super.key, required this.pageNumber});
-
-  @override
-  ConsumerState<Inkworm> createState() => _Inkworm();
-}
-
-class _Inkworm extends ConsumerState<Inkworm> {
-  int displayedPage = 0;
+class Inkworm extends ConsumerWidget {
+  Inkworm({super.key,});
 
   @override
-  Widget build(BuildContext context) {
-    List<EpubChapter> chapters = ref.watch(epubProvider);
+  Widget build(BuildContext context, WidgetRef ref) {
+    EpubBook book = ref.watch(epubProvider);
 
     return Scaffold(
       appBar: null,
       body: SafeArea(
-        child: Container(
-          height: double.maxFinite,
-          width: double.maxFinite,
-          padding: const EdgeInsets.only(top: 6, bottom: 6),
-          child: GestureDetector(
-              onTapUp: (TapUpDetails details) {
-                double screenWidth = MediaQuery.of(context).size.width;
-                double tapX = details.globalPosition.dx;
-
-                setState(() {
-                  if (tapX < screenWidth / 2) {
-                    if (displayedPage > 0) {
-                      displayedPage--;
-                    }
-                  } else {
-                    // TODO: deal with end of chapter!
-                    displayedPage++;
-                  }
-                });
-                    },
-            child: CustomPaint(painter: PageRenderer(ref, displayedPage),),
-          ),
+        child: Column(
+          children: [
+            Expanded(
+              child: book.error != null
+                ? Text(book.error.toString())
+                : PageCanvas(),),
+            ProgressBar(),
+          ],
         ),
       ),
     );
-  }
-
-  @override
-  void initState() {
-    super.initState();
-
-    displayedPage = widget.pageNumber;
-  }
+    }
 }

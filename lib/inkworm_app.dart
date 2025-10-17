@@ -15,7 +15,7 @@ class InkwormApp extends ConsumerWidget {
 
      return MaterialApp(
       title: 'Inkworm',
-      home: Inkworm(pageNumber: 0),
+      home: Inkworm(),
       theme: ref.watch(themeProvider),
     );
   }
