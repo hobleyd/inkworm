@@ -3,6 +3,7 @@
 *.log
 *.pyc
 *.swp
+*.config.dart
 *.freezed.dart
 *.g.dart
 *.mocks.dart

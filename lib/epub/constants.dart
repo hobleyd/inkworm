@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -15,6 +13,7 @@ class PageConstants extends _$PageConstants {
   static double rightIndent = 12;
   late BuildContext context;
 
+  @override
   void build() {}
 
   void setConstraints({required double height, required double width}) {
@@ -22,11 +21,7 @@ class PageConstants extends _$PageConstants {
       canvasHeight = height;
       canvasWidth = width;
 
-      Future.delayed(Duration(seconds: 0), () => ref.read(epubProvider.notifier).parse(context));
+      Future.delayed(Duration(seconds: 0), () => ref.read(epubProvider.notifier).parse());
     }
-  }
-
-  void setContext(BuildContext context) {
-    this.context = context;
   }
 }

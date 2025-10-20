@@ -1,4 +1,5 @@
 import 'package:archive/archive.dart';
+import 'package:csslib/visitor.dart';
 import 'package:xml/xml.dart';
 
 import '../../models/manifest_item.dart';
@@ -9,10 +10,18 @@ extension FindFileExtension on Archive {
   ArchiveFile? findFileEndsWith(String filename) {
     return files.firstWhere((file) => file.name.endsWith(Uri.decodeFull(filename)));
   }
+
+  String getContentAsString(String filename) {
+    ArchiveFile file = findFileEndsWith(filename)!;
+    InputStream chapterStream = file.getContent()!;
+
+    final String contents = chapterStream.readString();
+    chapterStream.close();
+    return contents;
+  }
 }
 
 const dcNamespace = 'http://purl.org/dc/elements/1.1/';
-
 extension FileAuthorExtension on XmlDocument {
   String get author => findAllElements('creator', namespace: dcNamespace).firstOrNull?.innerText ?? "";
   String get title => findAllElements('title', namespace: dcNamespace).firstOrNull?.innerText ?? "";

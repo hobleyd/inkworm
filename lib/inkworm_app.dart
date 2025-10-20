@@ -11,8 +11,6 @@ class InkwormApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    ref.read(pageConstantsProvider.notifier).setContext(context);
-
      return MaterialApp(
       title: 'Inkworm',
       home: Inkworm(),

@@ -1,24 +1,21 @@
 import 'dart:io';
 
 import 'package:archive/archive.dart';
-import 'package:flutter/foundation.dart';
+import 'package:injectable/injectable.dart';
 import 'package:xml/xml.dart';
 
 import '../epub_chapter.dart';
+import '../handlers/html_handler.dart';
 import 'extensions.dart';
 
+@Singleton()
 class EpubParser {
   late Archive bookArchive;
 
   EpubParser();
 
   XmlDocument? getOPFContent(String opfPath) {
-    InputStream? opf = bookArchive.findFileEndsWith(opfPath)?.getContent();
-    if (opf == null) {
-      return null;
-    }
-
-    return XmlDocument.parse(opf.readString());
+    return XmlDocument.parse(bookArchive.getContentAsString(opfPath));
   }
 
   String? getOPFPath() {
@@ -36,6 +33,7 @@ class EpubParser {
     final XmlDocument document = XmlDocument.parse(containerStream.readString());
     XmlElement? rootfile = document.findAllElements('rootfile').firstOrNull;
 
+    containerStream.close();
     return rootfile?.getAttributeNode("full-path")?.value;
   }
 
@@ -43,7 +41,7 @@ class EpubParser {
     String bookPath = Platform.environment['EBOOK']!;
     final inputStream = InputFileStream(bookPath);
     bookArchive = ZipDecoder().decodeStream(inputStream);
-    inputStream.closeSync();
+    inputStream.close();
   }
 
   XmlDocument parse() {
@@ -62,14 +60,20 @@ class EpubParser {
 
   EpubChapter parseChapter(int index, String href) {
     EpubChapter chapter = EpubChapter(chapterNumber: index);
-    ArchiveFile file = bookArchive.findFileEndsWith(href)!;
-    InputStream chapterStream = file.getContent()!;
 
-    final XmlDocument doc = XmlDocument.parse(chapterStream.readString());
-    for (final node in doc.children) {
-      debugPrint('$node');
+    final XmlDocument doc = XmlDocument.parse(bookArchive.getContentAsString(href));
+    for (final element in doc.childElements) {
+      walkTree(element);
     }
 
     return chapter;
+  }
+
+  void walkTree(XmlElement element) {
+    HtmlHandler.getHandler(element.name.local)?.processElement(element);
+
+    for (var el in element.childElements) {
+      walkTree(el);
+    }
   }
 }
