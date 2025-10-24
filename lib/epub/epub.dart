@@ -2,7 +2,7 @@ import 'package:get_it/get_it.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:xml/xml.dart';
 
-import 'epub_chapter.dart';
+import 'elements/epub_chapter.dart';
 import '../models/epub_book.dart';
 import 'parser/epub_parser.dart';
 import 'parser/extensions.dart';

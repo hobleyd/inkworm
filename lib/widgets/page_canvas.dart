@@ -6,7 +6,9 @@ import '../models/epub_book.dart';
 import 'page_renderer.dart';
 
 class PageCanvas extends ConsumerStatefulWidget {
-  int pageNumber = 0;
+  final int pageNumber;
+
+  const PageCanvas({super.key, required this.pageNumber});
 
   @override
   ConsumerState<PageCanvas> createState() => _PageCanvas();

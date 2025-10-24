@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:injectable/injectable.dart';
-import 'package:inkworm/epub/parser/css_parser.dart';
 import 'package:xml/xml.dart';
 
-import '../parser/epub_parser.dart';
+import '../parser/css_parser.dart';
 import 'html_handler.dart';
 
 @Named("LinkHandler")

@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import 'epub.dart';
@@ -11,7 +10,7 @@ class PageConstants extends _$PageConstants {
   static double canvasHeight = 0;
   static double leftIndent = 12;
   static double rightIndent = 12;
-  late BuildContext context;
+  static double pixelDensity = 1;
 
   @override
   void build() {}

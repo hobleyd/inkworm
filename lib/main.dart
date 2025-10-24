@@ -7,7 +7,6 @@ import 'package:injectable/injectable.dart';
 import 'package:logger/logger.dart';
 
 import 'config/provider_logger.dart';
-import 'epub/handlers/html_handler.dart';
 import 'inkworm_app.dart';
 
 import 'main.config.dart';

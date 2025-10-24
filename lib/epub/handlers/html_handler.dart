@@ -3,7 +3,6 @@ import 'dart:collection';
 import 'package:flutter/material.dart';
 import 'package:xml/xml.dart';
 
-
 abstract class HtmlHandler {
   static final HashMap<String, HtmlHandler> _htmlHandlers = HashMap<String, HtmlHandler>();
 

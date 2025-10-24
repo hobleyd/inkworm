@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'elements/epub_page.dart';
-import 'elements/line.dart';
+import 'epub_page.dart';
+import 'line.dart';
 
 /*
  * A Chapter contains a list of Pages
@@ -13,7 +13,7 @@ class EpubChapter {
 
   EpubChapter({required this.chapterNumber,});
 
-  operator [](int index) => _pages[index];
+  EpubPage? operator [](int index) => _pages[index];
 
   void addTextToCurrentPage(TextSpan span) {
     if (_pages.isEmpty) {

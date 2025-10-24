@@ -25,6 +25,6 @@ class Word extends LineElement {
 
   @override
   String toString() {
-    return '${word.toPlainText()}';
+    return word.toPlainText();
   }
 }

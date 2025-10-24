@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:get_it/get_it.dart';
 import 'package:injectable/injectable.dart';
 import 'package:xml/xml.dart';
 
-import '../parser/css_parser.dart';
+import '../styles/block_style.dart';
 import 'html_handler.dart';
 
 @Named("BlockHandler")
@@ -25,7 +24,13 @@ class BlockHandler extends HtmlHandler {
   @override
   InlineSpan processElement(XmlElement element) {
     debugPrint('BLOCK_HANDLER: ${element.name}: ${element.attributes}');
-    //debugPrint('${GetIt.instance.get<CssParser>().extractStylesForSelector("p")}');
+
+    BlockStyle style = BlockStyle(element);
+
+    for (var child in element.childElements) {
+      HtmlHandler.getHandler(child.name.local)?.processElement(element);
+    }
+
     return TextSpan(text: element.innerText);
   }
 }

@@ -1,10 +1,12 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
+import 'package:flutter/material.dart';
 import 'package:injectable/injectable.dart';
 import 'package:xml/xml.dart';
 
-import '../epub_chapter.dart';
+import '../elements/epub_chapter.dart';
 import '../handlers/html_handler.dart';
 import 'extensions.dart';
 
@@ -13,6 +15,10 @@ class EpubParser {
   late Archive bookArchive;
 
   EpubParser();
+
+  Uint8List getBytes(String path) {
+    return bookArchive.getContentAsBytes(path);
+  }
 
   XmlDocument? getOPFContent(String opfPath) {
     return XmlDocument.parse(bookArchive.getContentAsString(opfPath));
@@ -63,17 +69,12 @@ class EpubParser {
 
     final XmlDocument doc = XmlDocument.parse(bookArchive.getContentAsString(href));
     for (final element in doc.childElements) {
-      walkTree(element);
+      InlineSpan? span = HtmlHandler.getHandler(element.name.local)?.processElement(element);
+      if (span != null) {
+        chapter.addTextToCurrentPage(span);
+      }
     }
 
     return chapter;
-  }
-
-  void walkTree(XmlElement element) {
-    HtmlHandler.getHandler(element.name.local)?.processElement(element);
-
-    for (var el in element.childElements) {
-      walkTree(el);
-    }
   }
 }

@@ -1,6 +1,7 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:inkworm/epub/epub_chapter.dart';
-import 'package:inkworm/models/manifest_item.dart';
+
+import '../epub/elements/epub_chapter.dart';
+import 'manifest_item.dart';
 
 part 'epub_book.freezed.dart';
 

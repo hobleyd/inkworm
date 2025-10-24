@@ -1,5 +1,6 @@
+import 'dart:typed_data';
+
 import 'package:archive/archive.dart';
-import 'package:csslib/visitor.dart';
 import 'package:xml/xml.dart';
 
 import '../../models/manifest_item.dart';
@@ -18,6 +19,11 @@ extension FindFileExtension on Archive {
     final String contents = chapterStream.readString();
     chapterStream.close();
     return contents;
+  }
+
+  Uint8List getContentAsBytes(String filename) {
+    ArchiveFile file = findFileEndsWith(filename)!;
+    return file.readBytes()!;
   }
 }
 
