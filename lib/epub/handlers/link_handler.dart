@@ -3,6 +3,7 @@ import 'package:get_it/get_it.dart';
 import 'package:injectable/injectable.dart';
 import 'package:xml/xml.dart';
 
+import '../content/html_content.dart';
 import '../parser/css_parser.dart';
 import 'html_handler.dart';
 
@@ -14,12 +15,12 @@ class LinkHandler extends HtmlHandler {
   }
 
   @override
-  InlineSpan processElement(XmlElement element) {
+  Future<List<HtmlContent>> processElement(XmlElement element) async {
     debugPrint('LINK_HANDLER: ${element.name}: ${element.attributes}');
     if ('${element.getAttribute("rel")}' == "stylesheet") {
       GetIt.instance.get<CssParser>().parseFile(element.getAttribute("href")!);
 
     }
-    return TextSpan(text: element.innerText);
+    return [];
   }
 }

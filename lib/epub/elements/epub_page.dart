@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:inkworm/epub/elements/image_element.dart';
 import 'package:inkworm/epub/elements/separators/non_breaking_space_separator.dart';
+import 'package:inkworm/epub/styles/block_style.dart';
 
 
 import '../constants.dart';
+import '../content/html_content.dart';
+import '../content/image_content.dart';
+import '../content/text_content.dart';
 import 'line_element.dart';
 import 'separators/hyphen_separator.dart';
 import 'separators/space_separator.dart';
 import 'line.dart';
-import 'word.dart';
+import 'word_element.dart';
 
 // Pseudo code:
 // Ensure we have the current height of the page as well as the absolute height of the Canvas.
@@ -25,15 +30,37 @@ class EpubPage {
 
   EpubPage();
 
-  void addLine(bool paragraph) {
+  void addImage(ImageContent image, bool inline) {
+    if (!inline) {
+      if (lines.isNotEmpty) {
+        getActiveLines().last.finish();
+      }
+      addLine(paragraph: true, blockStyle: image.blockStyle);
+    }
+
+    ImageElement el = ImageElement(image: image);
+
+    if (getActiveLines().last.willFit(el)) {
+      getActiveLines().last.addElement(el);
+    } else {
+      addLine(paragraph: false, blockStyle: image.blockStyle);
+      getActiveLines().last.addElement(el);
+    }
+
+    if (!inline) {
+      getActiveLines().last.finish();
+    }
+  }
+
+  void addLine({required bool paragraph, required BlockStyle blockStyle}) {
     // Close off the previous line to calculate justification etc.
     if (lines.isEmpty) {
-      lines.add(Line(yPos: 0));
+      lines.add(Line(yPos: 0, blockStyle: blockStyle));
     } else {
       getActiveLines().last.finish();
 
       // If we need to move to a new page, add these to the overflow list and let the calling process worry about creating a new page.
-      Line line = Line(yPos: getActiveLines().last.yPos + getActiveLines().last.height);
+      Line line = Line(yPos: getActiveLines().last.yPos + getActiveLines().last.height, blockStyle: blockStyle);
       if ((line.yPos + getActiveLines().last.height) > PageConstants.canvasHeight) {
         if (overflow.isEmpty) {
           line.yPos = 0;
@@ -57,23 +84,23 @@ class EpubPage {
   }
 
   // This will add a paragraph of text, line by line, to the current Page.
-  List<Line> addText(TextSpan span, List<TextSpan> footnotes) {
-      addLine(true);
+  List<Line> addText(TextContent content, List<HtmlContent> footnotes) {
+    addLine(paragraph: true, blockStyle: content.blockStyle);
 
     // Split the span into text and spaces or hyphens - such that we can modify the width of the latter two in order to support justification.
-    final List<String> words = splitSpan(span.text!);
+    final List<String> words = splitSpan(content.span.text!);
     for (String word in words) {
       LineElement el = switch (word) {
-        '-' || '\u{2014}'  => HyphenSeparator(style: span.style!),
-        ' '                => SpaceSeparator(style: span.style!),
-        '\u{00A0}'         => NonBreakingSpaceSeparator(style: span.style!),
-         _                 => Word(word: TextSpan(text: word.trim(), style: span.style)),
+        '-' || '\u{2014}'  => HyphenSeparator(style: content.blockStyle),
+        ' '                => SpaceSeparator(style: content.blockStyle),
+        '\u{00A0}'         => NonBreakingSpaceSeparator(style: content.blockStyle),
+         _                 => WordElement(word: TextContent(blockStyle: content.blockStyle, span: TextSpan(text: word.trim(), style: content.blockStyle.elementStyle.textStyle))),
       };
 
       if (getActiveLines().last.willFit(el)) {
         getActiveLines().last.addElement(el);
       } else {
-        addLine(false);
+        addLine(paragraph: false, blockStyle: content.blockStyle);
         if (el is! SpaceSeparator) {
           // No need to add spaces to a new line.
           getActiveLines().last.addElement(el);

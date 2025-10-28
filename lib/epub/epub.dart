@@ -16,13 +16,13 @@ class Epub extends _$Epub {
     return EpubBook(author: "", title: "", chapters: [], manifest: {});
   }
 
-  void parse() {
+  void parse() async {
     try {
       GetIt.instance.get<EpubParser>().openBook();
       XmlDocument opf = GetIt.instance.get<EpubParser>().parse();
 
       List<EpubChapter> chapters = [];
-      chapters.add(GetIt.instance.get<EpubParser>().parseChapter(0, opf.manifest["Cover"]!.href));
+      chapters.add(await GetIt.instance.get<EpubParser>().parseChapter(0, opf.manifest["one-xhtml"]!.href));
       //for (var chapter in opf.spine) {
       //  chapters.add(GetIt.instance.get<EpubParser>().parseChapter(opf.spine.indexOf(chapter), opf.manifest[chapter]!.href));
       ///}

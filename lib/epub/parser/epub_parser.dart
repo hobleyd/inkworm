@@ -7,6 +7,7 @@ import 'package:injectable/injectable.dart';
 import 'package:xml/xml.dart';
 
 import '../elements/epub_chapter.dart';
+import '../content/html_content.dart';
 import '../handlers/html_handler.dart';
 import 'extensions.dart';
 
@@ -64,14 +65,16 @@ class EpubParser {
     return opf;
   }
 
-  EpubChapter parseChapter(int index, String href) {
+  Future<EpubChapter> parseChapter(int index, String href) async {
     EpubChapter chapter = EpubChapter(chapterNumber: index);
 
     final XmlDocument doc = XmlDocument.parse(bookArchive.getContentAsString(href));
     for (final element in doc.childElements) {
-      InlineSpan? span = HtmlHandler.getHandler(element.name.local)?.processElement(element);
-      if (span != null) {
-        chapter.addTextToCurrentPage(span);
+      List<HtmlContent>? elements = await HtmlHandler.getHandler(element.name.local)?.processElement(element);
+      if (elements != null) {
+        for (var el in elements) {
+          chapter.addContentToCurrentPage(el);
+        }
       }
     }
 

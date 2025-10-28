@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:injectable/injectable.dart';
 import 'package:xml/xml.dart';
 
+import '../content/html_content.dart';
+import '../content/text_content.dart';
 import '../styles/block_style.dart';
 import 'html_handler.dart';
 
@@ -22,15 +24,25 @@ class BlockHandler extends HtmlHandler {
   }
 
   @override
-  InlineSpan processElement(XmlElement element) {
+  Future<List<HtmlContent>> processElement(XmlElement element) async {
     debugPrint('BLOCK_HANDLER: ${element.name}: ${element.attributes}');
+    List<HtmlContent> elements = [];
 
     BlockStyle style = BlockStyle(element);
-
-    for (var child in element.childElements) {
-      HtmlHandler.getHandler(child.name.local)?.processElement(element);
+    final String elementText = element.innerText.trim();
+    if (elementText.isNotEmpty) {
+      elements.add(TextContent(blockStyle: style, span: TextSpan(text: element.innerText, style: style.elementStyle.textStyle)));
     }
 
-    return TextSpan(text: element.innerText);
+    for (var child in element.childElements) {
+      debugPrint('CHILD_HANDLER: ${child.name}/${child.name.local}: ${child.attributes}');
+
+      List<HtmlContent>? childElements = await HtmlHandler.getHandler(child.name.local)?.processElement(child);
+      if (childElements != null) {
+        elements.addAll(childElements);
+      }
+    }
+
+    return elements;
   }
 }

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../content/image_content.dart';
+import '../content/text_content.dart';
 import 'epub_page.dart';
+import '../content/html_content.dart';
 import 'line.dart';
 
 /*
@@ -15,15 +18,20 @@ class EpubChapter {
 
   EpubPage? operator [](int index) => _pages[index];
 
-  void addTextToCurrentPage(TextSpan span) {
+  void addContentToCurrentPage(HtmlContent content) {
     if (_pages.isEmpty) {
       _pages.add(EpubPage());
     }
 
-    List<Line> overflow = _pages.last.addText(span, []);
-    if (overflow.isNotEmpty) {
-      _pages.add(EpubPage());
-      _pages.last.addLines(overflow);
+    if (content is TextContent) {
+      List<Line> overflow = _pages.last.addText(content, []);
+      if (overflow.isNotEmpty) {
+        _pages.add(EpubPage());
+        _pages.last.addLines(overflow);
+      }
+    } else {
+      // Must be an Image
+      _pages.last.addImage(content as ImageContent, false);
     }
   }
 

@@ -7,12 +7,12 @@ import 'package:inkworm/epub/elements/separators/hyphen_separator.dart';
 import 'package:inkworm/epub/elements/separators/space_separator.dart';
 import 'package:inkworm/epub/epub.dart';
 import 'package:inkworm/epub/elements/line.dart';
-import 'package:inkworm/epub/elements/word.dart';
+import 'package:inkworm/epub/elements/word_element.dart';
 import 'package:inkworm/epub/elements/epub_page.dart';
 import 'package:mockito/annotations.dart';
 
 // Generate mocks with: flutter pub run build_runner build
-@GenerateMocks([Line, Word, SpaceSeparator, Epub])
+@GenerateMocks([Line, WordElement, SpaceSeparator, Epub])
 void main() {
     group('text parsing', () {
     late EpubPage epubPage;
@@ -86,10 +86,10 @@ void main() {
         expect(epubPage.lines.length, 5);
         expect(epubPage.lines[0].yPos, 0);
         expect(epubPage.lines[0].textIndent, 18);
-        expect(line0[(Word)], 10);
+        expect(line0[(WordElement)], 10);
         expect(line0[(SpaceSeparator)], 8);
         expect(line0[(HyphenSeparator)], 1);
-        expect(line0[(Word)], 10);
+        expect(line0[(WordElement)], 10);
         expect(epubPage.lines[1].yPos, 16);
         expect(epubPage.lines[1].textIndent, 0);
         expect(epubPage.lines[2].yPos, 32);

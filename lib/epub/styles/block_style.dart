@@ -1,9 +1,12 @@
 import 'package:get_it/get_it.dart';
+import 'package:inkworm/epub/elements/line.dart';
 import 'package:xml/xml.dart';
 
 import '../parser/css_parser.dart';
 import 'element_style.dart';
 import 'style.dart';
+
+enum LineAlignment { left, right, centre, justify }
 
 class BlockStyle extends Style {
   late CssParser _parser;
@@ -19,7 +22,10 @@ class BlockStyle extends Style {
   double width = 0;
   double leftIndent = 0;
   double lineHeightMultiplier = 0;
-  String alignment = "justify";
+  LineAlignment alignment = LineAlignment.justify;
+
+  double maxHeight = 0;
+  double maxWidth = 0;
 
   // Table properties
   Map<int, BlockStyle> tableColumns = {};
@@ -36,7 +42,12 @@ class BlockStyle extends Style {
   }
 
   void getAlignment(XmlElement element) {
-    alignment = _parser.getStringAttribute(element, "text-align", "justify");
+    alignment = switch(_parser.getStringAttribute(element, "text-align", "justify")) {
+      "center" || "centre" => LineAlignment.centre,
+      "left"               => LineAlignment.left,
+      "right"              => LineAlignment.right,
+      _                    => LineAlignment.justify,
+    };
   }
 
   void getLineHeightMultiplier(XmlElement element) {
@@ -95,6 +106,16 @@ class BlockStyle extends Style {
     }
   }
 
+  void getMax(XmlElement element) {
+    // TODO: decide on a default size, for Cover images 100% is probably correct.
+    maxHeight = _parser.getPercentAttribute(element,  "max-height",  "100%");
+    maxWidth  = _parser.getPercentAttribute(element,  "max-width",  "100%");
+
+    if (maxWidth == 1) {
+      alignment = LineAlignment.centre;
+    }
+  }
+
   void getTableStyles(XmlElement element) {
     // TODO: should really support text-overflow: ellipsis; if I am supporting overflow.
     tableWhitespace = _parser.getStringAttribute(element,  "white-space",  "wrap");
@@ -111,6 +132,7 @@ class BlockStyle extends Style {
     getLineIndent(element);
     getLineHeightMultiplier(element);
     getMargins(element);
+    getMax(element);
     getTableStyles(element);
 
     return this;

@@ -1,30 +1,31 @@
 import 'package:flutter/material.dart';
 
+import '../content/text_content.dart';
 import 'line_element.dart';
 
 @immutable
-class Word extends LineElement {
-  final InlineSpan word;
+class WordElement extends LineElement {
+  final TextContent word;
 
   @override
   get element => word;
 
   @override
-  get style => word.style!;
+  get style => word.blockStyle;
 
-  Word({required this.word}) {
-    getTextConstraints(word);
+  WordElement({required this.word}) {
+    getConstraints();
   }
 
   @override
   void paint(Canvas c, double height, double xPos, double yPos) {
-    final TextPainter textPainter = TextPainter(text: word, textDirection: TextDirection.ltr);
+    final TextPainter textPainter = TextPainter(text: word.span, textDirection: TextDirection.ltr);
     textPainter.layout(maxWidth: width);
     textPainter.paint(c, Offset(xPos, yPos));
   }
 
   @override
   String toString() {
-    return word.toPlainText();
+    return word.toString();
   }
 }

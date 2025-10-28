@@ -21,6 +21,7 @@ class Inkworm extends ConsumerWidget {
       appBar: null,
       body: SafeArea(
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Expanded(
               child: book.error != null

@@ -1,19 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:inkworm/epub/content/text_content.dart';
 
 import 'separator.dart';
 
 class HyphenSeparator extends Separator {
-  @override
-  final TextStyle style;
-  late final InlineSpan hyphen;
-
-  @override
-  get element => hyphen;
-
-  HyphenSeparator({required this.style}) {
-    hyphen = TextSpan(text: "-", style: style);
-
-    getTextConstraints(hyphen);
+  HyphenSeparator({required super.style}) : super(separator: TextContent(blockStyle: style, span: TextSpan(text: "-", style: style.elementStyle.textStyle),)) {
+    getConstraints();
   }
 
   @override

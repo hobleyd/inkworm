@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import 'epub.dart';
@@ -17,6 +18,7 @@ class PageConstants extends _$PageConstants {
 
   void setConstraints({required double height, required double width}) {
     if (height != canvasHeight || width != canvasWidth) {
+      debugPrint('resetting width/height from $canvasWidth/$canvasHeight to $width/$height');
       canvasHeight = height;
       canvasWidth = width;
 

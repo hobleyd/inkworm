@@ -74,7 +74,7 @@ class CssParser {
     result ??= css[element.localName]?[attribute];
 
     // Now look for style inheritance
-    if ((result == null || result == 'inherit') && element.hasParent) {
+    if ((result == null || result == 'inherit') && element.parentElement != null) {
       result = getCSSValue(element.parentElement!, attribute);
     }
 
@@ -82,7 +82,7 @@ class CssParser {
   }
 
   double getFloatFromString(TextStyle s, String value, String defaultValue, bool isHorizontal) {
-    TextPainter paint = TextPainter(text: TextSpan(text: "s", style: s));
+    TextPainter paint = TextPainter(textDirection: TextDirection.ltr, text: TextSpan(text: "s", style: s));
     paint.layout();
 
     double preferredSize = isHorizontal ? paint.width : paint.height;

@@ -1,19 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '../../content/text_content.dart';
 import 'separator.dart';
 
 class SpaceSeparator extends Separator {
-  @override
-  final TextStyle style;
-  late final InlineSpan space;
-
-  @override
-  get element => space;
-
-  SpaceSeparator({required this.style}) {
-    space = TextSpan(text: " ", style: style);
-
-    getTextConstraints(space);
+  SpaceSeparator({required super.style}) : super(separator: TextContent(blockStyle: style, span: TextSpan(text: "-", style: style.elementStyle.textStyle),)) {
+    getConstraints();
   }
 
   @override
