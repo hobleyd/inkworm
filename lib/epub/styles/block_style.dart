@@ -35,10 +35,8 @@ class BlockStyle extends Style {
 
   bool ignoreVerticalMargins = false;
 
-  BlockStyle(XmlElement element) {
+  BlockStyle() {
     _parser = GetIt.instance.get<CssParser>();
-
-    parseElement(element);
   }
 
   void getAlignment(XmlElement element) {
@@ -126,7 +124,8 @@ class BlockStyle extends Style {
 
   @override
   Style parseElement(XmlElement element) {
-    elementStyle = ElementStyle(element);
+    elementStyle = ElementStyle();
+    elementStyle.parseElement(element);
 
     getAlignment(element);
     getLineIndent(element);

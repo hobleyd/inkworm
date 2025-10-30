@@ -28,7 +28,8 @@ class BlockHandler extends HtmlHandler {
     debugPrint('BLOCK_HANDLER: ${element.name}: ${element.attributes}');
     List<HtmlContent> elements = [];
 
-    BlockStyle style = BlockStyle(element);
+    BlockStyle style = BlockStyle();
+    style.parseElement(element);
     final String elementText = element.innerText.trim();
     if (elementText.isNotEmpty) {
       elements.add(TextContent(blockStyle: style, span: TextSpan(text: element.innerText, style: style.elementStyle.textStyle)));

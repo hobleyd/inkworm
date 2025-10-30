@@ -1,15 +1,25 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:get_it/get_it.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:injectable/injectable.dart' as injectable;
 import 'package:inkworm/epub/constants.dart';
+import 'package:inkworm/epub/content/text_content.dart';
 import 'package:inkworm/epub/elements/separators/hyphen_separator.dart';
 import 'package:inkworm/epub/elements/separators/space_separator.dart';
 import 'package:inkworm/epub/epub.dart';
 import 'package:inkworm/epub/elements/line.dart';
 import 'package:inkworm/epub/elements/word_element.dart';
 import 'package:inkworm/epub/elements/epub_page.dart';
+import 'package:inkworm/epub/styles/block_style.dart';
+import 'package:inkworm/epub/styles/element_style.dart';
 import 'package:mockito/annotations.dart';
+
+import 'epub_page_test.config.dart';
+
+@injectable.injectableInit
+void configureInjection() => GetIt.instance.init();
 
 // Generate mocks with: flutter pub run build_runner build
 @GenerateMocks([Line, WordElement, SpaceSeparator, Epub])
@@ -17,7 +27,10 @@ void main() {
     group('text parsing', () {
     late EpubPage epubPage;
     late TextStyle style;
+    late BlockStyle blockStyle;
     late ThemeData themeData;
+
+    configureInjection();
 
     setUp(() {
       WidgetsFlutterBinding.ensureInitialized();
@@ -58,6 +71,9 @@ void main() {
               builder: (context) {
                 // Access the theme here
                 style = Theme.of(context).textTheme.bodySmall!;
+                blockStyle = BlockStyle();
+                blockStyle.elementStyle = ElementStyle();
+                blockStyle.elementStyle.textStyle = style;
                 return Container();
               },
             ),
@@ -76,9 +92,11 @@ void main() {
     group('addText', () {
       test('check for lines, words and separators', () {
         epubPage.addText(
-            TextSpan(
+            TextContent(
+              span: TextSpan(
                 text: """The cutter passed from sunlit brilliance to soot-black shadow with the knife-edge suddenness possible only in space, and the tall, broad-shouldered woman in the black and gold of the Royal Manticoran Navy gazed out the armorplast port at the battle-steel beauty of her command and frowned.""",
                 style: style,),
+              blockStyle: blockStyle,),
             []);
 
         Map<Type, int> line0 = groupBy(epubPage.lines[0].elements, (e) => e.runtimeType).map((k, v) => MapEntry(k, v.length));
@@ -101,9 +119,11 @@ void main() {
         expect(epubPage.lines[4].alignment, LineAlignment.left);
 
         epubPage.addText(
-            TextSpan(
-              text: """The six-limbed cream-and-gray treecat on her shoulder shifted his balance as she raised her right hand and pointed.""",
-              style: style,),
+            TextContent(
+              span: TextSpan(
+                text: """The six-limbed cream-and-gray treecat on her shoulder shifted his balance as she raised her right hand and pointed.""",
+                style: style,),
+              blockStyle: blockStyle,),
             []);
 
         expect(epubPage.overflow.length, 2);

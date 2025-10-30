@@ -26,10 +26,8 @@ class ElementStyle extends Style {
     'x': (sup: '\u02e3', sub: '\u2093'),
   };
 
-  ElementStyle(XmlElement element) {
+  ElementStyle() {
     _parser = GetIt.instance.get<CssParser>();
-
-    parseElement(element);
   }
 
   void getDropCaps(XmlElement element) {
