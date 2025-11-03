@@ -12,11 +12,13 @@ dependencies:
     sdk: flutter
   archive: ^4.0.7
   collection: ^1.19.1
+  csslib: ^1.0.2
   dio: ^5.9.0
   get_it: ^8.2.0
   flutter_riverpod: ^3.0.1
   freezed: 3.2.3
   freezed_annotation: ^3.1.0
+  html: ^0.15.6
   injectable: ^2.5.2
   logger: ^2.6.1
   mockito: ^5.5.0
@@ -32,7 +34,6 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   build_runner: ^2.7.1
-  csslib: ^1.0.2
   flutter_launcher_icons: ^0.14.4
   flutter_lints: ^6.0.0
   injectable_generator: ^2.8.1

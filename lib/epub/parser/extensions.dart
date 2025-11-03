@@ -5,6 +5,8 @@ import 'package:xml/xml.dart';
 
 import '../../models/manifest_item.dart';
 
+typedef CssDeclarations = Map<String, String>;
+
 // Some (older, admittedly) epub archives don't have reliably consistent filenames in the archive; so look for the value
 // ending in what we are looking for and this should catch everything I've seen; so far, at least.
 extension FindFileExtension on Archive {
@@ -30,6 +32,7 @@ extension FindFileExtension on Archive {
 const dcNamespace = 'http://purl.org/dc/elements/1.1/';
 extension FileAuthorExtension on XmlDocument {
   String get author => findAllElements('creator', namespace: dcNamespace).firstOrNull?.innerText ?? "";
+
   String get title => findAllElements('title', namespace: dcNamespace).firstOrNull?.innerText ?? "";
 
   List<String> get spine => findAllElements('itemref').map((el) => el.getAttribute('idref')!).toList();
@@ -42,4 +45,33 @@ extension FileAuthorExtension on XmlDocument {
     return manifest;
   }
 }
+
+extension SelectorMapExtension on Map<String, CssDeclarations> {
+  Map<String, CssDeclarations> combine(String selector, CssDeclarations declarations,) {
+    final existingMap = this[selector];
+
+    if (existingMap != null) {
+      return {
+        ...this,
+        selector: {...existingMap, ...declarations}, };
+    } else {
+      return {
+        ...this,
+        selector: declarations,
+      };
+    }
+  }
+}
+
+extension CssDeclarationsExtension on CssDeclarations {
+  CssDeclarations combine(CssDeclarations? declarations,) {
+    return {
+        ...this,
+        if (declarations != null) ...declarations,
+    };
+  }
+}
+
+
+
 

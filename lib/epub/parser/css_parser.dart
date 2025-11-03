@@ -7,13 +7,12 @@ import 'package:xml/xml.dart';
 import '../constants.dart';
 import 'epub_parser.dart';
 import 'extensions.dart';
-
-typedef CssDeclarations = Map<String, String>;
+import 'style_retriever.dart';
 
 @Singleton()
 class CssParser {
   final Map<String, CssDeclarations> css = {};
-
+  late StyleRetriever retriever;
   final Set<String> nonInheritableProperties = {};
 
   CssDeclarations? operator [](String key) => css[key];
@@ -37,7 +36,7 @@ class CssParser {
   }
 
   String getStringAttribute(XmlElement element, String attribute, String defaultValue) {
-    String? value = getCSSValue(element, attribute);
+    String? value = getCSSAttributeValue(element, attribute);
 
     return value ?? defaultValue;
   }
@@ -49,36 +48,35 @@ class CssParser {
    * class
    * h2
    */
-  String? getCSSValue(XmlElement element, String attribute) {
-    // Local style over-rides the CSS file(s)
-    String? result = getInlineStyle(element, attribute);
-
-    // No local styles, check the specified class attributes
-    if (result == null) {
-      final String? elementClasses = element.getAttribute("class");
-
-      if (elementClasses != null) {
-        for (var elementClass in elementClasses.split(" ")) {
-          result   = css['${element.localName}.$elementClass']?[attribute];
-          result ??= css['.$elementClass']?[attribute];
-          result ??= css[elementClass]?[attribute];
-
-          if (result != null) {
-            break;
-          }
-        }
-      }
-    }
-
-    // Fall back to the element itself, if all else fails.
-    result ??= css[element.localName]?[attribute];
+  String? getCSSAttributeValue(XmlElement element, String attribute) {
+    CssDeclarations? declarations = getCSSDeclarations(element);
 
     // Now look for style inheritance
-    if ((result == null || result == 'inherit') && element.parentElement != null) {
-      result = getCSSValue(element.parentElement!, attribute);
+    if ((declarations == null || declarations[attribute] == 'inherit') && element.parentElement != null) {
+      return getCSSAttributeValue(element.parentElement!, attribute);
     }
 
-    return result;
+    return declarations?[attribute];
+  }
+
+  CssDeclarations? getCSSDeclarations(XmlElement element) {
+    CssDeclarations declarations = {};
+
+    // Reverse the order of precedence as the combine function will preference the latest values.
+    declarations = declarations.combine(css[element.localName]);
+    declarations = declarations.combine(css[element]);
+
+    final String? elementClasses = element.getAttribute("class");
+    if (elementClasses != null) {
+      for (var elementClass in elementClasses.split(" ")) {
+        declarations = declarations.combine(css[elementClass]);
+        declarations = declarations.combine(css['.$elementClass']);
+        declarations = declarations.combine(css['${element.localName}.$elementClass']);
+      }
+    }
+    declarations = declarations.combine(getInlineStyle(element));
+
+    return declarations;
   }
 
   double getFloatFromString(TextStyle s, String value, String defaultValue, bool isHorizontal) {
@@ -104,11 +102,11 @@ class CssParser {
     };
   }
 
-  String? getInlineStyle(XmlElement element, String attribute) {
+  CssDeclarations? getInlineStyle(XmlElement element) {
     String? styles = element.getAttribute("style");
 
     if (styles != null) {
-      return parseDeclarations(styles)[attribute];
+      return parseDeclarations(styles);
     }
 
     return null;
@@ -156,7 +154,7 @@ class CssParser {
               }
             }
 
-            result[individual] = declarations;
+            result = result.combine(individual, declarations);
           }
         }
       }

@@ -30,10 +30,6 @@ class BlockHandler extends HtmlHandler {
 
     BlockStyle style = BlockStyle();
     style.parseElement(element);
-    final String elementText = element.innerText.trim();
-    if (elementText.isNotEmpty) {
-      elements.add(TextContent(blockStyle: style, span: TextSpan(text: element.innerText, style: style.elementStyle.textStyle)));
-    }
 
     for (var child in element.childElements) {
       debugPrint('CHILD_HANDLER: ${child.name}/${child.name.local}: ${child.attributes}');

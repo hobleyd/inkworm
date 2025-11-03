@@ -69,7 +69,9 @@ class EpubParser {
     EpubChapter chapter = EpubChapter(chapterNumber: index);
 
     final XmlDocument doc = XmlDocument.parse(bookArchive.getContentAsString(href));
-    for (final element in doc.childElements) {
+
+    for (final XmlNode node in doc.children) {
+      node.
       List<HtmlContent>? elements = await HtmlHandler.getHandler(element.name.local)?.processElement(element);
       if (elements != null) {
         for (var el in elements) {

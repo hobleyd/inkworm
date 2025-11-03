@@ -1,8 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 import 'package:inkworm/epub/elements/line.dart';
 import 'package:xml/xml.dart';
 
 import '../parser/css_parser.dart';
+import '../parser/extensions.dart';
 import 'element_style.dart';
 import 'style.dart';
 
@@ -127,6 +129,8 @@ class BlockStyle extends Style {
     elementStyle = ElementStyle();
     elementStyle.parseElement(element);
 
+    debugPrint('decls: ${element.localName}${element.attributes}: ${_parser.getCSSDeclarations(element)}');
+    CssDeclarations? decls = _parser.getCSSDeclarations(element);
     getAlignment(element);
     getLineIndent(element);
     getLineHeightMultiplier(element);
