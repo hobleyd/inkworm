@@ -5,6 +5,8 @@ import 'package:xml/xml.dart';
 
 import '../content/html_content.dart';
 import '../parser/css_parser.dart';
+import '../styles/block_style.dart';
+import '../styles/element_style.dart';
 import 'html_handler.dart';
 
 @Named("LinkHandler")
@@ -15,7 +17,8 @@ class LinkHandler extends HtmlHandler {
   }
 
   @override
-  Future<List<HtmlContent>> processElement(XmlElement element) async {
+  Future<List<HtmlContent>> processElement({required XmlNode node, BlockStyle? parentBlockStyle, ElementStyle? parentElementStyle}) async {
+    XmlElement element = node as XmlElement;
     debugPrint('LINK_HANDLER: ${element.name}: ${element.attributes}');
     if ('${element.getAttribute("rel")}' == "stylesheet") {
       GetIt.instance.get<CssParser>().parseFile(element.getAttribute("href")!);

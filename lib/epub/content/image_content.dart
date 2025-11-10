@@ -8,5 +8,5 @@ class ImageContent extends HtmlContent {
   double get height => image.height.toDouble();
   double get width => image.width.toDouble();
 
-  const ImageContent({required super.blockStyle, required this.image});
+  const ImageContent({required super.blockStyle, required super.elementStyle, required this.image});
 }

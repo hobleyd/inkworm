@@ -1,9 +1,7 @@
-import 'dart:ui' as ui;
-
 import 'package:flutter/material.dart';
-import 'package:inkworm/epub/constants.dart';
 
 import '../content/image_content.dart';
+import '../constants.dart';
 import 'line_element.dart';
 
 @immutable
@@ -15,9 +13,6 @@ class ImageElement extends LineElement {
 
   @override
   get element => image;
-
-  @override
-  get style => image.blockStyle;
 
   ImageElement({required this.image}) {
     getConstraints();
@@ -38,8 +33,18 @@ class ImageElement extends LineElement {
         newWidth = canvasHeight * aspectRatio;
       }
 
-      width = newWidth * image.blockStyle.maxWidth;
-      height = newHeight * image.blockStyle.maxHeight;
+      // TODO: these next two if statements may not retain the aspect ratio
+      if (image.blockStyle.maxWidth != null) {
+        width = newWidth * image.blockStyle.maxWidth!;
+      } else {
+        width = newWidth;
+      }
+
+      if (image.blockStyle.maxHeight != null) {
+        height = newHeight * image.blockStyle.maxHeight!;
+      } else {
+        height = newHeight;
+      }
     } else {
       width = image.width;
       height = image.height;

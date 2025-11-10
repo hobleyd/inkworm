@@ -45,6 +45,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/inkworm.png
+    - assets/default.css
     - assets/google_fonts/
     - pubspec.yaml
 

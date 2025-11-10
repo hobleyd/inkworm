@@ -1,17 +1,14 @@
-import 'package:flutter/material.dart';
-import 'package:inkworm/epub/elements/image_element.dart';
-import 'package:inkworm/epub/elements/separators/non_breaking_space_separator.dart';
-import 'package:inkworm/epub/styles/block_style.dart';
-
-
 import '../constants.dart';
 import '../content/html_content.dart';
 import '../content/image_content.dart';
 import '../content/text_content.dart';
-import 'line_element.dart';
+import '../styles/block_style.dart';
 import 'separators/hyphen_separator.dart';
+import 'separators/non_breaking_space_separator.dart';
 import 'separators/space_separator.dart';
+import 'image_element.dart';
 import 'line.dart';
+import 'line_element.dart';
 import 'word_element.dart';
 
 // Pseudo code:
@@ -71,9 +68,8 @@ class EpubPage {
       }
     }
 
-    // TODO: drive this off the style
     if (paragraph) {
-      getActiveLines().last.textIndent = PageConstants.leftIndent * 1.5;
+      getActiveLines().last.textIndent = blockStyle.leftIndent ?? PageConstants.leftIndent * 1.5;
     }
   }
 
@@ -85,16 +81,18 @@ class EpubPage {
 
   // This will add a paragraph of text, line by line, to the current Page.
   List<Line> addText(TextContent content, List<HtmlContent> footnotes) {
-    addLine(paragraph: true, blockStyle: content.blockStyle);
+    if (lines.isEmpty) {
+      addLine(paragraph: true, blockStyle: content.blockStyle);
+    }
 
     // Split the span into text and spaces or hyphens - such that we can modify the width of the latter two in order to support justification.
     final List<String> words = splitSpan(content.span.text!);
     for (String word in words) {
       LineElement el = switch (word) {
-        '-' || '\u{2014}'  => HyphenSeparator(style: content.blockStyle),
-        ' '                => SpaceSeparator(style: content.blockStyle),
-        '\u{00A0}'         => NonBreakingSpaceSeparator(style: content.blockStyle),
-         _                 => WordElement(word: TextContent(blockStyle: content.blockStyle, span: TextSpan(text: word.trim(), style: content.blockStyle.elementStyle.textStyle))),
+        '-' || '\u{2014}'  => HyphenSeparator(blockStyle: content.blockStyle, elementStyle: content.elementStyle),
+        ' '                => SpaceSeparator(blockStyle: content.blockStyle, elementStyle: content.elementStyle),
+        '\u{00A0}'         => NonBreakingSpaceSeparator(blockStyle: content.blockStyle, elementStyle: content.elementStyle),
+         _                 => WordElement(word: TextContent(blockStyle: content.blockStyle, text: word.trim(), elementStyle: content.elementStyle)),
       };
 
       if (getActiveLines().last.willFit(el)) {

@@ -12,6 +12,7 @@ import '../content/image_content.dart';
 import '../parser/epub_parser.dart';
 import '../parser/extensions.dart';
 import '../styles/block_style.dart';
+import '../styles/element_style.dart';
 import 'html_handler.dart';
 
 @Named("ImageHandler")
@@ -30,15 +31,20 @@ class ImageHandler extends HtmlHandler {
   }
   
   @override
-  Future<List<HtmlContent>> processElement(XmlElement element) async {
+  Future<List<HtmlContent>> processElement({required XmlNode node, BlockStyle? parentBlockStyle, ElementStyle? parentElementStyle}) async {
+    XmlElement element = node as XmlElement;
     debugPrint('IMG_HANDLER: ${element.name}: ${element.attributes}');
     List<HtmlContent> elements = [];
 
-    BlockStyle style = BlockStyle();
-    style.parseElement(element);
+    ElementStyle elementStyle = ElementStyle();
+    elementStyle.parseElement(element: element, parentStyle: parentElementStyle);
+
+    BlockStyle blockStyle = BlockStyle(elementStyle: elementStyle);
+    blockStyle.parseElement(element: element, parentStyle: parentBlockStyle);
+
     ui.Image img = await createImageFromUint8List(GetIt.instance.get<EpubParser>().bookArchive.getContentAsBytes(element.getAttribute('src')!));
 
-    elements.add(ImageContent(blockStyle: style, image: img));
+    elements.add(ImageContent(blockStyle: blockStyle, elementStyle: elementStyle, image: img));
 
     return elements;
   }

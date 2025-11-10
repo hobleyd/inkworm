@@ -5,5 +5,5 @@ import 'package:xml/xml.dart';
  * and ElementStyle which relates entirely to text rendering.
  */
 abstract class Style {
-  Style parseElement(XmlElement element);
+  Style parseElement({required XmlNode element, Style? parentStyle});
 }

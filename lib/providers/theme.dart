@@ -21,6 +21,7 @@ class Theme extends _$Theme {
           enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
           errorBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.red, width: 2)),
           focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.teal, width: 2))),
+      scaffoldBackgroundColor: Colors.white,
       textTheme: TextTheme(
         titleSmall:  TextStyle(fontSize: fontSize - 2, fontWeight: FontWeight.w700),
         bodyMedium:  TextStyle(fontSize: fontSize + 1, fontWeight: FontWeight.w400),

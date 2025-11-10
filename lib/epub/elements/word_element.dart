@@ -10,9 +10,6 @@ class WordElement extends LineElement {
   @override
   get element => word;
 
-  @override
-  get style => word.blockStyle;
-
   WordElement({required this.word}) {
     getConstraints();
   }

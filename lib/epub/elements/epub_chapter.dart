@@ -1,9 +1,7 @@
-import 'package:flutter/material.dart';
-
+import '../content/html_content.dart';
 import '../content/image_content.dart';
 import '../content/text_content.dart';
 import 'epub_page.dart';
-import '../content/html_content.dart';
 import 'line.dart';
 
 /*
@@ -29,9 +27,11 @@ class EpubChapter {
         _pages.add(EpubPage());
         _pages.last.addLines(overflow);
       }
-    } else {
-      // Must be an Image
+    } else if (content is ImageContent) {
       _pages.last.addImage(content as ImageContent, false);
+    } else {
+      // Content must be a paragraph break.
+      _pages.last.addLine(paragraph: true, blockStyle: content.blockStyle);
     }
   }
 

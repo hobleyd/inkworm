@@ -2,13 +2,11 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
-import 'package:flutter/material.dart';
 import 'package:injectable/injectable.dart';
 import 'package:xml/xml.dart';
 
 import '../elements/epub_chapter.dart';
 import '../content/html_content.dart';
-import '../handlers/html_handler.dart';
 import 'extensions.dart';
 
 @Singleton()
@@ -71,8 +69,7 @@ class EpubParser {
     final XmlDocument doc = XmlDocument.parse(bookArchive.getContentAsString(href));
 
     for (final XmlNode node in doc.children) {
-      node.
-      List<HtmlContent>? elements = await HtmlHandler.getHandler(element.name.local)?.processElement(element);
+      List<HtmlContent>? elements = await node.handler?.processElement(node: node,);
       if (elements != null) {
         for (var el in elements) {
           chapter.addContentToCurrentPage(el);

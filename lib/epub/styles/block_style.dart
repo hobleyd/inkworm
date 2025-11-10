@@ -1,81 +1,104 @@
-import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
-import 'package:inkworm/epub/elements/line.dart';
 import 'package:xml/xml.dart';
 
 import '../parser/css_parser.dart';
-import '../parser/extensions.dart';
 import 'element_style.dart';
 import 'style.dart';
 
-enum LineAlignment { left, right, centre, justify }
+enum LineAlignment { left, right, centre, justify, none }
 
 class BlockStyle extends Style {
   late CssParser _parser;
-  late ElementStyle elementStyle;
+  ElementStyle elementStyle;
 
   // Margins
-  double leftMargin = 0;
-  double rightMargin = 0;
-  double topMargin = 0;
-  double bottomMargin = 0;
+  double? leftMargin;
+  double? rightMargin;
+  double? topMargin;
+  double? bottomMargin;
 
   // Line related
-  double width = 0;
-  double leftIndent = 0;
-  double lineHeightMultiplier = 0;
-  LineAlignment alignment = LineAlignment.justify;
+  double? width;
+  double? leftIndent;
+  double? lineHeightMultiplier;
+  LineAlignment? alignment;
 
-  double maxHeight = 0;
-  double maxWidth = 0;
+  double? maxHeight;
+  double? maxWidth;
 
   // Table properties
   Map<int, BlockStyle> tableColumns = {};
-  String tableLayout = "";
-  String tableOverflow = "";
-  String tableWhitespace = "";
+  String? tableLayout;
+  String? tableOverflow;
+  String? tableWhitespace;
 
   bool ignoreVerticalMargins = false;
 
-  BlockStyle() {
+  BlockStyle({required this.elementStyle}) {
     _parser = GetIt.instance.get<CssParser>();
   }
 
-  void getAlignment(XmlElement element) {
-    alignment = switch(_parser.getStringAttribute(element, "text-align", "justify")) {
+  BlockStyle copyWith(BlockStyle parent) {
+    leftMargin   = parent.leftMargin;
+    rightMargin  = parent.leftMargin;
+    topMargin    = parent.leftMargin;
+    bottomMargin = parent.leftMargin;
+
+    width = parent.width;
+    leftIndent = parent.leftIndent;
+    lineHeightMultiplier = parent.lineHeightMultiplier;
+    alignment = parent.alignment;
+
+    maxHeight = parent.maxHeight;
+    maxWidth = parent.maxWidth;
+
+    tableColumns.addAll(parent.tableColumns);
+    tableLayout = parent.tableLayout;
+    tableOverflow = parent.tableOverflow;
+    tableWhitespace = parent.tableWhitespace;
+
+    ignoreVerticalMargins = parent.ignoreVerticalMargins;
+
+    return this;
+  }
+
+
+  void getAlignment(XmlNode element) {
+    alignment = switch(_parser.getStringAttribute(element, "text-align")) {
       "center" || "centre" => LineAlignment.centre,
       "left"               => LineAlignment.left,
       "right"              => LineAlignment.right,
-      _                    => LineAlignment.justify,
+      "justify"            => LineAlignment.justify,
+      _                    => alignment,
     };
   }
 
-  void getLineHeightMultiplier(XmlElement element) {
+  void getLineHeightMultiplier(XmlNode element) {
     // TODO: Should we support this?
     if (false) {
-      lineHeightMultiplier = _parser.getFloatAttribute(element, "line-height", "1em", elementStyle.textStyle, false);
+      lineHeightMultiplier = _parser.getFloatAttribute(element, "line-height", elementStyle.textStyle, false) ?? lineHeightMultiplier;
     }
     lineHeightMultiplier = 1;
   }
 
-  void getLineIndent(XmlElement element) {
-    leftIndent = _parser.getFloatAttribute(element, "text-indent", "1.5em", elementStyle.textStyle, true);
+  void getLineIndent(XmlNode element) {
+    leftIndent = _parser.getFloatAttribute(element, "text-indent", elementStyle.textStyle, true) ?? leftIndent;
   }
 
-  void getMargins(XmlElement element) {
-    String leftMarginString   = "";
-    String rightMarginString  = "";
-    String topMarginString    = "";
-    String bottomMarginString = "";
+  void getMargins(XmlNode element) {
+    String? leftMarginString;
+    String? rightMarginString;
+    String? topMarginString;
+    String? bottomMarginString;
 
-    String? margins = _parser.getStringAttribute(element, "margin", "");
-    if (margins.isEmpty) {
-      leftMarginString   = _parser.getStringAttribute(element, "margin-left", "");
-      rightMarginString  = _parser.getStringAttribute(element, "margin-right", "");
-      topMarginString    = _parser.getStringAttribute(element, "margin-top", "");
-      bottomMarginString = _parser.getStringAttribute(element, "margin-bottom", "");
+    String? margins = _parser.getStringAttribute(element, "margin");
+    if (margins == null) {
+      leftMarginString   = _parser.getStringAttribute(element, "margin-left") ?? leftMarginString;
+      rightMarginString  = _parser.getStringAttribute(element, "margin-right") ?? rightMarginString;
+      topMarginString    = _parser.getStringAttribute(element, "margin-top") ?? topMarginString;
+      bottomMarginString = _parser.getStringAttribute(element, "margin-bottom") ?? bottomMarginString;
     } else {
-      List<String> parts = margins.split(RegExp(r'\s'));
+      List<String> parts = margins!.split(RegExp(r'\s'));
 
       if (parts.length == 1) {
         bottomMarginString = parts[0];
@@ -99,38 +122,34 @@ class BlockStyle extends Style {
         leftMarginString   = parts[3];
       }
 
-      leftMargin   = _parser.getFloatFromString(elementStyle.textStyle, leftMarginString,   "0px", true);
-      rightMargin  = _parser.getFloatFromString(elementStyle.textStyle, rightMarginString,  "0px", true);
-      topMargin    = _parser.getFloatFromString(elementStyle.textStyle, topMarginString,    "0px", false);
-      bottomMargin = _parser.getFloatFromString(elementStyle.textStyle, bottomMarginString, "0px", false);
+      if (leftMarginString   != null) leftMargin   = _parser.getFloatFromString(elementStyle.textStyle, leftMarginString, true);
+      if (rightMarginString  != null) rightMargin  = _parser.getFloatFromString(elementStyle.textStyle, rightMarginString, true);
+      if (topMarginString    != null) topMargin    = _parser.getFloatFromString(elementStyle.textStyle, topMarginString, false);
+      if (bottomMarginString != null) bottomMargin = _parser.getFloatFromString(elementStyle.textStyle, bottomMarginString, false);
     }
   }
 
-  void getMax(XmlElement element) {
+  void getMax(XmlNode element) {
     // TODO: decide on a default size, for Cover images 100% is probably correct.
-    maxHeight = _parser.getPercentAttribute(element,  "max-height",  "100%");
-    maxWidth  = _parser.getPercentAttribute(element,  "max-width",  "100%");
-
-    if (maxWidth == 1) {
-      alignment = LineAlignment.centre;
-    }
+    maxHeight = _parser.getPercentAttribute(element,  "max-height") ?? maxHeight;
+    maxWidth  = _parser.getPercentAttribute(element,  "max-width") ?? maxWidth;
   }
 
-  void getTableStyles(XmlElement element) {
+  void getTableStyles(XmlNode element) {
     // TODO: should really support text-overflow: ellipsis; if I am supporting overflow.
-    tableWhitespace = _parser.getStringAttribute(element,  "white-space",  "wrap");
-    tableOverflow   = _parser.getStringAttribute(element,  "overflow",     "");
-    tableLayout     = _parser.getStringAttribute(element,  "table-layout", "fixed");
-    width           = _parser.getPercentAttribute(element, "width",        "100%");
+    tableWhitespace = _parser.getStringAttribute(element,  "white-space") ?? tableWhitespace;
+    tableOverflow   = _parser.getStringAttribute(element,  "overflow") ?? tableOverflow;
+    tableLayout     = _parser.getStringAttribute(element,  "table-layout") ?? tableLayout;
+    width           = _parser.getPercentAttribute(element, "width") ?? width;
   }
 
   @override
-  Style parseElement(XmlElement element) {
-    elementStyle = ElementStyle();
-    elementStyle.parseElement(element);
+  Style parseElement({required XmlNode element, Style? parentStyle}) {
+    if (parentStyle != null) {
+      copyWith(parentStyle as BlockStyle);
+    }
 
-    debugPrint('decls: ${element.localName}${element.attributes}: ${_parser.getCSSDeclarations(element)}');
-    CssDeclarations? decls = _parser.getCSSDeclarations(element);
+    _parser.getCSSDeclarations(element);
     getAlignment(element);
     getLineIndent(element);
     getLineHeightMultiplier(element);
@@ -139,5 +158,46 @@ class BlockStyle extends Style {
     getTableStyles(element);
 
     return this;
+  }
+
+  @override
+  String toString() {
+    String result = '{ ';
+
+    if (leftMargin != null) {
+      result += 'margin-left: $leftMargin, ';
+    }
+
+    if (rightMargin != null) {
+      result += 'margin-right: $rightMargin, ';
+    }
+
+    if (topMargin != null) {
+      result += 'margin-top: $topMargin, ';
+    }
+
+    if (bottomMargin != null) {
+      result += 'margin-bottom: $bottomMargin, ';
+    }
+
+    if (leftIndent != null) {
+      result += 'left-indent: $leftIndent, ';
+    }
+
+    if (alignment != null) {
+      result += 'alignment: ${alignment?.name}, ';
+    }
+
+    if (maxHeight != null) {
+      result += 'max-height: $maxHeight, ';
+    }
+
+    if (maxWidth != null) {
+      result += 'max-width: $maxWidth';
+    }
+
+    result += ' }';
+
+    return result;
   }
 }

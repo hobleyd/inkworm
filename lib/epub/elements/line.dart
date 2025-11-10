@@ -24,7 +24,7 @@ class Line {
   double get canvasWidth => PageConstants.canvasWidth - PageConstants.leftIndent - PageConstants.rightIndent;
 
   Line({required this.yPos, required BlockStyle blockStyle}) {
-    alignment = blockStyle.alignment;
+    alignment = blockStyle.alignment != null ? blockStyle.alignment! : LineAlignment.justify;
   }
 
   void addElement(LineElement e) {
@@ -74,12 +74,14 @@ class Line {
   }
 
   void finish() {
-    while (elements.last is SpaceSeparator) {
-      elements.removeLast();
-      _separatorCount--;
-    }
+    if (elements.isNotEmpty) {
+      while (elements.last is SpaceSeparator) {
+        elements.removeLast();
+        _separatorCount--;
+      }
 
-    calculateSeparatorWidth();
+      calculateSeparatorWidth();
+    }
   }
 
   @override

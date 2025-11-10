@@ -4,6 +4,7 @@ import 'package:archive/archive.dart';
 import 'package:xml/xml.dart';
 
 import '../../models/manifest_item.dart';
+import '../handlers/html_handler.dart';
 
 typedef CssDeclarations = Map<String, String>;
 
@@ -43,6 +44,16 @@ extension FileAuthorExtension on XmlDocument {
       manifest[el.getAttribute('id')!] = ManifestItem(href: el.getAttribute('href')!, mimeType: el.getAttribute('media-type')!);
     }
     return manifest;
+  }
+}
+
+extension HandlerNodeExtension on XmlNode {
+  HtmlHandler? get handler {
+    return switch (this) {
+      XmlElement el => HtmlHandler.getHandler(el.name.local.toLowerCase()),
+      XmlText     t => HtmlHandler.getHandler(t.nodeType.name.toLowerCase()),
+                  _ => null,
+    };
   }
 }
 

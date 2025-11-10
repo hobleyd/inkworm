@@ -6,6 +6,7 @@ import 'package:xml/xml.dart';
 
 import '../constants.dart';
 import 'epub_parser.dart';
+import 'font_management.dart';
 import 'extensions.dart';
 import 'style_retriever.dart';
 
@@ -23,22 +24,46 @@ class CssParser {
     nonInheritableProperties.add("margin-right");
     nonInheritableProperties.add("margin-top");
     nonInheritableProperties.add("margin-bottom");
+
+    parseDefaultCss();
   }
 
-  double getFloatAttribute(XmlElement element, String attribute, String defaultValue, TextStyle textStyle, bool isHorizontal) {
-    String textIndent = getStringAttribute(element, "text-indent", defaultValue);
-    return getFloatFromString(textStyle, textIndent, defaultValue, true);
+  double? getFloatAttribute(XmlNode element, String attribute, TextStyle textStyle, bool isHorizontal) {
+    String? textIndent = getStringAttribute(element, "text-indent");
+    if (textIndent != null) {
+      return getFloatFromString(textStyle, textIndent, true);
+    }
+
+    return null;
   }
 
-  double getPercentAttribute(XmlElement element, String attribute, String defaultValue) {
-    String result = getStringAttribute(element, attribute, defaultValue);
-    return result.endsWith('%') ? parseFloatCssValue(result, 1) : 1;
-  }
-
-  String getStringAttribute(XmlElement element, String attribute, String defaultValue) {
+  String? getFontAttribute(XmlNode element, String attribute) {
     String? value = getCSSAttributeValue(element, attribute);
 
-    return value ?? defaultValue;
+    if (value != null) {
+      if (value.contains(',')) {
+        // Flutter doesn't provide an API to tell whether a font exists, or not, sigh, so just return the first one.
+        return value.split(',').first;
+      }
+      return value;
+    }
+
+    return null;
+  }
+
+  double? getPercentAttribute(XmlNode element, String attribute) {
+    String? result = getStringAttribute(element, attribute);
+    if (result != null) {
+      if (result.endsWith('%')) {
+        return parseFloatCssValue(result, 1);
+      }
+    }
+
+    return null;
+  }
+
+  String? getStringAttribute(XmlNode element, String attribute) {
+    return getCSSAttributeValue(element, attribute);
   }
 
   /*
@@ -48,18 +73,19 @@ class CssParser {
    * class
    * h2
    */
-  String? getCSSAttributeValue(XmlElement element, String attribute) {
-    CssDeclarations? declarations = getCSSDeclarations(element);
+  String? getCSSAttributeValue(XmlNode element, String attribute) {
+    CssDeclarations declarations = getCSSDeclarations(element);
 
     // Now look for style inheritance
-    if ((declarations == null || declarations[attribute] == 'inherit') && element.parentElement != null) {
+    if ((declarations.isEmpty || declarations[attribute] == 'inherit') && element.parentElement != null) {
       return getCSSAttributeValue(element.parentElement!, attribute);
     }
 
-    return declarations?[attribute];
+    return declarations[attribute];
   }
 
-  CssDeclarations? getCSSDeclarations(XmlElement element) {
+  CssDeclarations getCSSDeclarations(XmlNode node) {
+    XmlElement element = node as XmlElement;
     CssDeclarations declarations = {};
 
     // Reverse the order of precedence as the combine function will preference the latest values.
@@ -79,12 +105,12 @@ class CssParser {
     return declarations;
   }
 
-  double getFloatFromString(TextStyle s, String value, String defaultValue, bool isHorizontal) {
+  double? getFloatFromString(TextStyle s, String value, bool isHorizontal) {
     TextPainter paint = TextPainter(textDirection: TextDirection.ltr, text: TextSpan(text: "s", style: s));
     paint.layout();
 
     double preferredSize = isHorizontal ? paint.width : paint.height;
-    return value.isEmpty ? parseFloatCssValue(defaultValue, preferredSize) : parseFloatCssValue(value, preferredSize);
+    return value.isEmpty ? null : parseFloatCssValue(value, preferredSize);
   }
 
   double getFontMultiplier(String fontSize) {
@@ -110,17 +136,6 @@ class CssParser {
     }
 
     return null;
-  }
-
-  static Future<void> loadFontFromEpub(String fontFamily, String fontPath) async {
-    // Knowing how the getBytes function works, strip out the relative paths as they won't be needed. Purists will disagree ;-)
-    String cleanedPath = fontPath.replaceAll(RegExp(r'^(\.\.\/)+'), '');
-
-    final bytes = GetIt.instance.get<EpubParser>().getBytes(cleanedPath);
-
-    final fontLoader = FontLoader(fontFamily);
-    fontLoader.addFont(Future.value(ByteData.view(bytes.buffer)));
-    await fontLoader.load();
   }
 
   Map<String, CssDeclarations> parseCss(String cssContent) {
@@ -150,7 +165,7 @@ class CssParser {
               declarations.remove("font-family");
 
               if (declarations['url'] != null) {
-                loadFontFromEpub(individual, declarations['url']!);
+                GetIt.instance.get<FontManagement>().loadFontFromEpub(individual, declarations['url']!);
               }
             }
 
@@ -186,10 +201,14 @@ class CssParser {
     return declarations;
   }
 
+  Future<void> parseDefaultCss() async {
+    String defaultCss = await rootBundle.loadString('assets/default.css');
+    css.addAll(parseCss(defaultCss));
+  }
+
   void parseFile(String href) {
     if (!css.containsKey(href)) {
       Map<String, CssDeclarations> declarations = parseCss(GetIt.instance.get<EpubParser>().bookArchive.getContentAsString(href));
-
       css.addAll(declarations);
     }
   }

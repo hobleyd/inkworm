@@ -9,7 +9,7 @@ class ElementStyle extends Style {
   late CssParser _parser;
   late TextStyle textStyle;
 
-  bool isDropCaps = false;
+  bool? isDropCaps;
 
   // Character: (superscript subscript)
   static const Map<String, ({String sup, String sub})> unicodeMap = {
@@ -28,43 +28,101 @@ class ElementStyle extends Style {
 
   ElementStyle() {
     _parser = GetIt.instance.get<CssParser>();
+    textStyle = TextStyle();
+
   }
 
-  void getDropCaps(XmlElement element) {
+  ElementStyle copyWith(ElementStyle parentStyle) {
+    textStyle = textStyle.copyWith(
+        color: parentStyle.textStyle.color,
+        fontFamily: parentStyle.textStyle.fontFamily,
+        fontSize: parentStyle.textStyle.fontSize,
+        fontStyle: parentStyle.textStyle.fontStyle,
+        fontWeight: parentStyle.textStyle.fontWeight,
+        decoration: parentStyle.textStyle.decoration);
+
+    isDropCaps = parentStyle.isDropCaps;
+
+    return this;
+  }
+
+  void getDropCaps(XmlNode element) {
     // The check for line-height is a hack; but makes the chapter starts look better in The Strange Case of the Alchemist's Daughter.
-    isDropCaps = _parser.getStringAttribute(element, "float", "no") == "left" || _parser.getStringAttribute(element, "line-height", "") == "0em";
+    String? floatValue = _parser.getStringAttribute(element, "float");
+    String? lineHeight = _parser.getStringAttribute(element, "line-height");
+
+    isDropCaps =  (floatValue != null && floatValue == "left") ||  (lineHeight != null && lineHeight == "0em");
   }
 
-  void getTextStyle(XmlElement element) {
-    final String fontFamily = _parser.getStringAttribute(element, "font-family", "");
-    final String fontStyle  = _parser.getStringAttribute(element, "font-style", "normal");
-    final String fontWeight = _parser.getStringAttribute(element, "font-weight", "normal");
-    final String fontDecoration  = _parser.getStringAttribute(element, "text-decoration", "normal");
+  void getTextStyle(XmlNode element) {
+    final String? fontFamily = _parser.getFontAttribute(element, "font-family");
+    final String? fontStyle  = _parser.getStringAttribute(element, "font-style");
+    final String? fontWeight = _parser.getStringAttribute(element, "font-weight");
+    final String? fontDecoration  = _parser.getStringAttribute(element, "text-decoration");
 
-    textStyle = TextStyle(
+    textStyle = textStyle.copyWith(
+      color: Colors.black,
       decoration: switch (fontDecoration) {
-        "underline" => TextDecoration.underline,
+        "underline"    => TextDecoration.underline,
         "line-through" => TextDecoration.lineThrough,
-        _ => TextDecoration.none,
+                     _ => textStyle.decoration,
       },
-      fontFamily: fontFamily,
+      fontFamily: fontFamily ?? textStyle.fontFamily,
       fontSize: 12, // TODO: drive from config when created.
-      fontStyle: fontStyle == "italic" ? FontStyle.italic : FontStyle.normal,
-      fontWeight: fontWeight.startsWith("bold") ? FontWeight.w700 : FontWeight.w400,
-
+      fontStyle: fontStyle == "italic" ? FontStyle.italic : textStyle.fontStyle,
+      fontWeight: fontWeight != null && fontWeight.startsWith("bold") ? FontWeight.w700 : textStyle.fontWeight,
     );
   }
 
   @override
-  Style parseElement(XmlElement element) {
+  Style parseElement({required XmlNode element, Style? parentStyle}) {
+    if (parentStyle != null) {
+      copyWith(parentStyle as ElementStyle);
+    }
+
     getTextStyle(element);
     getDropCaps(element);
 
     return this;
   }
 
+  void setBold() {
+    textStyle = textStyle.copyWith(fontWeight: FontWeight.w700);
+  }
+
+  void setItalics() {
+    textStyle = textStyle.copyWith(fontStyle: FontStyle.italic);
+  }
+
   @override
   String toString() {
-    return 'FS:${textStyle.fontSize}|FF:${textStyle.fontFamily}|B:${textStyle.fontWeight}|I:${textStyle.fontStyle}|VA:${textStyle.decoration}${isDropCaps ? "|DROPCAPS" : ""}';
+    String result = '{ ';
+
+    if (textStyle.fontSize != null) {
+      result += 'font-size: ${textStyle.fontSize}, ';
+    }
+
+    if (textStyle.fontFamily != null) {
+      result += 'font-family: ${textStyle.fontFamily}, ';
+    }
+
+    if (textStyle.fontWeight != null) {
+      result += 'font-weight: ${textStyle.fontWeight}, ';
+    }
+
+    if (textStyle.fontStyle != null) {
+      result += 'font-style: ${textStyle.fontStyle}, ';
+    }
+
+    if (textStyle.decoration != null) {
+      result += 'decoration: ${textStyle.decoration}, ';
+    }
+
+    if (isDropCaps != null) {
+      result += 'dropcaps: ${isDropCaps! ? "true" : "false"}';
+    }
+
+    result += ' }';
+    return result;
   }
 }

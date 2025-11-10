@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../content/text_content.dart';
 import 'separator.dart';
 
 class NonBreakingSpaceSeparator extends Separator {
-  NonBreakingSpaceSeparator({required super.style}) : super(separator: TextContent(blockStyle: style, span: TextSpan(text: "-", style: style.elementStyle.textStyle),)) {
+  NonBreakingSpaceSeparator({required super.blockStyle, required super.elementStyle}) : super(separator: " ") {
     getConstraints();
   }
 

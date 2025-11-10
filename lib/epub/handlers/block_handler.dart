@@ -1,16 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:injectable/injectable.dart';
+import 'package:inkworm/epub/content/paragraph_break.dart';
 import 'package:xml/xml.dart';
 
 import '../content/html_content.dart';
-import '../content/text_content.dart';
+import '../parser/extensions.dart';
 import '../styles/block_style.dart';
+import '../styles/element_style.dart';
 import 'html_handler.dart';
 
 @Named("BlockHandler")
 @Singleton(as: HtmlHandler)
 class BlockHandler extends HtmlHandler {
   BlockHandler() {
+    HtmlHandler.registerHandler('html', this);
+    HtmlHandler.registerHandler('head', this);
+    HtmlHandler.registerHandler('body', this);
     HtmlHandler.registerHandler('p', this);
     HtmlHandler.registerHandler('h1', this);
     HtmlHandler.registerHandler('h2', this);
@@ -24,21 +29,27 @@ class BlockHandler extends HtmlHandler {
   }
 
   @override
-  Future<List<HtmlContent>> processElement(XmlElement element) async {
-    debugPrint('BLOCK_HANDLER: ${element.name}: ${element.attributes}');
+  Future<List<HtmlContent>> processElement({required XmlNode node, BlockStyle? parentBlockStyle, ElementStyle? parentElementStyle}) async {
+    XmlElement element = node as XmlElement;
+
     List<HtmlContent> elements = [];
 
-    BlockStyle style = BlockStyle();
-    style.parseElement(element);
+    ElementStyle elementStyle = ElementStyle();
+    elementStyle.parseElement(element: element, parentStyle: parentElementStyle);
 
-    for (var child in element.childElements) {
-      debugPrint('CHILD_HANDLER: ${child.name}/${child.name.local}: ${child.attributes}');
+    BlockStyle blockStyle = BlockStyle(elementStyle: elementStyle);
+    blockStyle.parseElement(element: element, parentStyle: parentBlockStyle);
 
-      List<HtmlContent>? childElements = await HtmlHandler.getHandler(child.name.local)?.processElement(child);
+    debugPrint('BLOCK_HANDLER: ${element.name}: ${element.attributes}: $blockStyle, $elementStyle');
+
+    for (var child in node.children) {
+      List<HtmlContent>? childElements = await child.handler?.processElement(node: child, parentBlockStyle: blockStyle, parentElementStyle: elementStyle);
       if (childElements != null) {
         elements.addAll(childElements);
       }
     }
+
+    elements.add(ParagraphBreak(blockStyle: blockStyle, elementStyle: elementStyle));
 
     return elements;
   }

@@ -1,156 +1,275 @@
+import 'package:csslib/parser.dart' as css;
+import 'package:csslib/visitor.dart' as css;
+import 'package:injectable/injectable.dart';
 import 'package:xml/xml.dart';
-import 'package:csslib/parser.dart';
-import 'package:csslib/visitor.dart';
 
+@Singleton()
 class StyleRetriever {
-  final StyleSheet styleSheet;
+  late css.StyleSheet styleSheet;
 
-  StyleRetriever({required this.styleSheet});
-
-  /// Retrieves styles for an XmlElement from the CSS stylesheet
-  Map<String, String> getStylesForElement(XmlElement element) {
-    final styles = <String, String>{};
-
-    // Get inline styles first (highest priority)
-    final inlineStyle = element.getAttribute('style');
-    if (inlineStyle != null) {
-      styles.addAll(_parseInlineStyle(inlineStyle));
-    }
-
-    // Iterate through all top-level rules in the stylesheet
-    for (final topLevel in styleSheet.topLevels) {
-      _extractStylesFromTopLevel(topLevel, element, styles);
-    }
-
-    return styles;
+  void parse(String cssString) {
+    styleSheet = css.parse(cssString);
+    return;
   }
 
-  /// Extracts styles from any top-level construct (rules or directives)
-  void _extractStylesFromTopLevel(TreeNode topLevel, XmlElement element, Map<String, String> styles) {
-    if (topLevel is RuleSet) {
-      if (_selectorMatches(topLevel.selectorGroup, element)) {
-        for (final decl in topLevel.declarationGroup.declarations) {
-          if (decl is Declaration) {
-            final value = _expressionToString(decl.expression);
-            styles[decl.property] = value;
+  /// Get all relevant declarations for a node, respecting CSS specificity
+  Map<String, css.Expression> getDeclarationsForNode(XmlElement node) {
+    final matches = <_RuleMatch>[];
+
+    // Find all matching rules
+    for (var rule in styleSheet.topLevels) {
+      if (rule is css.RuleSet) {
+        for (var selector in rule.selectorGroup?.selectors ?? []) {
+          if (_matchesSelector(node, selector)) {
+            final specificity = _calculateSpecificity(selector);
+            matches.add(_RuleMatch(rule, specificity));
           }
         }
       }
-    } else if (topLevel is MediaDirective) {
-      // Recursively process rules inside media directives
-      for (final rule in topLevel.rules) {
-        _extractStylesFromTopLevel(rule, element, styles);
-      }
-    } else if (topLevel is SupportsDirective) {
-      // Handle @supports directives
-      for (final rule in topLevel.groupRuleBody) {
-        _extractStylesFromTopLevel(rule, element, styles);
+    }
+
+    // Sort by specificity (higher specificity wins)
+    matches.sort((a, b) => a.specificity.compareTo(b.specificity));
+
+    // Build final declaration map (later rules override earlier ones)
+    final declarations = <String, css.Expression>{};
+    for (var match in matches) {
+      for (var decl in match.rule.declarationGroup.declarations) {
+        if (decl is css.Declaration) {
+          declarations[decl.property] = decl.expression!;
+        }
       }
     }
-  }
-  String? getStyleProperty(XmlElement element, String property) {
-    return getStylesForElement(element)[property];
+
+    return declarations;
   }
 
-  /// Checks if a selector group matches an element
-  bool _selectorMatches(SelectorGroup? selectorGroup, XmlElement element) {
-    if (selectorGroup == null) return false;
+  /// Check if a node matches a CSS selector
+  bool _matchesSelector(XmlElement node, css.Selector selector) {
+    final sequences = selector.simpleSelectorSequences;
+    if (sequences.isEmpty) return false;
 
-    for (final selector in selectorGroup.selectors) {
-      if (_singleSelectorMatches(selector, element)) {
+    // Start from the rightmost selector (the one that must match the node)
+    return _matchesSequences(node, sequences, sequences.length - 1);
+  }
+
+  /// Recursively match selector sequences with combinators
+  bool _matchesSequences(
+      XmlElement node,
+      List<css.SimpleSelectorSequence> sequences,
+      int currentIndex,
+      ) {
+    if (currentIndex < 0) return true;
+
+    final currentSequence = sequences[currentIndex];
+
+    // The current node must match the current sequence
+    if (!_matchesSimpleSequence(node, currentSequence)) {
+      return false;
+    }
+
+    // If this is the first sequence, we're done
+    if (currentIndex == 0) return true;
+
+    // Get the combinator before this sequence
+    final combinator = currentSequence.combinator;
+
+    if (combinator == css.TokenKind.COMBINATOR_DESCENDANT) {
+      // Space combinator: match any ancestor
+      return _matchesAnyAncestor(node, sequences, currentIndex - 1);
+    } else if (combinator == css.TokenKind.COMBINATOR_GREATER) {
+      // > combinator: match immediate parent
+      final parent = node.parent;
+      if (parent is! XmlElement) return false;
+      return _matchesSequences(parent, sequences, currentIndex - 1);
+    } else if (combinator == css.TokenKind.COMBINATOR_PLUS) {
+      // + combinator: match immediately preceding sibling
+      final prevSibling = _getPreviousSiblingElement(node);
+      if (prevSibling == null) return false;
+      return _matchesSequences(prevSibling, sequences, currentIndex - 1);
+    } else if (combinator == css.TokenKind.COMBINATOR_TILDE) {
+      // ~ combinator: match any preceding sibling
+      return _matchesAnyPrecedingSibling(node, sequences, currentIndex - 1);
+    }
+
+    // No combinator or unknown combinator (shouldn't happen for valid CSS)
+    return currentIndex == 0;
+  }
+
+  /// Check if any ancestor matches the remaining sequences
+  bool _matchesAnyAncestor(
+      XmlElement node,
+      List<css.SimpleSelectorSequence> sequences,
+      int sequenceIndex,
+      ) {
+    var current = node.parent;
+    while (current is XmlElement) {
+      if (_matchesSequences(current, sequences, sequenceIndex)) {
         return true;
       }
+      current = current.parent;
     }
     return false;
   }
 
-  /// Checks if a single selector matches an element
-  bool _singleSelectorMatches(Selector selector, XmlElement element) {
-    // Get all simple selector sequences in this selector
-    if (selector.simpleSelectorSequences.isEmpty) {
-      return false;
+  /// Check if any preceding sibling matches the remaining sequences
+  bool _matchesAnyPrecedingSibling(
+      XmlElement node,
+      List<css.SimpleSelectorSequence> sequences,
+      int sequenceIndex,
+      ) {
+    var current = _getPreviousSiblingElement(node);
+    while (current != null) {
+      if (_matchesSequences(current, sequences, sequenceIndex)) {
+        return true;
+      }
+      current = _getPreviousSiblingElement(current);
     }
-
-    // For now, just check the first simple selector
-    final firstSequence = selector.simpleSelectorSequences.first;
-    return _simpleSelectorSequenceMatches(firstSequence, element);
+    return false;
   }
 
-  /// Checks if a simple selector sequence matches an element
-  bool _simpleSelectorSequenceMatches(
-      SimpleSelectorSequence sequence, XmlElement element) {
+  /// Get the previous sibling element (skipping text nodes, etc.)
+  XmlElement? _getPreviousSiblingElement(XmlElement node) {
+    final parent = node.parent;
+    if (parent is! XmlElement) return null;
+
+    final siblings = parent.children.whereType<XmlElement>().toList();
+    final index = siblings.indexOf(node);
+
+    return index > 0 ? siblings[index - 1] : null;
+  }
+
+  /// Match a simple selector sequence (e.g., div.class#id[attr])
+  bool _matchesSimpleSequence(
+      XmlElement node,
+      css.SimpleSelectorSequence sequence
+      ) {
     final simpleSelector = sequence.simpleSelector;
 
-    if (simpleSelector is ElementSelector) {
-      final elementName = element.name.toString();
-      if (simpleSelector.name != elementName &&
-          simpleSelector.name != '*') {
+    // Parse the selector text to extract classes, IDs, and attributes
+    final selectorText = simpleSelector.toString();
+
+    // Check element name (extract from beginning of selector before any . # [ :)
+    final elementMatch = RegExp(r'^([a-zA-Z][\w-]*)').firstMatch(selectorText);
+    if (elementMatch != null) {
+      final elementName = elementMatch.group(1)!;
+      if (elementName != '*' && elementName != node.name.local) {
         return false;
       }
-    } else if (simpleSelector is IdSelector) {
-      if (element.getAttribute('id') != simpleSelector.name) {
-        return false;
-      }
-    } else if (simpleSelector is ClassSelector) {
-      final classes = element.getAttribute('class')?.split(' ') ?? [];
-      if (!classes.contains(simpleSelector.name)) {
-        return false;
-      }
-    } else {
-      // Unknown selector type, skip
+    } else if (!selectorText.startsWith('*') &&
+        !selectorText.startsWith('.') &&
+        !selectorText.startsWith('#') &&
+        !selectorText.startsWith('[') &&
+        !selectorText.startsWith(':')) {
+      // If there's no element selector and it doesn't start with a class/id/attr,
+      // it might be malformed
       return false;
     }
+
+    // Extract and check ID
+    final idMatch = RegExp(r'#([\w-]+)').firstMatch(selectorText);
+    if (idMatch != null) {
+      if (node.getAttribute('id') != idMatch.group(1)) {
+        return false;
+      }
+    }
+
+    // Extract and check classes
+    final classMatches = RegExp(r'\.([\w-]+)').allMatches(selectorText);
+    for (var match in classMatches) {
+      final className = match.group(1)!;
+      final classes = node.getAttribute('class')?.split(' ') ?? [];
+      if (!classes.contains(className)) {
+        return false;
+      }
+    }
+
+    // Extract and check attributes
+    final attrMatches = RegExp(r'\[(\w+)(?:([~|^$*]?=)"?([^"\]]+)"?)?\]')
+        .allMatches(selectorText);
+    for (var match in attrMatches) {
+      final attrName = match.group(1)!;
+      final operator = match.group(2);
+      final attrValue = match.group(3);
+
+      final nodeAttrValue = node.getAttribute(attrName);
+
+      if (operator == null) {
+        // Just check attribute exists
+        if (nodeAttrValue == null) return false;
+      } else if (operator == '=') {
+        if (nodeAttrValue != attrValue) return false;
+      } else if (operator == '~=') {
+        if (nodeAttrValue == null ||
+            !nodeAttrValue.split(' ').contains(attrValue)) return false;
+      } else if (operator == '|=') {
+        if (nodeAttrValue == null ||
+            (!nodeAttrValue.startsWith('$attrValue-') &&
+                nodeAttrValue != attrValue)) return false;
+      } else if (operator == '^=') {
+        if (nodeAttrValue == null ||
+            !nodeAttrValue.startsWith(attrValue!)) return false;
+      } else if (operator == r'$=') {
+        if (nodeAttrValue == null ||
+            !nodeAttrValue.endsWith(attrValue!)) return false;
+      } else if (operator == '*=') {
+        if (nodeAttrValue == null ||
+            !nodeAttrValue.contains(attrValue!)) return false;
+      }
+    }
+
     return true;
   }
 
-  /// Converts an Expression object to a string value
-  String _expressionToString(Expression? expr) {
-    if (expr == null) return '';
+  /// Calculate CSS specificity (a, b, c) where:
+  /// a = number of ID selectors
+  /// b = number of class selectors, attribute selectors, and pseudo-classes
+  /// c = number of element selectors and pseudo-elements
+  int _calculateSpecificity(css.Selector selector) {
+    int ids = 0, classes = 0, elements = 0;
 
-    if (expr is Expressions) {
-      final buffer = StringBuffer();
-      for (int i = 0; i < expr.expressions.length; i++) {
-        final term = expr.expressions[i];
-        buffer.write(_termToString(term));
-        if (i < expr.expressions.length - 1) {
-          buffer.write(' ');
-        }
+    for (var sequence in selector.simpleSelectorSequences) {
+      final selectorText = sequence.simpleSelector.toString();
+
+      // Count IDs
+      ids += RegExp(r'#[\w-]+').allMatches(selectorText).length;
+
+      // Count classes
+      classes += RegExp(r'\.[\w-]+').allMatches(selectorText).length;
+
+      // Count attributes
+      classes += RegExp(r'\[[\w-]+').allMatches(selectorText).length;
+
+      // Count pseudo-classes (but not pseudo-elements)
+      classes += RegExp(r':(?!:)[\w-]+').allMatches(selectorText).length;
+
+      // Count element selectors (extract from beginning of selector)
+      final elementMatch = RegExp(r'^([a-zA-Z][\w-]*)').firstMatch(selectorText);
+      if (elementMatch != null && elementMatch.group(1) != '*') {
+        elements++;
       }
-      return buffer.toString().trim();
+
+      // Count pseudo-elements
+      elements += RegExp(r'::[\w-]+').allMatches(selectorText).length;
     }
 
-    return _termToString(expr);
+    // Combine into single int: specificity = a*100 + b*10 + c
+    return ids * 100 + classes * 10 + elements;
   }
 
-  /// Converts a Term object to a string value
-  String _termToString(dynamic term) {
-    if (term is LiteralTerm) {
-      return term.value.toString() ?? '';
-    } else if (term is NumberTerm) {
-      return '${term.value}';
-    } else if (term is EmTerm) {
-      return '${term.value}em';
-    } else if (term is HexColorTerm) {
-      return '#${term.value}';
-    }
-    return term.toString().trim();
+  /// Helper to get a declaration value as string
+  String? getDeclarationValue(
+      Map<String, css.Expression> declarations,
+      String property
+      ) {
+    final expr = declarations[property];
+    return expr?.toString();
   }
+}
 
-  /// Parses inline style attribute into a map
-  Map<String, String> _parseInlineStyle(String styleString) {
-    final styles = <String, String>{};
-    final declarations = styleString.split(';');
+class _RuleMatch {
+  final css.RuleSet rule;
+  final int specificity;
 
-    for (final declaration in declarations) {
-      if (declaration.trim().isEmpty) continue;
-      final parts = declaration.split(':');
-      if (parts.length == 2) {
-        final key = parts[0].trim().toLowerCase();
-        final value = parts[1].trim();
-        styles[key] = value;
-      }
-    }
-
-    return styles;
-  }
+  _RuleMatch(this.rule, this.specificity);
 }
