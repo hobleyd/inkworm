@@ -77,7 +77,7 @@ class Line {
     }
   }
 
-  void finish() {
+  void completeLine() {
     if (elements.isNotEmpty) {
       while (elements.last is SpaceSeparator) {
         elements.removeLast();
@@ -85,6 +85,13 @@ class Line {
       }
 
       calculateSeparatorWidth();
+    }
+  }
+
+  void completeParagraph() {
+    // Don't justify the last line in a paragraph.
+    if (alignment == LineAlignment.justify) {
+      alignment = LineAlignment.left;
     }
   }
 

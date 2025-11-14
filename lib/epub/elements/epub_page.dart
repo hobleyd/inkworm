@@ -35,7 +35,7 @@ class EpubPage {
   void addImage(ImageContent image, bool inline) {
     if (!inline) {
       if (lines.isNotEmpty) {
-        getActiveLines().last.finish();
+        getActiveLines().last.completeLine();
       }
       addLine(paragraph: true, blockStyle: image.blockStyle);
     }
@@ -70,7 +70,7 @@ class EpubPage {
     }
 
     if (!inline) {
-      getActiveLines().last.finish();
+      getActiveLines().last.completeLine();
     }
   }
 
@@ -79,12 +79,7 @@ class EpubPage {
     if (lines.isEmpty) {
       lines.add(Line(yPos: 0, blockStyle: blockStyle));
     } else {
-      // Don't justify the last line in a paragraph.
-      if (paragraph && getActiveLines().last.alignment == LineAlignment.justify) {
-        getActiveLines().last.alignment = LineAlignment.left;
-      }
-
-      getActiveLines().last.finish();
+      getActiveLines().last.completeLine();
 
       // If we need to move to a new page, add these to the overflow list and let the calling process worry about creating a new page.
       Line line = Line(yPos: getActiveLines().last.yPos + getActiveLines().last.height, blockStyle: blockStyle);
@@ -115,8 +110,8 @@ class EpubPage {
   }
 
   // This will add a paragraph of text, line by line, to the current Page.
-  List<Line> addText(TextContent content, List<HtmlContent> footnotes) {
-    if (lines.isEmpty) {
+  List<Line> addText(bool newParagraph, TextContent content, List<HtmlContent> footnotes) {
+    if (lines.isEmpty || newParagraph) {
       addLine(paragraph: true, blockStyle: content.blockStyle);
     }
 

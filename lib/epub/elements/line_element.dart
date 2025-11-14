@@ -1,7 +1,6 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:measure_text/measure_text.dart';
 
 import '../content/html_content.dart';
 import '../content/text_content.dart';

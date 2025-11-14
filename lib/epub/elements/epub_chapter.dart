@@ -10,6 +10,7 @@ import 'line.dart';
  */
 class EpubChapter {
   final int chapterNumber;
+  bool newParagraphRequired = false;
 
   final List<EpubPage> _pages = [];
 
@@ -23,7 +24,8 @@ class EpubChapter {
     }
 
     if (content is TextContent) {
-      List<Line> overflow = _pages.last.addText(content, []);
+      List<Line> overflow = _pages.last.addText(newParagraphRequired, content, []);
+      newParagraphRequired = false;
       if (overflow.isNotEmpty) {
         _pages.add(EpubPage());
         _pages.last.addLines(overflow);
@@ -31,8 +33,10 @@ class EpubChapter {
     } else if (content is ImageContent) {
       _pages.last.addImage(content, false);
     } else {
-      // Content must be a paragraph break.
-      _pages.last.addLine(paragraph: true, blockStyle: content.blockStyle);
+      if (_pages.last.getActiveLines().isNotEmpty) {
+        _pages.last.getActiveLines().last.completeParagraph();
+      }
+      newParagraphRequired = true;
     }
   }
 
