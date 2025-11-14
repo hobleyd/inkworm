@@ -29,13 +29,17 @@ class _PageCanvas extends ConsumerState<PageCanvas> {
           double tapX = details.globalPosition.dx;
 
           setState(() {
-            if (tapX < screenWidth / 3) {
+            if (tapX < screenWidth * 0.33) {
               if (displayedPage > 0) {
-                displayedPage--;
+                setState(() {
+                  displayedPage--;
+                });
               }
-            } else if (screenWidth -tapX > screenWidth / 3){
+            } else if (tapX > screenWidth * 0.66){
               // TODO: deal with end of chapter!
-              displayedPage++;
+              setState(() {
+                displayedPage++;
+              });
             } else {
               // TODO: display  menu
             }
