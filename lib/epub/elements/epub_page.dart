@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../constants.dart';
 import '../content/html_content.dart';
 import '../content/image_content.dart';
@@ -25,6 +27,9 @@ class EpubPage {
   List<Line> lines = [];
   List<Line> overflow = [];
 
+  double dropCapsXPosition = 0;
+  double dropCapsYPosition = 0;
+
   EpubPage();
 
   void addImage(ImageContent image, bool inline) {
@@ -37,10 +42,30 @@ class EpubPage {
 
     ImageElement el = ImageElement(image: image);
 
+    if (image.elementStyle.isDropCaps ?? false) {
+      dropCapsYPosition = getActiveLines().last.yPos + el.height;
+      dropCapsXPosition = el.width;
+    }
+
     if (getActiveLines().last.willFit(el)) {
       getActiveLines().last.addElement(el);
     } else {
-      addLine(paragraph: false, blockStyle: image.blockStyle);
+      // TODO: this is ugly and if the dropcaps is on the very first line, not sure that this will work.
+      // But generally Chapter Headers are a thing and so shouldn't be a real issue.
+      if (dropCapsYPosition > 0) {
+        if (dropCapsYPosition > getActiveLines().last.yPos) {
+          if (dropCapsXPosition > 0) {
+            dropCapsXPosition = 0;
+            dropCapsYPosition = 0;
+          }
+        }
+      }
+
+      addLine(
+          paragraph: false,
+          blockStyle: image.blockStyle,
+          dropCapsIndent: dropCapsXPosition,
+      );
       getActiveLines().last.addElement(el);
     }
 
@@ -49,15 +74,25 @@ class EpubPage {
     }
   }
 
-  void addLine({required bool paragraph, required BlockStyle blockStyle}) {
+  void addLine({required bool paragraph, required BlockStyle blockStyle, double? dropCapsIndent}) {
     // Close off the previous line to calculate justification etc.
     if (lines.isEmpty) {
       lines.add(Line(yPos: 0, blockStyle: blockStyle));
     } else {
+      // Don't justify the last line in a paragraph.
+      if (paragraph && getActiveLines().last.alignment == LineAlignment.justify) {
+        getActiveLines().last.alignment = LineAlignment.left;
+      }
+
       getActiveLines().last.finish();
 
       // If we need to move to a new page, add these to the overflow list and let the calling process worry about creating a new page.
       Line line = Line(yPos: getActiveLines().last.yPos + getActiveLines().last.height, blockStyle: blockStyle);
+
+      if (dropCapsIndent != null) {
+        line.dropCapsIndent = dropCapsIndent;
+      }
+
       if ((line.yPos + getActiveLines().last.height) > PageConstants.canvasHeight) {
         if (overflow.isEmpty) {
           line.yPos = 0;
@@ -95,18 +130,34 @@ class EpubPage {
          _                 => WordElement(word: TextContent(blockStyle: content.blockStyle, text: word.trim(), elementStyle: content.elementStyle)),
       };
 
+      // While this in a loop a dropcaps entry will only have a single element anyway so not a major concern.
+      if (content.elementStyle.isDropCaps ?? false) {
+        dropCapsYPosition = getActiveLines().last.yPos + el.height;
+        dropCapsXPosition = el.width;
+      }
+
       if (getActiveLines().last.willFit(el)) {
         getActiveLines().last.addElement(el);
       } else {
-        addLine(paragraph: false, blockStyle: content.blockStyle);
+        if (dropCapsYPosition < getActiveLines().last.bottomYPosition + getActiveLines().last.height) {
+          // Add the line height to the current bottomYPosition to get the next line position, prior to adding it.
+          if (dropCapsXPosition > 0) {
+            dropCapsXPosition = 0;
+            dropCapsYPosition = 0;
+          }
+        }
+        addLine(
+            paragraph: false,
+            blockStyle: content.blockStyle,
+            dropCapsIndent: dropCapsXPosition,
+        );
+
         if (el is! SpaceSeparator) {
           // No need to add spaces to a new line.
           getActiveLines().last.addElement(el);
         }
       }
     }
-
-    getActiveLines().last.alignment = LineAlignment.left;
 
     return overflow;
   }

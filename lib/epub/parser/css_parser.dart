@@ -5,6 +5,8 @@ import 'package:injectable/injectable.dart';
 import 'package:xml/xml.dart';
 
 import '../constants.dart';
+import '../styles/element_style.dart';
+import '../styles/style.dart';
 import 'epub_parser.dart';
 import 'font_management.dart';
 import 'extensions.dart';
@@ -28,17 +30,17 @@ class CssParser {
     parseDefaultCss();
   }
 
-  double? getFloatAttribute(XmlNode element, String attribute, TextStyle textStyle, bool isHorizontal) {
-    String? textIndent = getStringAttribute(element, "text-indent");
+  double? getFloatAttribute(XmlNode element, String attribute, Style style, bool isHorizontal) {
+    String? textIndent = getStringAttribute(element, style, "text-indent");
     if (textIndent != null) {
-      return getFloatFromString(textStyle, textIndent, true);
+      return getFloatFromString((style as ElementStyle).textStyle, textIndent, true);
     }
 
     return null;
   }
 
-  String? getFontAttribute(XmlNode element, String attribute) {
-    String? value = getCSSAttributeValue(element, attribute);
+  String? getFontAttribute(XmlNode element, Style style, String attribute) {
+    String? value = getCSSAttributeValue(element, style, attribute);
 
     if (value != null) {
       if (value.contains(',')) {
@@ -51,8 +53,8 @@ class CssParser {
     return null;
   }
 
-  double? getPercentAttribute(XmlNode element, String attribute) {
-    String? result = getStringAttribute(element, attribute);
+  double? getPercentAttribute(XmlNode element, Style style, String attribute) {
+    String? result = getStringAttribute(element, style, attribute);
     if (result != null) {
       if (result.endsWith('%')) {
         return parseFloatCssValue(result, 1);
@@ -62,47 +64,17 @@ class CssParser {
     return null;
   }
 
-  String? getStringAttribute(XmlNode element, String attribute) {
-    return getCSSAttributeValue(element, attribute);
+  String? getStringAttribute(XmlNode element, Style style, String attribute) {
+    return getCSSAttributeValue(element, style, attribute);
   }
 
-  /*
-   * CSS hierarchy:
-   * h2.class
-   * .class
-   * class
-   * h2
-   */
-  String? getCSSAttributeValue(XmlNode element, String attribute) {
-    CssDeclarations declarations = getCSSDeclarations(element);
-
+  String? getCSSAttributeValue(XmlNode element, Style style, String attribute) {
     // Now look for style inheritance
-    if ((declarations.isEmpty || declarations[attribute] == 'inherit') && element.parentElement != null) {
-      return getCSSAttributeValue(element.parentElement!, attribute);
+    if ((style.declarations.isEmpty || style.declarations[attribute] == 'inherit') && element.parentElement != null) {
+      return getCSSAttributeValue(element.parentElement!, style, attribute);
     }
 
-    return declarations[attribute];
-  }
-
-  CssDeclarations getCSSDeclarations(XmlNode node) {
-    XmlElement element = node as XmlElement;
-    CssDeclarations declarations = {};
-
-    // Reverse the order of precedence as the combine function will preference the latest values.
-    declarations = declarations.combine(css[element.localName]);
-    declarations = declarations.combine(css[element]);
-
-    final String? elementClasses = element.getAttribute("class");
-    if (elementClasses != null) {
-      for (var elementClass in elementClasses.split(" ")) {
-        declarations = declarations.combine(css[elementClass]);
-        declarations = declarations.combine(css['.$elementClass']);
-        declarations = declarations.combine(css['${element.localName}.$elementClass']);
-      }
-    }
-    declarations = declarations.combine(getInlineStyle(element));
-
-    return declarations;
+    return style.declarations[attribute];
   }
 
   double? getFloatFromString(TextStyle s, String value, bool isHorizontal) {
@@ -128,6 +100,21 @@ class CssParser {
     };
   }
 
+  FontWeight getFontWeight(String fontWeight) {
+    return switch(fontWeight) {
+      "normal"  || "400"  => FontWeight.w400,
+      "bold"    || "700"  => FontWeight.w700,
+      "bolder"  || "900"  => FontWeight.w900,
+      "lighter" || "300"  => FontWeight.w300,
+      "100"               => FontWeight.w100,
+      "200"               => FontWeight.w200,
+      "500"               => FontWeight.w500,
+      "600"               => FontWeight.w600,
+      "800"               => FontWeight.w800,
+      _                   => FontWeight.w400,
+    };
+  }
+
   CssDeclarations? getInlineStyle(XmlElement element) {
     String? styles = element.getAttribute("style");
 
@@ -136,6 +123,100 @@ class CssParser {
     }
 
     return null;
+  }
+
+
+  /*
+   * CSS hierarchy:
+   *   h2.class
+   *   .class
+   *   class
+   *   h2
+   */
+  CssDeclarations matchClassSelectors(XmlElement element, Set<String> selectors) {
+    CssDeclarations declarations = {};
+
+    // CSS styles are additive, so we need to check everything. But the hierarchy is important in the case we have
+    // over-riding values. CSS is clearly defined by committee. Sigh.
+    declarations = declarations.combine(css[element.localName]);
+
+    // Check the basic CSS hierarchy
+    for (String selector in selectors) {
+      declarations = declarations.combine(css[selector]);
+      declarations = declarations.combine(css['.$selector']);
+      declarations = declarations.combine(css['${element.localName}.$selector']);
+    }
+
+    // Apparently you can specify multiple subsets of the class elements and expect this to match
+    // <p class="a,b,c,d,e"> can match css selections ".a.b.e", ".a.c.d", ".a.e.b.d" etc. Go figure.
+    for (String cssKey in css.keys) {
+      if (isMatchedSingleLevelSelectors(cssKey, selectors)) {
+          declarations = declarations.combine(css[cssKey]);
+      }
+    }
+
+    for (String cssKey in css.keys) {
+      if (cssKey.contains(' ')) {
+        if (isMatchedMultiLevelSelectors(element, cssKey.split(' ').toSet())) {
+          declarations = declarations.combine(css[cssKey]);
+        }
+      }
+    }
+
+    return declarations;
+  }
+
+  bool isMatchedSingleLevelSelectors(String selector, Set<String> selectors) {
+    if (selector.contains('.')) {
+      Set<String> selectorParts = selector.split('.').where((sel) => sel.isNotEmpty).toSet();
+      return selectorParts.difference(selectors).isEmpty;
+    }
+
+    return false;
+  }
+
+  /*  You also need to check (non contiguous) parent class entries in order:
+   * <div id="unnumbered-1" class="element element-bodymatter element-container-single element-type-chapter element-without-heading">
+   *     <div class="text" id="unnumbered-1-text">
+   *       <div class="inline-image inline-image-kind-photograph inline-image-size-medium inline-image-flow-center inline-image-flow-within-text inline-image-aspect-wide block-height-not-mult-of-line-height inline-image-without-caption inline-image-begins-section inline-image-before-element-end">
+   *         <div class="inline-image-container">
+   *           <img src="images/chapno-1.jpg" alt="" />
+   *         </div>
+   *       </div>
+   *       <p class="implicit-break"></p>
+   *       <p class="first first-in-chapter first-full-width first-with-first-letter-a"><b><i><span class="first-letter first-letter-a first-letter-without-punctuation">A</span>s</i></b> I have often opined, what good does it do a fellow to be a master of the mystic arts if he’s not allowed to do a bally thing with said mastery? And while I’ll admit that knocking the toppers off one’s fellow practitioners at Goodwood might have been a tad childish, it hardly, to my mind, constituted a hanging offence. Alas, the old sticks at the Folly didn’t see eye to eye with me on this, so I decided that perhaps it would be wise to remove myself somewhere out of their censorious gaze until the blissful waters of Lethe bathed their cares away. Or something.</p>
+   * Needs to match the selector:
+   * .element-container-single.element-bodymatter p.first-in-chapter.first-full-width span.first-letter
+   */
+  bool isMatchedMultiLevelSelectors(XmlElement element, Set<String> selectors) {
+    if (element.getAttribute("class") != null) {
+      Set<String> matchedSelectors = element.getAttribute("class")!.split(" ").toSet();
+      for (String matchedSelector in matchedSelectors) {
+        selectors.remove(matchedSelector);
+        selectors.remove('.$matchedSelector');
+        selectors.remove('${element.localName}.$matchedSelector');
+      }
+
+      if (selectors.isNotEmpty) {
+        String lastSelector = selectors.last;
+        if (lastSelector.startsWith(element.localName)) {
+          lastSelector = lastSelector.replaceFirst('${element.localName}.', '');
+        }
+        if (isMatchedSingleLevelSelectors(lastSelector, matchedSelectors)) {
+          selectors.remove(selectors.last);
+        }
+      }
+    }
+
+    if (selectors.isEmpty) {
+      return true;
+    } else {
+      if (element.parentElement != null) {
+        return isMatchedMultiLevelSelectors(element.parentElement!, selectors);
+      } else {
+        return false;
+      }
+    }
   }
 
   Map<String, CssDeclarations> parseCss(String cssContent) {
@@ -164,8 +245,8 @@ class CssParser {
               individual = declarations["font-family"]!.replaceAll('"', '');
               declarations.remove("font-family");
 
-              if (declarations['url'] != null) {
-                GetIt.instance.get<FontManagement>().loadFontFromEpub(individual, declarations['url']!);
+              if (declarations['src'] != null) {
+                GetIt.instance.get<FontManagement>().loadFontFromEpub(individual, declarations['src']!);
               }
             }
 

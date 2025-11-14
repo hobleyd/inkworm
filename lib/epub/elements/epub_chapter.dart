@@ -1,6 +1,7 @@
 import '../content/html_content.dart';
 import '../content/image_content.dart';
 import '../content/text_content.dart';
+import '../styles/block_style.dart';
 import 'epub_page.dart';
 import 'line.dart';
 
@@ -28,7 +29,7 @@ class EpubChapter {
         _pages.last.addLines(overflow);
       }
     } else if (content is ImageContent) {
-      _pages.last.addImage(content as ImageContent, false);
+      _pages.last.addImage(content, false);
     } else {
       // Content must be a paragraph break.
       _pages.last.addLine(paragraph: true, blockStyle: content.blockStyle);

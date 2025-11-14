@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:get_it/get_it.dart';
 import 'package:injectable/injectable.dart';
@@ -10,6 +11,9 @@ class FontManagement {
 
   Future<void> loadFontFromEpub(String fontFamily, String fontPath) async {
     // Knowing how the getBytes function works, strip out the relative paths as they won't be needed. Purists will disagree ;-)
+    if (fontPath.startsWith('url')) {
+      fontPath = fontPath.substring(4, fontPath.length-1);
+    }
     String cleanedPath = fontPath.replaceAll(RegExp(r'^(\.\.\/)+'), '');
 
     final bytes = GetIt.instance.get<EpubParser>().getBytes(cleanedPath);
@@ -18,6 +22,7 @@ class FontManagement {
     fontLoader.addFont(Future.value(ByteData.view(bytes.buffer)));
     await fontLoader.load();
 
+    debugPrint('loaded $fontFamily into the Flutter runtime.');
     verifiedFonts.add(fontFamily);
   }
 

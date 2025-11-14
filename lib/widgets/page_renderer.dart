@@ -27,7 +27,8 @@ class PageRenderer extends CustomPainter {
     canvas.clipRect(Offset(0, 0) & size);
 
     for (Line line in lines) {
-      double xPos = line.leftIndent + line.textIndent;
+      debugPrint('line: $line');
+      double xPos = line.leftIndent + line.textIndent + line.dropCapsIndent;
       for (LineElement el in line.elements) {
         el.paint(canvas, line.height, xPos, line.yPos);
         xPos += el.width;

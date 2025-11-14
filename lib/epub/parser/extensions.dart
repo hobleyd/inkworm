@@ -57,6 +57,20 @@ extension HandlerNodeExtension on XmlNode {
   }
 }
 
+extension SelectorSetExtension on XmlElement {
+  Set<String> get selectorSet {
+    Set<String> selectors = {};
+
+    final String? elementClasses = getAttribute("class");
+    if (elementClasses != null) {
+      for (var elementClass in elementClasses.split(" ")) {
+        selectors.add(elementClass);
+      }
+    }
+
+    return selectors;
+  }
+}
 extension SelectorMapExtension on Map<String, CssDeclarations> {
   Map<String, CssDeclarations> combine(String selector, CssDeclarations declarations,) {
     final existingMap = this[selector];

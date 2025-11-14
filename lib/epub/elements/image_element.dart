@@ -59,7 +59,6 @@ class ImageElement extends LineElement {
       Rect.fromLTWH(xPos, yPos, width, this.height),
       Paint(),
     );
-    //c.drawImage(image.image, Offset(xPos, yPos), Paint());
   }
 
   @override

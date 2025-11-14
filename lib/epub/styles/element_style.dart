@@ -48,17 +48,20 @@ class ElementStyle extends Style {
 
   void getDropCaps(XmlNode element) {
     // The check for line-height is a hack; but makes the chapter starts look better in The Strange Case of the Alchemist's Daughter.
-    String? floatValue = _parser.getStringAttribute(element, "float");
-    String? lineHeight = _parser.getStringAttribute(element, "line-height");
+    String? floatValue = _parser.getStringAttribute(element, this, "float");
+    String? lineHeight = _parser.getStringAttribute(element, this, "line-height");
 
-    isDropCaps =  (floatValue != null && floatValue == "left") ||  (lineHeight != null && lineHeight == "0em");
+    if ((floatValue != null && floatValue == "left") ||  (lineHeight != null && lineHeight == "0em")) {
+      isDropCaps = true;
+    }
   }
 
   void getTextStyle(XmlNode element) {
-    final String? fontFamily = _parser.getFontAttribute(element, "font-family");
-    final String? fontStyle  = _parser.getStringAttribute(element, "font-style");
-    final String? fontWeight = _parser.getStringAttribute(element, "font-weight");
-    final String? fontDecoration  = _parser.getStringAttribute(element, "text-decoration");
+    final String? fontFamily = _parser.getFontAttribute(element, this, "font-family")?.replaceAll('"', '');
+    final double fontSizeMultipler = _parser.getPercentAttribute(element, this, "font-size") ?? 1;
+    final String? fontStyle  = _parser.getStringAttribute(element, this, "font-style");
+    final String? fontWeight = _parser.getStringAttribute(element, this, "font-weight");
+    final String? fontDecoration  = _parser.getStringAttribute(element, this, "text-decoration");
 
     textStyle = textStyle.copyWith(
       color: Colors.black,
@@ -68,14 +71,17 @@ class ElementStyle extends Style {
                      _ => textStyle.decoration,
       },
       fontFamily: fontFamily ?? textStyle.fontFamily,
-      fontSize: 12, // TODO: drive from config when created.
+      fontSize: 12 * fontSizeMultipler, // TODO: drive from config when created.
       fontStyle: fontStyle == "italic" ? FontStyle.italic : textStyle.fontStyle,
-      fontWeight: fontWeight != null && fontWeight.startsWith("bold") ? FontWeight.w700 : textStyle.fontWeight,
+      fontWeight: fontWeight != null ? _parser.getFontWeight(fontWeight) : textStyle.fontWeight,
     );
   }
 
   @override
   Style parseElement({required XmlNode element, Style? parentStyle}) {
+    addSelectors(element);
+    addDeclarations(_parser, element);
+
     if (parentStyle != null) {
       copyWith(parentStyle as ElementStyle);
     }
@@ -122,7 +128,7 @@ class ElementStyle extends Style {
       result += 'dropcaps: ${isDropCaps! ? "true" : "false"}';
     }
 
-    result += ' }';
+    result += '}';
     return result;
   }
 }

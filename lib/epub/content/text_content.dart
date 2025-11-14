@@ -8,4 +8,9 @@ class TextContent extends HtmlContent {
   TextSpan get span => TextSpan(text: text, style: elementStyle.textStyle);
 
   const TextContent({required super.blockStyle, required super.elementStyle, required this.text});
+
+  @override
+  String toString() {
+    return text;
+  }
 }

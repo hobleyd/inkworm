@@ -19,9 +19,12 @@ class Line {
   double textIndent = 0;
   int _separatorCount = 0;
 
+  double dropCapsIndent = 0;
+
   List<LineElement> elements = [];
 
-  double get canvasWidth => PageConstants.canvasWidth - PageConstants.leftIndent - PageConstants.rightIndent;
+  double get canvasWidth => PageConstants.canvasWidth - PageConstants.leftIndent - PageConstants.rightIndent - dropCapsIndent;
+  double get bottomYPosition => yPos + height;
 
   Line({required this.yPos, required BlockStyle blockStyle}) {
     alignment = blockStyle.alignment != null ? blockStyle.alignment! : LineAlignment.justify;
@@ -37,8 +40,9 @@ class Line {
       }
     }
 
-    if (!e.isDropCaps) {
-      // Only adjust the line height if this is not a dropcaps element. For obvious reasons.
+    if (!(e.element.elementStyle.isDropCaps ?? false)) {
+      // Only adjust the line height if this is not a dropcaps element. For obvious reasons. Given the use of dropcaps I can't
+      // imagine it will be possible that this is the only thing on the line. On the other hand. HTML. Sigh.
       height = max(height, e.height);
     }
 
@@ -53,7 +57,7 @@ class Line {
 
   void calculateSeparatorWidth() {
     if (alignment == LineAlignment.justify) {
-      _spaceWidth = (PageConstants.canvasWidth - rightIndent - (leftIndent + textIndent + _computedWidthNoSeparators)) / _separatorCount;
+      _spaceWidth = (PageConstants.canvasWidth - rightIndent - (leftIndent + textIndent + dropCapsIndent + _computedWidthNoSeparators)) / _separatorCount;
 
       for (LineElement e in elements) {
         if (e is Separator) {
@@ -86,7 +90,7 @@ class Line {
 
   @override
   String toString() {
-    String result = "$yPos: ";
+    String result = "$yPos: $bottomYPosition: ${alignment.name}: TI: $textIndent: DCI: $dropCapsIndent: ";
     for (var el in elements) {
       result += '$el';
     }

@@ -16,9 +16,11 @@ class WordElement extends LineElement {
 
   @override
   void paint(Canvas c, double height, double xPos, double yPos) {
-    final TextPainter textPainter = TextPainter(text: word.span, textDirection: TextDirection.ltr);
+    final TextPainter textPainter = TextPainter(text: word.span, textDirection: TextDirection.ltr,);
     textPainter.layout(maxWidth: width);
     textPainter.paint(c, Offset(xPos, yPos));
+
+    textPainter.dispose();
   }
 
   @override
