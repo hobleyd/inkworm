@@ -40,8 +40,7 @@ class BlockHandler extends HtmlHandler {
     BlockStyle blockStyle = BlockStyle(elementStyle: elementStyle);
     blockStyle.parseElement(element: element, parentStyle: parentBlockStyle);
 
-    debugPrint('BLOCK_HANDLER: ${element.name}: ${element.attributes}: $blockStyle, $elementStyle');
-
+    //debugPrint('BLOCK_HANDLER: ${element.name}: ${element.attributes}: $blockStyle, $elementStyle');
     for (var child in node.children) {
       List<HtmlContent>? childElements = await child.handler?.processElement(node: child, parentBlockStyle: blockStyle, parentElementStyle: elementStyle);
       if (childElements != null) {

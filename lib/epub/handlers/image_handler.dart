@@ -33,7 +33,6 @@ class ImageHandler extends HtmlHandler {
   @override
   Future<List<HtmlContent>> processElement({required XmlNode node, BlockStyle? parentBlockStyle, ElementStyle? parentElementStyle}) async {
     XmlElement element = node as XmlElement;
-    debugPrint('IMG_HANDLER: ${element.name}: ${element.attributes}');
     List<HtmlContent> elements = [];
 
     ElementStyle elementStyle = ElementStyle();

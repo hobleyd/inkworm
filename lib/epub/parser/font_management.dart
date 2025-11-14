@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:get_it/get_it.dart';
 import 'package:injectable/injectable.dart';
@@ -22,7 +21,6 @@ class FontManagement {
     fontLoader.addFont(Future.value(ByteData.view(bytes.buffer)));
     await fontLoader.load();
 
-    debugPrint('loaded $fontFamily into the Flutter runtime.');
     verifiedFonts.add(fontFamily);
   }
 

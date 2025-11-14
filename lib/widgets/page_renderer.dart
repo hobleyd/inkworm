@@ -16,7 +16,7 @@ class PageRenderer extends CustomPainter {
     _ref = ref;
 
     if (ref.read(epubProvider).chapters.isNotEmpty) {
-      lines = ref.read(epubProvider).chapters[0][0]!.lines;
+      lines = ref.read(epubProvider).chapters[0][pageNumber]!.lines;
     }
   }
 
@@ -27,7 +27,6 @@ class PageRenderer extends CustomPainter {
     canvas.clipRect(Offset(0, 0) & size);
 
     for (Line line in lines) {
-      debugPrint('line: $line');
       double xPos = line.leftIndent + line.textIndent + line.dropCapsIndent;
       for (LineElement el in line.elements) {
         el.paint(canvas, line.height, xPos, line.yPos);

@@ -23,7 +23,7 @@ class TextHandler extends HtmlHandler {
       return [];
     }
 
-    debugPrint('TEXT_HANDLER: ${element.value}: $parentElementStyle');
+    //debugPrint('TEXT_HANDLER: ${element.value}: $parentElementStyle');
     List<HtmlContent> elements = [];
     elements.add(TextContent(blockStyle: parentBlockStyle!, elementStyle: parentElementStyle!, text: element.value,),);
 

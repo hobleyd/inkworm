@@ -26,8 +26,7 @@ class InlineHandler extends HtmlHandler {
     ElementStyle elementStyle = ElementStyle();
     elementStyle.parseElement(element: element, parentStyle: parentElementStyle);
 
-    debugPrint('INLINE_HANDLER: ${element.name}: ${element.attributes}: $elementStyle');
-
+    //debugPrint('INLINE_HANDLER: ${element.name}: ${element.attributes}: $elementStyle');
     List<HtmlContent> elements = [];
     for (var child in node.children) {
       List<HtmlContent>? childElements = await child.handler?.processElement(node: child, parentBlockStyle: parentBlockStyle, parentElementStyle: elementStyle);

@@ -19,7 +19,6 @@ class LinkHandler extends HtmlHandler {
   @override
   Future<List<HtmlContent>> processElement({required XmlNode node, BlockStyle? parentBlockStyle, ElementStyle? parentElementStyle}) async {
     XmlElement element = node as XmlElement;
-    debugPrint('LINK_HANDLER: ${element.name}: ${element.attributes}');
     if ('${element.getAttribute("rel")}' == "stylesheet") {
       GetIt.instance.get<CssParser>().parseFile(element.getAttribute("href")!);
 
