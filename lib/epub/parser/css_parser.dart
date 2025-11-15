@@ -10,12 +10,10 @@ import '../styles/style.dart';
 import 'epub_parser.dart';
 import 'font_management.dart';
 import 'extensions.dart';
-import 'style_retriever.dart';
 
 @Singleton()
 class CssParser {
   final Map<String, CssDeclarations> css = {};
-  late StyleRetriever retriever;
   final Set<String> nonInheritableProperties = {};
 
   CssDeclarations? operator [](String key) => css[key];

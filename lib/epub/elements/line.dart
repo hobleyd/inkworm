@@ -23,6 +23,7 @@ class Line {
 
   List<LineElement> elements = [];
 
+  double get canvasHeight => PageConstants.canvasHeight;
   double get canvasWidth => PageConstants.canvasWidth - PageConstants.leftIndent - PageConstants.rightIndent - dropCapsIndent;
   double get bottomYPosition => yPos + height;
 
@@ -31,8 +32,6 @@ class Line {
   }
 
   void addElement(LineElement e) {
-    assert(willFit(e));
-
     // We don't add multiple spaces together unless they are non-breaking.
     if (e is SpaceSeparator) {
       if (elements.isNotEmpty && (elements.last is SpaceSeparator || elements.last is NonBreakingSpaceSeparator)) {
@@ -105,7 +104,11 @@ class Line {
     return result;
   }
 
-  bool willFit(LineElement e) {
+  bool willFitHeight(LineElement e) {
+    return (yPos + height + e.height) <= canvasHeight;
+  }
+
+  bool willFitWidth(LineElement e) {
     return (_computedWidth + e.width) <= canvasWidth;
   }
 }

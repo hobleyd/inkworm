@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../content/text_content.dart';
 import 'line_element.dart';
 
-@immutable
 class WordElement extends LineElement {
   final TextContent word;
 

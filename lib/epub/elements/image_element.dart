@@ -4,7 +4,6 @@ import '../content/image_content.dart';
 import '../constants.dart';
 import 'line_element.dart';
 
-@immutable
 class ImageElement extends LineElement {
   final ImageContent image;
 

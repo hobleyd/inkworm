@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:injectable/injectable.dart';
 import 'package:inkworm/epub/content/paragraph_break.dart';
 import 'package:xml/xml.dart';

@@ -1,7 +1,6 @@
+import 'package:inkworm/epub/content/paragraph_break.dart';
+
 import '../content/html_content.dart';
-import '../content/image_content.dart';
-import '../content/text_content.dart';
-import '../styles/block_style.dart';
 import 'epub_page.dart';
 import 'line.dart';
 
@@ -23,20 +22,18 @@ class EpubChapter {
       _pages.add(EpubPage());
     }
 
-    if (content is TextContent) {
-      List<Line> overflow = _pages.last.addText(newParagraphRequired, content, []);
-      newParagraphRequired = false;
-      if (overflow.isNotEmpty) {
-        _pages.add(EpubPage());
-        _pages.last.addLines(overflow);
-      }
-    } else if (content is ImageContent) {
-      _pages.last.addImage(content, false);
-    } else {
+    if (content is ParagraphBreak) {
       if (_pages.last.getActiveLines().isNotEmpty) {
         _pages.last.getActiveLines().last.completeParagraph();
       }
       newParagraphRequired = true;
+    } else {
+      List<Line> overflow = _pages.last.addElement(newParagraphRequired, content, []);
+      if (overflow.isNotEmpty) {
+        _pages.add(EpubPage());
+        _pages.last.addLines(overflow);
+      }
+      newParagraphRequired = false;
     }
   }
 
