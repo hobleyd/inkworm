@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../epub/epub.dart';
 import '../models/epub_book.dart';
+import '../screens/settings.dart';
 import 'page_renderer.dart';
 
 class PageCanvas extends ConsumerStatefulWidget {
@@ -42,6 +43,7 @@ class _PageCanvas extends ConsumerState<PageCanvas> {
               });
             } else {
               // TODO: display  menu
+              Navigator.push(context, MaterialPageRoute(builder: (context) => Settings())).then((onValue) {});
             }
           });
         },
