@@ -24,8 +24,8 @@ class Inkworm extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Expanded(
-              child: book.error != null
-                ? Text(book.error.toString())
+              child: book.error != null || book.errorDescription != null
+                ? Text('${book.errorDescription}\n${book.error}')
                 : PageCanvas(),),
             ProgressBar(),
           ],

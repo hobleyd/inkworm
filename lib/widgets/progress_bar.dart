@@ -20,6 +20,7 @@ class ProgressBar extends ConsumerWidget {
       child: Stack(
         children: [
           Align(alignment: Alignment.centerLeft, child: Text(book.title, style: Theme.of(context).textTheme.labelSmall)),
+          if (book.parsingBook) ...[Align(alignment: Alignment.center, child: Text('Parsing eBook; please be patient', textAlign: TextAlign.center, style: Theme.of(context).textTheme.labelSmall))],
           if (!book.parsingBook) ...[Align(alignment: Alignment.center, child: Text('${book.currentPageNumber(progress.chapterNumber, progress.pageNumber)}-${book.nextChapterPageNumber(progress.chapterNumber)}/${book.totalPages}', textAlign: TextAlign.center, style: Theme.of(context).textTheme.labelSmall))],
           Align(alignment: Alignment.centerRight, child: Text(book.author, textAlign: TextAlign.right, style: Theme.of(context).textTheme.labelSmall)),
         ],

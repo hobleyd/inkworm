@@ -42,9 +42,8 @@ class EpubParser {
     return rootfile?.getAttributeNode("full-path")?.value;
   }
 
-  void openBook() {
-    String bookPath = Platform.environment['EBOOK']!;
-    final inputStream = InputFileStream(bookPath);
+  void openBook(String uri) {
+    final inputStream = InputFileStream(uri);
     bookArchive = ZipDecoder().decodeStream(inputStream);
     inputStream.close();
   }

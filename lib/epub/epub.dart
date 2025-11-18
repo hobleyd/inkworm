@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:get_it/get_it.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:xml/xml.dart';
@@ -10,16 +13,22 @@ import 'parser/extensions.dart';
 
 part 'epub.g.dart';
 
+const platform = MethodChannel('au.com.sharpblue.inkworm/epub');
+
 @Riverpod(keepAlive: true)
 class Epub extends _$Epub {
   @override
   EpubBook build() {
-    return EpubBook(author: "", title: "", chapters: [], manifest: {}, parsingBook: true);
+    if (Platform.isAndroid) {
+      _handleEpubIntent();
+    } else {
+      GetIt.instance.get<EpubParser>().openBook(Platform.environment['EBOOK']!);
+    }
+    return EpubBook(uri: "", author: "", title: "", chapters: [], manifest: {}, parsingBook: true);
   }
 
   void parse() async {
     try {
-      GetIt.instance.get<EpubParser>().openBook();
       XmlDocument opf = GetIt.instance.get<EpubParser>().parse();
 
       List<EpubChapter> chapters = [];
@@ -29,8 +38,24 @@ class Epub extends _$Epub {
       }
       state = state.copyWith(author: opf.author, title: opf.title, manifest: opf.manifest, chapters: chapters, parsingBook: false);
     } catch (e, s) {
-      state = state.copyWith(error: s);
+      state = state.copyWith(errorDescription: e.toString(), error: s);
     }
   }
 
+
+  Future<void> _handleEpubIntent() async {
+    try {
+      final Map<dynamic, dynamic> result =
+      await platform.invokeMethod('getEpubFile');
+      final path = result['path'];
+      if (path != null) {
+        GetIt.instance.get<EpubParser>().openBook(path);
+      } else {
+        state = state.copyWith(errorDescription: 'Error receiving file intent: ${result['uri']} / $path');
+        GetIt.instance.get<EpubParser>().openBook(Platform.environment['EBOOK']!);
+      }
+    } catch (e, s) {
+      state = state.copyWith(errorDescription: e.toString(), error: s);
+    }
+  }
 }

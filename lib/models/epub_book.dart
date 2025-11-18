@@ -8,6 +8,9 @@ part 'epub_book.freezed.dart';
 @freezed
 class EpubBook with _$EpubBook {
   @override
+  String uri;
+
+  @override
   String author;
 
   @override
@@ -23,6 +26,9 @@ class EpubBook with _$EpubBook {
   StackTrace? error;
 
   @override
+  String? errorDescription;
+
+  @override
   bool parsingBook;
 
   EpubChapter operator [](int index) => chapters[index];
@@ -30,7 +36,7 @@ class EpubBook with _$EpubBook {
   int get lastChapterIndex => chapters.length - 1;
   int get totalPages => chapters.fold(0, (sum, chapter) => sum + chapter.pages.length);
 
-  EpubBook({required this.author, required this.title, this.error, required this.chapters, required this.manifest, required this.parsingBook});
+  EpubBook({required this.uri, required this.author, required this.title, this.error, this.errorDescription, required this.chapters, required this.manifest, required this.parsingBook});
 
   int currentPageNumber(int chapterNumber, int pageNumber) {
     return chapterNumber == 0
