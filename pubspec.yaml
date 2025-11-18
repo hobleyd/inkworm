@@ -24,6 +24,7 @@ dependencies:
   logger: ^2.6.1
   mockito: ^5.5.0
   riverpod_annotation: ^3.0.3
+  shared_preferences: ^2.5.3
   version: ^3.0.2
   xml: ^6.6.1
 

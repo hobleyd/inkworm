@@ -10,38 +10,44 @@ import 'line.dart';
 class EpubChapter {
   final int chapterNumber;
   bool newParagraphRequired = false;
+  double lastParagraphBottomMargin = 0;
 
-  final List<EpubPage> _pages = [];
+  final List<EpubPage> pages = [];
 
   EpubChapter({required this.chapterNumber,});
 
-  EpubPage? operator [](int index) => _pages[index];
+  EpubPage? operator [](int index) => pages[index];
+
+  int get lastPageIndex => pages.length - 1;
 
   void addContentToCurrentPage(HtmlContent content) {
-    if (_pages.isEmpty) {
-      _pages.add(EpubPage());
+    if (pages.isEmpty) {
+      pages.add(EpubPage());
     }
 
+    // If I get a ParagraphBreak, I need to move the next line down by the bottom-margin of the
+    // ParagraphBreak BlockStyle and the top margin of the new BlockStyle.
     if (content is ParagraphBreak) {
-      if (_pages.last.getActiveLines().isNotEmpty) {
-        _pages.last.getActiveLines().last.completeParagraph();
+      if (pages.last.getActiveLines().isNotEmpty) {
+        pages.last.getActiveLines().last.completeParagraph();
       }
       newParagraphRequired = true;
+      lastParagraphBottomMargin = content.blockStyle.marginBottom;
     } else {
-      List<Line> overflow = _pages.last.addElement(newParagraphRequired, content, []);
+      List<Line> overflow = pages.last.addElement(newParagraphRequired, lastParagraphBottomMargin, content, []);
       if (overflow.isNotEmpty) {
-        _pages.add(EpubPage());
-        _pages.last.addLines(overflow);
+        pages.add(EpubPage());
+        pages.last.addLines(overflow);
       }
       newParagraphRequired = false;
     }
   }
 
   void clear() {
-    for (var page in _pages) {
+    for (var page in pages) {
       page.clear();
     }
 
-    _pages.clear();
+    pages.clear();
   }
 }

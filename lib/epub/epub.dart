@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:xml/xml.dart';
@@ -13,7 +14,7 @@ part 'epub.g.dart';
 class Epub extends _$Epub {
   @override
   EpubBook build() {
-    return EpubBook(author: "", title: "", chapters: [], manifest: {});
+    return EpubBook(author: "", title: "", chapters: [], manifest: {}, parsingBook: true);
   }
 
   void parse() async {
@@ -22,11 +23,11 @@ class Epub extends _$Epub {
       XmlDocument opf = GetIt.instance.get<EpubParser>().parse();
 
       List<EpubChapter> chapters = [];
-      chapters.add(await GetIt.instance.get<EpubParser>().parseChapter(0, opf.manifest["one-xhtml"]!.href));
-      //for (var chapter in opf.spine) {
-      //  chapters.add(GetIt.instance.get<EpubParser>().parseChapter(opf.spine.indexOf(chapter), opf.manifest[chapter]!.href));
-      ///}
-      state = state.copyWith(author: opf.author, title: opf.title, manifest: opf.manifest, chapters: chapters);
+      for (var chapter in opf.spine) {
+        debugPrint('parsing: ${opf.manifest[chapter]}');
+        chapters.add(await GetIt.instance.get<EpubParser>().parseChapter(opf.spine.indexOf(chapter), opf.manifest[chapter]!.href));
+      }
+      state = state.copyWith(author: opf.author, title: opf.title, manifest: opf.manifest, chapters: chapters, parsingBook: false);
     } catch (e, s) {
       state = state.copyWith(error: s);
     }

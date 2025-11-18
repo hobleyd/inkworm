@@ -17,36 +17,41 @@ class ImageElement extends LineElement {
     getConstraints();
   }
 
+  double calculateAspectRatio(double desiredWidth, double desiredHeight) {
+    if (image.width > desiredWidth || image.height > desiredHeight) {
+      final widthScale = desiredWidth / image.width;
+      final heightScale = desiredHeight / image.height;
+
+      return widthScale < heightScale ? widthScale : heightScale;
+    }
+
+    return 1;
+  }
+
   @override
   void getConstraints() {
     // Resize the image to fit the screen.
-    if (image.width > canvasWidth || image.height > canvasHeight) {
-      double aspectRatio = image.width / image.height;
 
-      double newWidth = canvasWidth;
-      double newHeight = canvasHeight;
+    double scale = calculateAspectRatio(canvasWidth, canvasHeight);
 
-      if (aspectRatio > canvasWidth / canvasHeight) {
-        newHeight = canvasWidth / aspectRatio;
-      } else {
-        newWidth = canvasHeight * aspectRatio;
-      }
+    width = image.width * scale;
+    height = image.height * scale;
 
-      // TODO: these next two if statements may not retain the aspect ratio
-      if (image.blockStyle.maxWidth != null) {
-        width = newWidth * image.blockStyle.maxWidth!;
-      } else {
-        width = newWidth;
-      }
+    // If we need to scale the resized image, we can do this here. Making the assumption that
+    // a) maxWidth or maxHeight are a percentage and that
+    // b) you'd only specify 1 as otherwise you'll mess with the aspect ratio.
+    if (image.blockStyle.maxWidth != null) {
+      width = width * image.blockStyle.maxWidth!;
+      height = height * image.blockStyle.maxWidth!;
+    } else if (image.blockStyle.maxHeight != null) {
+      width = width * image.blockStyle.maxHeight!;
+      height = height * image.blockStyle.maxHeight!;
+    }
 
-      if (image.blockStyle.maxHeight != null) {
-        height = newHeight * image.blockStyle.maxHeight!;
-      } else {
-        height = newHeight;
-      }
-    } else {
-      width = image.width;
-      height = image.height;
+    // TODO: look at how images with titles are handled and ensure we have enough space for both.
+    if (height == canvasHeight) {
+      width = width * 0.8;
+      height = height * 0.8;
     }
   }
 

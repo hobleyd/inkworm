@@ -11,6 +11,8 @@ class BlockStyle extends Style {
   late CssParser _parser;
   ElementStyle elementStyle;
 
+  String? display;
+
   // Margins
   double? leftMargin;
   double? rightMargin;
@@ -33,6 +35,9 @@ class BlockStyle extends Style {
   String? tableWhitespace;
 
   bool ignoreVerticalMargins = false;
+
+  double get marginBottom => (bottomMargin ?? 0);
+  double get marginTop => (topMargin ?? 0);
 
   BlockStyle({required this.elementStyle}) {
     _parser = GetIt.instance.get<CssParser>();
@@ -71,6 +76,12 @@ class BlockStyle extends Style {
       "justify"            => LineAlignment.justify,
       _                    => alignment,
     };
+  }
+
+  void getDisplay(XmlNode element) {
+    // Display is used to determine whether you want to see an element or not. In an interactive web-page
+    // this can make sense; but in a book? But none-the-less, I've seen it used!
+    display = _parser.getStringAttribute(element, this, "display");
   }
 
   void getLineHeightMultiplier(XmlNode element) {
@@ -154,6 +165,7 @@ class BlockStyle extends Style {
     }
 
     getAlignment(element);
+    getDisplay(element);
     getLineIndent(element);
     getLineHeightMultiplier(element);
     getMargins(element);

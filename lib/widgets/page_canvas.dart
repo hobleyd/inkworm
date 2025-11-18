@@ -3,24 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../epub/epub.dart';
 import '../models/epub_book.dart';
+import '../models/reading_progress.dart';
+import '../providers/progress.dart';
 import '../screens/settings.dart';
 import 'page_renderer.dart';
 
-class PageCanvas extends ConsumerStatefulWidget {
-  final int pageNumber;
-
-  const PageCanvas({super.key, required this.pageNumber});
-
+class PageCanvas extends ConsumerWidget {
   @override
-  ConsumerState<PageCanvas> createState() => _PageCanvas();
-}
-
-class _PageCanvas extends ConsumerState<PageCanvas> {
-  int displayedPage = 0;
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     EpubBook book = ref.watch(epubProvider);
+    ReadingProgress progress =  ref.watch(progressProvider);
 
     return Container(
       padding: const EdgeInsets.only(top: 6, bottom: 6),
@@ -29,25 +21,27 @@ class _PageCanvas extends ConsumerState<PageCanvas> {
           double screenWidth = MediaQuery.of(context).size.width;
           double tapX = details.globalPosition.dx;
 
-          setState(() {
-            if (tapX < screenWidth * 0.33) {
-              if (displayedPage > 0) {
-                setState(() {
-                  displayedPage--;
-                });
-              }
-            } else if (tapX > screenWidth * 0.66){
-              // TODO: deal with end of chapter!
-              setState(() {
-                displayedPage++;
-              });
-            } else {
-              // TODO: display  menu
-              Navigator.push(context, MaterialPageRoute(builder: (context) => Settings())).then((onValue) {});
+          if (tapX < screenWidth * 0.33) {
+            if (progress.pageNumber > 0) {
+              ref.read(progressProvider.notifier).setProgress(progress.chapterNumber, progress.pageNumber-1);
+            } else if (progress.chapterNumber > 0) {
+              final int chapter = progress.chapterNumber - 1;
+              ref.read(progressProvider.notifier).setProgress(chapter, book[chapter].lastPageIndex);
             }
-          });
+          } else if (tapX > screenWidth * 0.66) {
+            if (progress.pageNumber == book[progress.chapterNumber].lastPageIndex) {
+              if (progress.chapterNumber < book.lastChapterIndex) {
+                ref.read(progressProvider.notifier).setProgress(progress.chapterNumber + 1, 0);
+              }
+            } else {
+              ref.read(progressProvider.notifier).setProgress(progress.chapterNumber, progress.pageNumber + 1);
+            }
+          } else {
+            // TODO: display  menu
+            Navigator.push(context, MaterialPageRoute(builder: (context) => Settings())).then((onValue) {});
+          }
         },
-        child: CustomPaint(painter: PageRenderer(ref, displayedPage),),
+        child: CustomPaint(painter: PageRenderer(ref),),
       ),
     );
   }

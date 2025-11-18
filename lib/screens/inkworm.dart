@@ -26,7 +26,7 @@ class Inkworm extends ConsumerWidget {
             Expanded(
               child: book.error != null
                 ? Text(book.error.toString())
-                : PageCanvas(pageNumber: 0,),),
+                : PageCanvas(),),
             ProgressBar(),
           ],
         ),

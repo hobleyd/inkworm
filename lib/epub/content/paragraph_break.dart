@@ -1,3 +1,5 @@
+import 'package:inkworm/epub/styles/block_style.dart';
+
 import '../elements/line_element.dart';
 import 'html_content.dart';
 

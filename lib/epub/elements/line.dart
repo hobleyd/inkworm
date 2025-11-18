@@ -1,5 +1,8 @@
 import 'dart:math';
 
+import 'package:flutter/cupertino.dart';
+import 'package:inkworm/epub/elements/word_element.dart';
+
 import '../constants.dart';
 import '../styles/block_style.dart';
 import 'separators/non_breaking_space_separator.dart';
@@ -15,7 +18,6 @@ class Line {
   double _computedWidthNoSeparators = 0;
   double leftIndent = PageConstants.leftIndent;
   double rightIndent = PageConstants.rightIndent;
-  double _spaceWidth = 0;
   double textIndent = 0;
   int _separatorCount = 0;
 
@@ -34,7 +36,9 @@ class Line {
   void addElement(LineElement e) {
     // We don't add multiple spaces together unless they are non-breaking.
     if (e is SpaceSeparator) {
-      if (elements.isNotEmpty && (elements.last is SpaceSeparator || elements.last is NonBreakingSpaceSeparator)) {
+      if (elements.isEmpty) {
+        return;
+      } else if (elements.last is SpaceSeparator || elements.last is NonBreakingSpaceSeparator) {
         return;
       }
     }
@@ -56,11 +60,11 @@ class Line {
 
   void calculateSeparatorWidth() {
     if (alignment == LineAlignment.justify) {
-      _spaceWidth = (PageConstants.canvasWidth - rightIndent - (leftIndent + textIndent + dropCapsIndent + _computedWidthNoSeparators)) / _separatorCount;
+      double spaceWidth = (PageConstants.canvasWidth - rightIndent - (leftIndent + textIndent + dropCapsIndent + _computedWidthNoSeparators)) / _separatorCount;
 
       for (LineElement e in elements) {
         if (e is Separator) {
-          e.width = _spaceWidth;
+          e.width = spaceWidth;
         }
       }
     } else if (alignment == LineAlignment.centre) {
@@ -105,7 +109,7 @@ class Line {
   }
 
   bool willFitHeight(LineElement e) {
-    return (yPos + height + e.height) <= canvasHeight;
+    return (yPos + e.height) <= canvasHeight;
   }
 
   bool willFitWidth(LineElement e) {

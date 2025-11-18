@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:inkworm/providers/progress.dart';
 
 import '../epub/constants.dart';
 import '../epub/elements/line.dart';
 import '../epub/elements/line_element.dart';
 import '../epub/epub.dart';
+import '../models/reading_progress.dart';
 
 class PageRenderer extends CustomPainter {
   final bool useTextPainter = true;
@@ -12,11 +14,13 @@ class PageRenderer extends CustomPainter {
 
   late WidgetRef _ref;
 
-  PageRenderer(WidgetRef ref, int pageNumber) {
+  PageRenderer(WidgetRef ref) {
     _ref = ref;
 
+    ReadingProgress progress = ref.watch(progressProvider);
+
     if (ref.read(epubProvider).chapters.isNotEmpty) {
-      lines = ref.read(epubProvider).chapters[0][pageNumber]!.lines;
+      lines = ref.read(epubProvider).chapters[progress.chapterNumber][progress.pageNumber]!.lines;
     }
   }
 
