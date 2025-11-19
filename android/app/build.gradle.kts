@@ -1,3 +1,6 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
@@ -43,6 +46,14 @@ android {
             storePassword = keystoreProperties["storePassword"] as String
             keyPassword = keystoreProperties["keyPassword"] as String
             keyAlias = keystoreProperties["keyAlias"] as String
+        }
+    }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            signingConfig = signingConfigs["release"]
         }
     }
 }
