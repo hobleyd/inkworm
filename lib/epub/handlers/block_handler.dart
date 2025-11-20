@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:injectable/injectable.dart';
+import 'package:inkworm/epub/content/margin_content.dart';
 import 'package:inkworm/epub/content/paragraph_break.dart';
 import 'package:xml/xml.dart';
 
@@ -43,6 +45,11 @@ class BlockHandler extends HtmlHandler {
       return [];
     }
 
+    // Add a Paragraph Break before the content if we need a top-margin!
+    if (blockStyle.marginTop > 0) {
+      elements.add(MarginContent(blockStyle: blockStyle.copyWith(topMargin: blockStyle.topMargin, bottomMargin: 0), elementStyle: elementStyle));
+    }
+
     //debugPrint('BLOCK_HANDLER: ${element.name}: ${element.attributes}: $blockStyle, $elementStyle');
     for (var child in node.children) {
       List<HtmlContent>? childElements = await child.handler?.processElement(node: child, parentBlockStyle: blockStyle, parentElementStyle: elementStyle);
@@ -51,7 +58,12 @@ class BlockHandler extends HtmlHandler {
       }
     }
 
-    elements.add(ParagraphBreak(blockStyle: blockStyle, elementStyle: elementStyle));
+    if (blockStyle.marginBottom > 0) {
+      elements.add(MarginContent(blockStyle: blockStyle.copyWith(bottomMargin: blockStyle.bottomMargin, topMargin: 0), elementStyle: elementStyle));
+    }
+
+    // We always need a Paragraph Break after the content.
+    elements.add(ParagraphBreak(blockStyle: blockStyle.copyWith(topMargin: 0, bottomMargin: 0), elementStyle: elementStyle));
 
     return elements;
   }

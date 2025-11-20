@@ -50,8 +50,8 @@ class ImageElement extends LineElement {
 
     // TODO: look at how images with titles are handled and ensure we have enough space for both.
     if (height == canvasHeight) {
-      width = width * 0.8;
-      height = height * 0.8;
+      width = width * 0.9;
+      height = height * 0.9;
     }
   }
 

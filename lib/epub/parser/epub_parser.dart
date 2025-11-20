@@ -1,7 +1,7 @@
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
+import 'package:flutter/foundation.dart';
 import 'package:injectable/injectable.dart';
 import 'package:xml/xml.dart';
 
@@ -67,6 +67,9 @@ class EpubParser {
 
     final XmlDocument doc = XmlDocument.parse(bookArchive.getContentAsString(href));
 
+    if (index == 2) {
+      debugPrint('here');
+    }
     for (final XmlNode node in doc.children) {
       List<HtmlContent>? elements = await node.handler?.processElement(node: node,);
       if (elements != null) {

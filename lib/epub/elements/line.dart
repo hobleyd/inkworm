@@ -1,8 +1,5 @@
 import 'dart:math';
 
-import 'package:flutter/cupertino.dart';
-import 'package:inkworm/epub/elements/word_element.dart';
-
 import '../constants.dart';
 import '../styles/block_style.dart';
 import 'separators/non_breaking_space_separator.dart';

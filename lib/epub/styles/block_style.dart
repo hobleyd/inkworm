@@ -43,11 +43,11 @@ class BlockStyle extends Style {
     _parser = GetIt.instance.get<CssParser>();
   }
 
-  BlockStyle copyWith(BlockStyle parent) {
+  BlockStyle copyFrom(BlockStyle parent) {
     leftMargin   = parent.leftMargin;
-    rightMargin  = parent.leftMargin;
-    topMargin    = parent.leftMargin;
-    bottomMargin = parent.leftMargin;
+    rightMargin  = parent.rightMargin;
+    topMargin    = parent.topMargin;
+    bottomMargin = parent.bottomMargin;
 
     width = parent.width;
     leftIndent = parent.leftIndent;
@@ -67,15 +67,58 @@ class BlockStyle extends Style {
     return this;
   }
 
+  BlockStyle copyWith({double? topMargin, double? bottomMargin}) {
+    BlockStyle style = BlockStyle(elementStyle: elementStyle);
+
+    style.leftMargin   = leftMargin;
+    style.rightMargin  = rightMargin;
+    style.topMargin    = topMargin ?? this.topMargin;
+    style.bottomMargin = bottomMargin ?? this.bottomMargin;
+
+    style.width = width;
+    style.leftIndent = leftIndent;
+    style.lineHeightMultiplier = lineHeightMultiplier;
+    style.alignment = alignment;
+
+    style.maxHeight = maxHeight;
+    style.maxWidth = maxWidth;
+
+    style.tableColumns.addAll(tableColumns);
+    style.tableLayout = tableLayout;
+    style.tableOverflow = tableOverflow;
+    style.tableWhitespace = tableWhitespace;
+
+    style.ignoreVerticalMargins = ignoreVerticalMargins;
+
+    return style;
+  }
 
   void getAlignment(XmlNode element) {
-    alignment = switch(_parser.getStringAttribute(element, this, "text-align")) {
-      "center" || "centre" => LineAlignment.centre,
-      "left"               => LineAlignment.left,
-      "right"              => LineAlignment.right,
-      "justify"            => LineAlignment.justify,
-      _                    => alignment,
-    };
+    String? alignmentAttribute = _parser.getStringAttribute(element, this, "text-align");
+    if (alignmentAttribute == null) {
+      // This is another way of centering in CSS.
+      String? leftMarginString   = _parser.getStringAttribute(element, this, "margin-left");
+      String? rightMarginString  = _parser.getStringAttribute(element, this, "margin-right");
+
+      if (leftMarginString != null && rightMarginString != null) {
+        if (leftMarginString == "auto" && rightMarginString == "auto") {
+          alignment = LineAlignment.centre;
+        }
+      }
+    } else {
+      alignment = switch(alignmentAttribute) {
+        "center" || "centre" => LineAlignment.centre,
+        "left" => LineAlignment.left,
+        "right" => LineAlignment.right,
+        "justify" => LineAlignment.justify,
+        _ => alignment,
+      };
+    }
+
+    // TODO: this shouldn't be necessary. Look into this at some point.
+    if (alignment == LineAlignment.centre) {
+      leftIndent = 0;
+    }
   }
 
   void getDisplay(XmlNode element) {
@@ -154,19 +197,33 @@ class BlockStyle extends Style {
     width           = _parser.getPercentAttribute(element, this, "width") ?? width;
   }
 
+  BlockStyle getBottomMarginStyle() {
+    BlockStyle style = BlockStyle(elementStyle: elementStyle);
+    style.bottomMargin = bottomMargin;
+
+    return style;
+  }
+
+  BlockStyle getTopMarginStyle() {
+    BlockStyle style = BlockStyle(elementStyle: elementStyle);
+    style.topMargin = topMargin;
+
+    return style;
+  }
+
   @override
   Style parseElement({required XmlNode element, Style? parentStyle}) {
-    // TODO: Hideous hack. Fix, please. Should ElementStyle and BlockStyle inherit of the same base object?
+    // TODO: Hideous hack. Fix, please. Should ElementStyle and BlockStyle inherit off the same base object?
     selectors = elementStyle.selectors;
     declarations = elementStyle.declarations;
 
     if (parentStyle != null) {
-      copyWith(parentStyle as BlockStyle);
+      copyFrom(parentStyle as BlockStyle);
     }
 
-    getAlignment(element);
-    getDisplay(element);
     getLineIndent(element);
+    getAlignment(element); // Ensure this happens after getting the LineIndent.
+    getDisplay(element);
     getLineHeightMultiplier(element);
     getMargins(element);
     getMax(element);

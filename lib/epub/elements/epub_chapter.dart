@@ -1,4 +1,6 @@
+import 'package:inkworm/epub/content/margin_content.dart';
 import 'package:inkworm/epub/content/paragraph_break.dart';
+import 'package:inkworm/epub/styles/block_style.dart';
 
 import '../content/html_content.dart';
 import 'epub_page.dart';
@@ -10,7 +12,6 @@ import 'line.dart';
 class EpubChapter {
   final int chapterNumber;
   bool newParagraphRequired = false;
-  double lastParagraphBottomMargin = 0;
 
   final List<EpubPage> pages = [];
 
@@ -25,16 +26,19 @@ class EpubChapter {
       pages.add(EpubPage());
     }
 
-    // If I get a ParagraphBreak, I need to move the next line down by the bottom-margin of the
-    // ParagraphBreak BlockStyle and the top margin of the new BlockStyle.
     if (content is ParagraphBreak) {
       if (pages.last.getActiveLines().isNotEmpty) {
-        pages.last.getActiveLines().last.completeParagraph();
+        pages.last.currentLine?.completeParagraph();
+        pages.last.currentLine?.completeLine();
       }
       newParagraphRequired = true;
-      lastParagraphBottomMargin = content.blockStyle.marginBottom;
+    } if (content is MarginContent) {
+      pages.last.addLine(paragraph: false, margin: content.margin, blockStyle: content.blockStyle);
     } else {
-      List<Line> overflow = pages.last.addElement(newParagraphRequired, lastParagraphBottomMargin, content, []);
+      if (pages.last.isCurrentLineEmpty && content.blockStyle.alignment != null) {
+        pages.last.currentLine?.alignment = content.blockStyle.alignment!;
+      }
+      List<Line> overflow = pages.last.addElement(newParagraphRequired, content, []);
       if (overflow.isNotEmpty) {
         pages.add(EpubPage());
         pages.last.addLines(overflow);

@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:inkworm/epub/constants.dart';
 
 import '../epub/epub.dart';
 import '../models/epub_book.dart';
 import '../widgets/inkworm_update.dart';
-import '../widgets/page_canvas.dart';
-import '../widgets/progress_bar.dart';
 
 class Settings extends ConsumerWidget {
   const Settings({super.key,});

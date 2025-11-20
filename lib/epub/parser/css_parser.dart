@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get_it/get_it.dart';
 import 'package:injectable/injectable.dart';
+import 'package:ordered_set/ordered_set.dart';
 import 'package:xml/xml.dart';
 
 import '../constants.dart';
@@ -131,7 +132,7 @@ class CssParser {
    *   class
    *   h2
    */
-  CssDeclarations matchClassSelectors(XmlElement element, Set<String> selectors) {
+  CssDeclarations matchClassSelectors(XmlElement element, OrderedSet<String> selectors) {
     CssDeclarations declarations = {};
 
     // CSS styles are additive, so we need to check everything. But the hierarchy is important in the case we have
@@ -139,7 +140,7 @@ class CssParser {
     declarations = declarations.combine(css[element.localName]);
 
     // Check the basic CSS hierarchy
-    for (String selector in selectors) {
+    for (String selector in selectors.reversed()) {
       declarations = declarations.combine(css[selector]);
       declarations = declarations.combine(css['.$selector']);
       declarations = declarations.combine(css['${element.localName}.$selector']);
@@ -148,7 +149,7 @@ class CssParser {
     // Apparently you can specify multiple subsets of the class elements and expect this to match
     // <p class="a,b,c,d,e"> can match css selections ".a.b.e", ".a.c.d", ".a.e.b.d" etc. Go figure.
     for (String cssKey in css.keys) {
-      if (isMatchedSingleLevelSelectors(cssKey, selectors)) {
+      if (isMatchedSingleLevelSelectors(cssKey, selectors.toSet())) {
           declarations = declarations.combine(css[cssKey]);
       }
     }

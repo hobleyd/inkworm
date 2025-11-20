@@ -2,7 +2,7 @@ name: inkworm
 description: "An paginated ePub reader"
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
-version: 0.0.2
+version: 0.0.3
 
 environment:
   sdk: ^3.9.2
@@ -19,10 +19,13 @@ dependencies:
   flutter_riverpod: ^3.0.1
   freezed: 3.2.3
   freezed_annotation: ^3.1.0
+  google_fonts: ^6.3.2
   html: ^0.15.6
   injectable: ^2.5.2
   logger: ^2.6.1
   mockito: ^5.5.0
+  ordered_set: ^8.0.0
+  path_provider: ^2.1.5
   riverpod_annotation: ^3.0.3
   shared_preferences: ^2.5.3
   version: ^3.0.2
@@ -39,7 +42,6 @@ dev_dependencies:
   flutter_launcher_icons: ^0.14.4
   flutter_lints: ^6.0.0
   injectable_generator: ^2.8.1
-  google_fonts: ^6.3.2
   riverpod_lint: ^3.0.3
   riverpod_generator: ^3.0.3
 

@@ -1,36 +1,41 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:inkworm/providers/progress.dart';
 
 import '../epub/constants.dart';
 import '../epub/elements/line.dart';
 import '../epub/elements/line_element.dart';
 import '../epub/epub.dart';
+import '../models/epub_book.dart';
 import '../models/reading_progress.dart';
+import '../providers/progress.dart';
 
 class PageRenderer extends CustomPainter {
+  late WidgetRef _ref;
   final bool useTextPainter = true;
   List<Line> lines = [];
-
-  late WidgetRef _ref;
 
   PageRenderer(WidgetRef ref) {
     _ref = ref;
 
-    ReadingProgress progress = ref.watch(progressProvider);
+    EpubBook book = ref.watch(epubProvider);
+    var progressAsync = ref.watch(progressProvider(book.uri));
 
-    if (ref.read(epubProvider).chapters.isNotEmpty) {
-      lines = ref.read(epubProvider).chapters[progress.chapterNumber][progress.pageNumber]!.lines;
+    if (progressAsync.hasValue) {
+      final ReadingProgress progress = progressAsync.value!;
+
+      if (ref.read(epubProvider).chapters.isNotEmpty) {
+        lines = ref.read(epubProvider).chapters[progress.chapterNumber][progress.pageNumber]!.lines;
+      }
     }
   }
 
   @override
   void paint(Canvas canvas, Size size) {
     _ref.read(pageConstantsProvider.notifier).setConstraints(width: size.width, height: size.height);
-    // DEBUGGING: canvas.drawRect(Offset(0, 0) & size, Paint()..color = Colors.red[100]!);
     canvas.clipRect(Offset(0, 0) & size);
 
     for (Line line in lines) {
+      debugPrint('$line');
       double xPos = line.leftIndent + line.textIndent + line.dropCapsIndent;
       for (LineElement el in line.elements) {
         el.paint(canvas, line.height, xPos, line.yPos);
@@ -41,6 +46,9 @@ class PageRenderer extends CustomPainter {
 
   @override
   bool shouldRepaint(CustomPainter oldDelegate) {
-    return true; // Just for example, in real environment should be implemented!
+    // Because a Book is immutable, there is no need for any complex repainting logic
+    // as the only time a repaint will be required is if the page changes and this will
+    // trigger a repaint through the Riverpod state management.
+    return true;
   }
 }

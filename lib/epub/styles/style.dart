@@ -1,3 +1,4 @@
+import 'package:ordered_set/ordered_set.dart';
 import 'package:xml/xml.dart';
 
 import '../parser/css_parser.dart';
@@ -8,7 +9,7 @@ import '../parser/extensions.dart';
  * and ElementStyle which relates entirely to text rendering.
  */
 abstract class Style {
-  Set<String> selectors = {};
+  OrderedSet<String> selectors = OrderedSet.simple<String>();
   CssDeclarations declarations = {};
 
   Style parseElement({required XmlNode element, Style? parentStyle});

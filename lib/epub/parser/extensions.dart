@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
+import 'package:ordered_set/ordered_set.dart';
 import 'package:xml/xml.dart';
 
 import '../../models/manifest_item.dart';
@@ -58,8 +59,8 @@ extension HandlerNodeExtension on XmlNode {
 }
 
 extension SelectorSetExtension on XmlElement {
-  Set<String> get selectorSet {
-    Set<String> selectors = {};
+  OrderedSet<String> get selectorSet {
+    OrderedSet<String> selectors = OrderedSet.simple<String>();
 
     final String? elementClasses = getAttribute("class");
     if (elementClasses != null) {

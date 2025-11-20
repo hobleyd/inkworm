@@ -9,40 +9,51 @@ import '../screens/settings.dart';
 import 'page_renderer.dart';
 
 class PageCanvas extends ConsumerWidget {
+  const PageCanvas({super.key});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     EpubBook book = ref.watch(epubProvider);
-    ReadingProgress progress =  ref.watch(progressProvider);
+    var progressAsync =  ref.watch(progressProvider(book.uri));
 
-    return Container(
-      padding: const EdgeInsets.only(top: 6, bottom: 6),
-      child: GestureDetector(
-        onTapUp: (TapUpDetails details) {
-          double screenWidth = MediaQuery.of(context).size.width;
-          double tapX = details.globalPosition.dx;
-
-          if (tapX < screenWidth * 0.33) {
-            if (progress.pageNumber > 0) {
-              ref.read(progressProvider.notifier).setProgress(progress.chapterNumber, progress.pageNumber-1);
-            } else if (progress.chapterNumber > 0) {
-              final int chapter = progress.chapterNumber - 1;
-              ref.read(progressProvider.notifier).setProgress(chapter, book[chapter].lastPageIndex);
-            }
-          } else if (tapX > screenWidth * 0.66) {
-            if (progress.pageNumber == book[progress.chapterNumber].lastPageIndex) {
-              if (progress.chapterNumber < book.lastChapterIndex) {
-                ref.read(progressProvider.notifier).setProgress(progress.chapterNumber + 1, 0);
-              }
-            } else {
-              ref.read(progressProvider.notifier).setProgress(progress.chapterNumber, progress.pageNumber + 1);
-            }
-          } else {
-            // TODO: display  menu
-            Navigator.push(context, MaterialPageRoute(builder: (context) => Settings())).then((onValue) {});
-          }
+    return progressAsync.when(
+        error: (error, stackTrace) {
+          return Text('');
         },
-        child: CustomPaint(painter: PageRenderer(ref),),
-      ),
-    );
+        loading: () {
+          return const Center(child: CircularProgressIndicator());
+        },
+        data: (ReadingProgress progress) {
+          return Container(
+            padding: const EdgeInsets.only(top: 6, bottom: 6),
+            child: GestureDetector(
+              onTapUp: (TapUpDetails details) {
+                double screenWidth = MediaQuery.of(context).size.width;
+                double tapX = details.globalPosition.dx;
+
+                if (tapX < screenWidth * 0.33) {
+                  if (progress.pageNumber > 0) {
+                    ref.read(progressProvider(book.uri).notifier).setProgress(book.uri, progress.chapterNumber, progress.pageNumber - 1);
+                  } else if (progress.chapterNumber > 0) {
+                    final int chapter = progress.chapterNumber - 1;
+                    ref.read(progressProvider(book.uri).notifier).setProgress(book.uri, chapter, book[chapter].lastPageIndex);
+                  }
+                } else if (tapX > screenWidth * 0.66) {
+                  if (progress.pageNumber == book[progress.chapterNumber].lastPageIndex) {
+                    if (progress.chapterNumber < book.lastChapterIndex) {
+                      ref.read(progressProvider(book.uri).notifier).setProgress(book.uri, progress.chapterNumber + 1, 0);
+                    }
+                  } else {
+                    ref.read(progressProvider(book.uri).notifier).setProgress(book.uri, progress.chapterNumber, progress.pageNumber + 1);
+                  }
+                } else {
+                  // TODO: display  menu
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => Settings())).then((onValue) {});
+                }
+              },
+              child: CustomPaint(painter: PageRenderer(ref),),
+            ),
+          );
+        });
   }
 }
