@@ -13,7 +13,7 @@ class PageCanvas extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    EpubBook book = ref.watch(epubProvider);
+    EpubBook book = ref.read(epubProvider);
     var progressAsync =  ref.watch(progressProvider(book.uri));
 
     return progressAsync.when(

@@ -1,6 +1,7 @@
-import 'package:inkworm/models/reading_progress.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../models/reading_progress.dart';
 
 part 'progress.g.dart';
 

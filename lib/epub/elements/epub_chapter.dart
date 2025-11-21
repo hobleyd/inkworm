@@ -1,9 +1,6 @@
-import 'package:inkworm/epub/content/margin_content.dart';
-import 'package:inkworm/epub/content/paragraph_break.dart';
-import 'package:inkworm/epub/styles/block_style.dart';
-
 import '../content/html_content.dart';
-import 'epub_page.dart';
+import '../content/margin_content.dart';
+import '../content/paragraph_break.dart';import 'epub_page.dart';
 import 'line.dart';
 
 /*

@@ -17,6 +17,8 @@ const platform = MethodChannel('au.com.sharpblue.inkworm/epub');
 
 @Riverpod(keepAlive: true)
 class Epub extends _$Epub {
+  late List<EpubChapter> _chapters;
+
   @override
   EpubBook build() {
     if (Platform.isAndroid) {
@@ -29,21 +31,53 @@ class Epub extends _$Epub {
     return EpubBook(uri: "", author: "", title: "", chapters: [], manifest: {}, parsingBook: true);
   }
 
-  void parse() async {
+  /*
+   * When parsing the book, parse the current chapter (the first on initial reading) and then one on either side to allow
+   * the reader to continue reading while we complete the book parsing.
+   */
+
+  void parse(int fromChapterNumber) async {
     try {
       XmlDocument opf = GetIt.instance.get<EpubParser>().parse();
 
-      List<EpubChapter> chapters = [];
-      for (var chapter in opf.spine) {
-        debugPrint('parsing: ${opf.manifest[chapter]}');
-        chapters.add(await GetIt.instance.get<EpubParser>().parseChapter(opf.spine.indexOf(chapter), opf.manifest[chapter]!.href));
-      }
-      state = state.copyWith(author: opf.author, title: opf.title, manifest: opf.manifest, chapters: chapters, parsingBook: false);
+      _chapters = List.generate(opf.spine.length, (int index) => EpubChapter(chapterNumber: index), growable: false);
+      _chapters[fromChapterNumber] = await parseChapter(opf, fromChapterNumber);
+
+      // Allow the page to be rendered.
+      state = state.copyWith(author: opf.author, title: opf.title, manifest: opf.manifest, chapters: _chapters);
+
+      parseRemainingChapters(opf, fromChapterNumber);
     } catch (e, s) {
       state = state.copyWith(errorDescription: e.toString(), error: s);
     }
   }
 
+  Future <EpubChapter> parseChapter(XmlDocument opf, int chapterIndex) async {
+    return await GetIt.instance.get<EpubParser>().parseChapter(chapterIndex, opf.manifest[opf.spine[chapterIndex]]!.href);
+  }
+
+  Future<void> parseRemainingChapters(XmlDocument opf, int chapterIndex) async {
+    Set<int> completedChapters = { chapterIndex };
+    if (chapterIndex < _chapters.length) {
+      _chapters[chapterIndex+1] = await parseChapter(opf, chapterIndex+1);
+      state = state.copyWith(chapters: _chapters);
+    }
+
+    if (chapterIndex > 0) {
+      await parseChapter(opf, chapterIndex-1);
+      _chapters[chapterIndex-1] = await parseChapter(opf, chapterIndex-1);
+      state = state.copyWith(chapters: _chapters);
+    }
+
+    for (int chapterIndex = 0; chapterIndex < _chapters.length; chapterIndex++) {
+      if (completedChapters.contains(chapterIndex)) {
+        continue;
+      }
+      _chapters[chapterIndex] = await parseChapter(opf, chapterIndex);
+      state = state.copyWith(chapters: _chapters);
+    }
+    state = state.copyWith(parsingBook: false);
+  }
 
   Future<void> _handleAndroidEpubIntent() async {
     try {

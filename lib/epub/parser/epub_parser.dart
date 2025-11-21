@@ -67,7 +67,7 @@ class EpubParser {
 
     final XmlDocument doc = XmlDocument.parse(bookArchive.getContentAsString(href));
 
-    if (index == 2) {
+    if (index == 4) {
       debugPrint('here');
     }
     for (final XmlNode node in doc.children) {

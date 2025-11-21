@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:injectable/injectable.dart';
 import 'package:xml/xml.dart';
 
@@ -25,6 +26,8 @@ class LinkHandler extends HtmlHandler {
 
     BlockStyle blockStyle = BlockStyle(elementStyle: elementStyle);
     blockStyle.parseElement(element: element, parentStyle: parentBlockStyle);
+
+    //debugPrint('LINK_HANDLER: ${element.name}: ${element.attributes}: $blockStyle, $elementStyle');
 
     if (node.children.isNotEmpty) {
       List<HtmlContent>? childElements = await node.firstChild!.handler?.processElement(node: node.firstChild!, parentBlockStyle: blockStyle, parentElementStyle: elementStyle);
