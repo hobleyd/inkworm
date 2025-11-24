@@ -1,8 +1,8 @@
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:get_it/get_it.dart';
+import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:xml/xml.dart';
 
@@ -21,13 +21,16 @@ class Epub extends _$Epub {
 
   @override
   EpubBook build() {
+    /*
     if (Platform.isAndroid) {
       _handleAndroidEpubIntent();
     } else if (Platform.isMacOS) {
-      _handleMacOSePubIntent();
+      GetIt.instance.get<EpubParser>().openBook(Platform.environment['EBOOK']!);
     } else {
       GetIt.instance.get<EpubParser>().openBook(Platform.environment['EBOOK']!);
-    }
+    }*/
+    //GetIt.instance.get<EpubParser>().openBook(Platform.environment['EBOOK']!);
+
     return EpubBook(uri: "", author: "", title: "", chapters: [], manifest: {}, parsingBook: true);
   }
 
@@ -88,20 +91,6 @@ class Epub extends _$Epub {
         GetIt.instance.get<EpubParser>().openBook(path);
       } else {
         state = state.copyWith(errorDescription: 'Error receiving file intent: ${result['uri']} / $path');
-        GetIt.instance.get<EpubParser>().openBook(Platform.environment['EBOOK']!);
-      }
-    } catch (e, s) {
-      state = state.copyWith(errorDescription: e.toString(), error: s);
-    }
-  }
-
-  Future<void> _handleMacOSePubIntent() async {
-    try {
-      final String? path = await platform.invokeMethod('getOpenedFile');
-      if (path != null) {
-        GetIt.instance.get<EpubParser>().openBook(path);
-      }else {
-        state = state.copyWith(errorDescription: 'Error receiving file intent: $path');
         GetIt.instance.get<EpubParser>().openBook(Platform.environment['EBOOK']!);
       }
     } catch (e, s) {
