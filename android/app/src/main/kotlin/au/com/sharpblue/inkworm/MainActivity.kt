@@ -1,4 +1,4 @@
-package com.example.untitled
+package au.com.sharpblue.inkworm;
 
 import android.content.Intent
 import android.net.Uri
