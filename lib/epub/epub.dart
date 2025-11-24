@@ -21,16 +21,6 @@ class Epub extends _$Epub {
 
   @override
   EpubBook build() {
-    /*
-    if (Platform.isAndroid) {
-      _handleAndroidEpubIntent();
-    } else if (Platform.isMacOS) {
-      GetIt.instance.get<EpubParser>().openBook(Platform.environment['EBOOK']!);
-    } else {
-      GetIt.instance.get<EpubParser>().openBook(Platform.environment['EBOOK']!);
-    }*/
-    //GetIt.instance.get<EpubParser>().openBook(Platform.environment['EBOOK']!);
-
     return EpubBook(uri: "", author: "", title: "", chapters: [], manifest: {}, parsingBook: true);
   }
 
@@ -82,19 +72,7 @@ class Epub extends _$Epub {
     state = state.copyWith(parsingBook: false);
   }
 
-  Future<void> _handleAndroidEpubIntent() async {
-    try {
-      final Map<dynamic, dynamic> result =
-      await platform.invokeMethod('getEpubFile');
-      final path = result['path'];
-      if (path != null) {
-        GetIt.instance.get<EpubParser>().openBook(path);
-      } else {
-        state = state.copyWith(errorDescription: 'Error receiving file intent: ${result['uri']} / $path');
-        GetIt.instance.get<EpubParser>().openBook(Platform.environment['EBOOK']!);
-      }
-    } catch (e, s) {
-      state = state.copyWith(errorDescription: e.toString(), error: s);
-    }
+  void setError(String description, StackTrace stackTrace) {
+    state = state.copyWith(errorDescription: description, error: stackTrace);
   }
 }

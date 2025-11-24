@@ -22,7 +22,6 @@ class Inkworm extends ConsumerStatefulWidget {
 
 class _Inkworm extends ConsumerState<Inkworm> {
   late StreamSubscription _intentSub;
-  final List<SharedMediaFile> _sharedFiles = [];
 
   @override
   void initState() {
@@ -31,33 +30,24 @@ class _Inkworm extends ConsumerState<Inkworm> {
     if (Platform.isAndroid) {
       // Listen to media sharing coming from outside the app while the app is in the memory.
       _intentSub = ReceiveSharingIntent.instance.getMediaStream().listen((value) {
-        setState(() {
-          _sharedFiles.clear();
-          _sharedFiles.addAll(value);
-
-          if (_sharedFiles.isNotEmpty) {
-            GetIt.instance.get<EpubParser>().openBook(_sharedFiles.first.path);
+          if (value.isNotEmpty) {
+              GetIt.instance.get<EpubParser>().openBook(value.first.path);
           }
-          print(_sharedFiles.map((f) => f.toMap()));
-        });
-      }, onError: (err) {
-        print("getIntentDataStream error: $err");
-      });
+        }, onError: (e, s) {
+          ref.read(epubProvider.notifier).setError(e.toString(), s);
+        },
+      );
 
       // Get the media sharing coming from outside the app while the app is closed.
       ReceiveSharingIntent.instance.getInitialMedia().then((value) {
-        setState(() {
-          _sharedFiles.clear();
-          _sharedFiles.addAll(value);
+        if (value.isNotEmpty) {
+          GetIt.instance.get<EpubParser>().openBook(value.first.path);
+        }
 
-          if (_sharedFiles.isNotEmpty) {
-            GetIt.instance.get<EpubParser>().openBook(_sharedFiles.first.path);
-          }
-
-          // Tell the library that we are done processing the intent.
-          ReceiveSharingIntent.instance.reset();
-        });
+        ReceiveSharingIntent.instance.reset();
       });
+    } else {
+      GetIt.instance.get<EpubParser>().openBook(Platform.environment['EBOOK']!);
     }
   }
 
@@ -84,8 +74,11 @@ class _Inkworm extends ConsumerState<Inkworm> {
           children: [
             Expanded(
               child: book.error != null || book.errorDescription != null
-                ? Text('${book.errorDescription}\n${book.error}')
-                : PageCanvas(),),
+                  ? Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+                      child: Text('${book.errorDescription}\n${book.error}', style: Theme.of(context).textTheme.bodyMedium),)
+                  : PageCanvas(),
+            ),
             ProgressBar(),
           ],
         ),
