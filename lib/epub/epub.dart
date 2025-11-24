@@ -1,8 +1,5 @@
-import 'dart:io';
 
-import 'package:flutter/services.dart';
 import 'package:get_it/get_it.dart';
-import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:xml/xml.dart';
 
@@ -12,8 +9,6 @@ import 'parser/epub_parser.dart';
 import 'parser/extensions.dart';
 
 part 'epub.g.dart';
-
-const platform = MethodChannel('au.com.sharpblue.inkworm/epub');
 
 @Riverpod(keepAlive: true)
 class Epub extends _$Epub {
