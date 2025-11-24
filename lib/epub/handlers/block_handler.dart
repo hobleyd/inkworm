@@ -52,9 +52,11 @@ class BlockHandler extends HtmlHandler {
 
     //debugPrint('BLOCK_HANDLER: ${element.name}: ${element.attributes}: $blockStyle, $elementStyle');
     for (var child in node.children) {
-      List<HtmlContent>? childElements = await child.handler?.processElement(node: child, parentBlockStyle: blockStyle, parentElementStyle: elementStyle);
-      if (childElements != null) {
-        elements.addAll(childElements);
+      if (child.shouldProcess) {
+        List<HtmlContent>? childElements = await child.handler?.processElement(node: child, parentBlockStyle: blockStyle, parentElementStyle: elementStyle);
+        if (childElements?.isNotEmpty ?? false) {
+          elements.addAll(childElements!);
+        }
       }
     }
 
@@ -62,8 +64,10 @@ class BlockHandler extends HtmlHandler {
       elements.add(MarginContent(blockStyle: blockStyle.copyWith(bottomMargin: blockStyle.bottomMargin, topMargin: 0), elementStyle: elementStyle));
     }
 
-    // We always need a Paragraph Break after the content.
-    elements.add(ParagraphBreak(blockStyle: blockStyle.copyWith(topMargin: 0, bottomMargin: 0), elementStyle: elementStyle));
+    // We always need a Paragraph Break after the content, as long as we are not in the HEAD of the page.
+    if (element.localName != 'head' && element.localName != 'html') {
+      elements.add(ParagraphBreak(blockStyle: blockStyle.copyWith(topMargin: 0, bottomMargin: 0), elementStyle: elementStyle));
+    }
 
     return elements;
   }

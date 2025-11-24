@@ -48,7 +48,7 @@ extension FileAuthorExtension on XmlDocument {
   }
 }
 
-extension HandlerNodeExtension on XmlNode {
+extension NodeExtension on XmlNode {
   HtmlHandler? get handler {
     return switch (this) {
       XmlElement el => HtmlHandler.getHandler(el.name.local.toLowerCase()),
@@ -56,6 +56,9 @@ extension HandlerNodeExtension on XmlNode {
                   _ => null,
     };
   }
+
+  // We get a lot of blank lines in HTML which get processed as Nodes. We want to ignore these.
+  bool get shouldProcess => this is! XmlText || (value?.trim().isNotEmpty ?? false);
 }
 
 extension SelectorSetExtension on XmlElement {
