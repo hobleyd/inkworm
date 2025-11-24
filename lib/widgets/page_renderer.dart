@@ -30,9 +30,7 @@ class PageRenderer extends CustomPainter {
       progress = progressAsync.value!;
 
       List<EpubChapter> chapters = ref.read(epubProvider).chapters;
-      if (chapters.isNotEmpty && chapters.length > progress.chapterNumber && chapters[progress.chapterNumber].lastPageIndex > progress.pageNumber) {
-        lines = chapters[progress.chapterNumber][progress.pageNumber]!.lines;
-      }
+      lines = chapters.elementAtOrNull(progress.chapterNumber)?[progress.pageNumber]?.lines ?? [];
     }
   }
 
