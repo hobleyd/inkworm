@@ -69,8 +69,10 @@ class CssParser {
 
   String? getCSSAttributeValue(XmlNode element, Style style, String attribute) {
     // Now look for style inheritance
-    if ((style.declarations.isEmpty || style.declarations[attribute] == 'inherit') && element.parentElement != null) {
-      return getCSSAttributeValue(element.parentElement!, style, attribute);
+    if (!nonInheritableProperties.contains(attribute)) {
+      if ((style.declarations.isEmpty || style.declarations[attribute] == 'inherit') && element.parentElement != null) {
+        return getCSSAttributeValue(element.parentElement!, style, attribute);
+      }
     }
 
     return style.declarations[attribute];
@@ -314,5 +316,4 @@ class CssParser {
     // Give up and return the default.
     return preferredSize;
   }
-
 }
