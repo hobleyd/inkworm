@@ -24,8 +24,7 @@ android {
     }
 
     kotlinOptions {
-        //jvmTarget = JavaVersion.VERSION_17.toString()
-        jvmToolchain(18)
+        jvmTarget = JavaVersion.VERSION_18.toString()
     }
 
     defaultConfig {
