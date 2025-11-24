@@ -14,7 +14,7 @@ class EpubChapter {
 
   EpubChapter({required this.chapterNumber,});
 
-  EpubPage? operator [](int index) => pages[index];
+  EpubPage? operator [](int index) => pages.elementAtOrNull(index);
 
   int get lastPageIndex => pages.length - 1;
 
