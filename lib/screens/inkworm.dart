@@ -4,9 +4,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get_it/get_it.dart';
-import 'package:inkworm/epub/constants.dart';
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 
+import '../epub/constants.dart';
 import '../epub/epub.dart';
 import '../epub/parser/epub_parser.dart';
 import '../models/epub_book.dart';
@@ -28,7 +28,7 @@ class _Inkworm extends ConsumerState<Inkworm> {
     super.initState();
 
     if (Platform.isAndroid) {
-      // Listen to media sharing coming from outside the app while the app is in the memory.
+      // Listen for Intents coming from outside the app while the app is in the memory.
       _intentSub = ReceiveSharingIntent.instance.getMediaStream().listen((value) {
           if (value.isNotEmpty) {
               GetIt.instance.get<EpubParser>().openBook(value.first.path);
@@ -38,7 +38,7 @@ class _Inkworm extends ConsumerState<Inkworm> {
         },
       );
 
-      // Get the media sharing coming from outside the app while the app is closed.
+      // Get Intents coming from outside the app while the app is closed.
       ReceiveSharingIntent.instance.getInitialMedia().then((value) {
         if (value.isNotEmpty) {
           GetIt.instance.get<EpubParser>().openBook(value.first.path);
@@ -47,6 +47,7 @@ class _Inkworm extends ConsumerState<Inkworm> {
         ReceiveSharingIntent.instance.reset();
       });
     } else {
+      // TODO: Support other platforms for debugging.
       GetIt.instance.get<EpubParser>().openBook(Platform.environment['EBOOK']!);
     }
   }
