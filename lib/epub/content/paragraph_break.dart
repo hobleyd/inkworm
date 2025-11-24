@@ -6,4 +6,9 @@ class ParagraphBreak extends HtmlContent {
   Iterable<LineElement> get elements => [];
 
   const ParagraphBreak({required super.blockStyle, required super.elementStyle,});
+
+  @override
+  String toString() {
+    return blockStyle.toString();
+  }
 }

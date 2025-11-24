@@ -8,4 +8,9 @@ class MarginContent extends HtmlContent {
   double get margin => blockStyle.marginTop > 0 ? blockStyle.marginTop: blockStyle.marginBottom;
 
   const MarginContent({required super.blockStyle, required super.elementStyle,});
+
+  @override
+  String toString() {
+    return blockStyle.toString();
+  }
 }

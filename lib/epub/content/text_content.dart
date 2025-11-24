@@ -29,30 +29,30 @@ class TextContent extends HtmlContent {
 
   const TextContent({required super.blockStyle, required super.elementStyle, required this.text});
 
-List<String> splitSpan(String span) {
-List<String> result = [];
-String current = "";
+  List<String> splitSpan(String span) {
+    List<String> result = [];
+    String current = "";
 
-for (int i = 0; i < span.length; i++) {
-String char = span[i];
+    for (int i = 0; i < span.length; i++) {
+      String char = span[i];
 
-if (char == '-' || char == '\u{2014}' || char == ' ' || char == '\u{00A0}') {
-if (current.isNotEmpty) {
-result.add(current);
-current = "";
-}
-result.add(char);
-} else {
-current += char;
-}
-}
+      if (char == '-' || char == '\u{2014}' || char == ' ' || char == '\u{00A0}') {
+        if (current.isNotEmpty) {
+          result.add(current);
+          current = "";
+        }
+        result.add(char);
+      } else {
+        current += char;
+      }
+    }
 
-if (current.isNotEmpty) {
-result.add(current);
-}
+    if (current.isNotEmpty) {
+      result.add(current);
+    }
 
-return result;
-}
+    return result;
+  }
 
   @override
   String toString() {
