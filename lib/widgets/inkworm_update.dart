@@ -63,6 +63,7 @@ class _InkwormUpdate extends ConsumerState<InkwormUpdate> {
     int? statusCode = await AndroidPackageInstaller.installApk(apkFilePath: apkPath);
     if (statusCode != null) {
       PackageInstallerStatus installationStatus = PackageInstallerStatus.byCode(statusCode);
+      // TODO: decide how to deal with errors, here.
     }
   }
 }
