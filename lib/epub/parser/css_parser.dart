@@ -83,6 +83,8 @@ class CssParser {
     paint.layout();
 
     double preferredSize = isHorizontal ? paint.width : paint.height;
+    paint.dispose();
+
     return value.isEmpty ? null : parseFloatCssValue(value, preferredSize);
   }
 
