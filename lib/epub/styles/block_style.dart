@@ -44,24 +44,8 @@ class BlockStyle extends Style {
   }
 
   BlockStyle copyFrom(BlockStyle parent) {
-    leftMargin   = parent.leftMargin;
-    rightMargin  = parent.rightMargin;
-    topMargin    = parent.topMargin;
-    bottomMargin = parent.bottomMargin;
-
-    width = parent.width;
     leftIndent = parent.leftIndent;
-    lineHeightMultiplier = parent.lineHeightMultiplier;
     alignment = parent.alignment;
-
-    maxHeight = parent.maxHeight;
-    maxWidth = parent.maxWidth;
-
-    tableColumns.addAll(parent.tableColumns);
-    tableLayout = parent.tableLayout;
-    tableOverflow = parent.tableOverflow;
-    tableWhitespace = parent.tableWhitespace;
-
     ignoreVerticalMargins = parent.ignoreVerticalMargins;
 
     return this;
