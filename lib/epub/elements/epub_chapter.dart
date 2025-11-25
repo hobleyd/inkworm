@@ -29,9 +29,10 @@ class EpubChapter {
         pages.last.currentLine?.completeLine();
       }
       newParagraphRequired = true;
-    } if (content is MarginContent) {
+    } else if (content is MarginContent) {
       pages.last.addLine(paragraph: false, margin: content.margin, blockStyle: content.blockStyle);
     } else {
+      // Reset alignment based on this content if we are adding content to an empty line.
       if (pages.last.isCurrentLineEmpty && content.blockStyle.alignment != null) {
         pages.last.currentLine?.alignment = content.blockStyle.alignment!;
       }
