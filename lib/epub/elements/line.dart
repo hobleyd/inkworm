@@ -97,7 +97,7 @@ class Line {
 
   @override
   String toString() {
-    String result = "$yPos: $bottomYPosition: ${alignment.name}: TI: $textIndent: DCI: $dropCapsIndent: ";
+    String result = "$yPos: $bottomYPosition: ${alignment.name}: LI: $leftIndent: TI: $textIndent: DCI: $dropCapsIndent: ";
     for (var el in elements) {
       result += '$el';
     }
