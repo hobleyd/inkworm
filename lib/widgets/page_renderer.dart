@@ -59,7 +59,7 @@ class PageRenderer extends CustomPainter {
     // Because a Book is immutable, there is no need for any complex repainting logic
     // as the only time a repaint will be required is if the page changes and this will
     // trigger a repaint through the Riverpod state management.
-    return true;
+    return false;
   }
 
   void _reparseBook() {
