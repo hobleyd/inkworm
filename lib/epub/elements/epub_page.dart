@@ -65,7 +65,7 @@ class EpubPage {
   // This will add a paragraph of text, line by line, to the current Page.
   List<Line> addElement(bool newParagraph, HtmlContent content, List<HtmlContent> footnotes) {
     if (lines.isEmpty || newParagraph) {
-      addLine(paragraph: true, blockStyle: content.blockStyle);
+      addLine(paragraph: newParagraph, blockStyle: content.blockStyle);
     }
 
     for (LineElement el in content.elements) {
@@ -78,7 +78,7 @@ class EpubPage {
       if (!currentLine!.willFitHeight(el)) {
         // This would have to be an image, or (theoretically) a suddenly changed font size.
         addLine(
-          paragraph: false,
+          paragraph: newParagraph,
           blockStyle: content.blockStyle,
           dropCapsIndent: dropCapsXPosition,
           overflowRequired: true,
