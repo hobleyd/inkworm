@@ -1,6 +1,6 @@
 import '../content/html_content.dart';
-import '../content/margin_content.dart';
-import '../content/paragraph_break.dart';import 'epub_page.dart';
+import '../content/paragraph_break.dart';
+import 'epub_page.dart';
 import 'line.dart';
 
 /*
@@ -8,8 +8,6 @@ import 'line.dart';
  */
 class EpubChapter {
   final int chapterNumber;
-  bool newParagraphRequired = false;
-
   final List<EpubPage> pages = [];
 
   EpubChapter({required this.chapterNumber,});
@@ -26,22 +24,18 @@ class EpubChapter {
     if (content is ParagraphBreak) {
       if (pages.last.getActiveLines().isNotEmpty) {
         pages.last.currentLine?.completeParagraph();
-        pages.last.currentLine?.completeLine();
       }
-      newParagraphRequired = true;
-    } else if (content is MarginContent) {
-      pages.last.addLine(paragraph: false, margin: content.margin, blockStyle: content.blockStyle);
+      pages.last.addLine(paragraph: true, margin: content.margin, blockStyle: content.blockStyle, dropCapsIndent: pages.last.dropCapsXPosition);
     } else {
       // Reset alignment based on this content if we are adding content to an empty line.
       if (pages.last.isCurrentLineEmpty && content.blockStyle.alignment != null) {
         pages.last.currentLine?.alignment = content.blockStyle.alignment!;
       }
-      List<Line> overflow = pages.last.addElement(newParagraphRequired, content, []);
-      if (overflow.isNotEmpty) {
+      List<Line> overflow = pages.last.addElement(content, []);
+      while (overflow.isNotEmpty) {
         pages.add(EpubPage());
-        pages.last.addLines(overflow);
+        overflow = pages.last.addOverflow(overflow);
       }
-      newParagraphRequired = false;
     }
   }
 

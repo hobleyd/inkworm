@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../constants.dart';
 import '../content/html_content.dart';
 import '../styles/block_style.dart';
@@ -28,10 +30,10 @@ class EpubPage {
   EpubPage();
 
   void addLine({required bool paragraph, double? margin, required BlockStyle blockStyle, double? dropCapsIndent, bool? overflowRequired}) {
-    // Close off the previous line to calculate justification etc.
     if (lines.isEmpty) {
       lines.add(Line(yPos: 0 + (margin ?? 0), blockStyle: blockStyle));
     } else {
+      // Close off the previous line to calculate justification etc.
       currentLine!.completeLine();
 
       // If we need to move to a new page, add these to the overflow list and let the calling process worry about creating a new page.
@@ -57,19 +59,25 @@ class EpubPage {
   }
 
   // Used to add overflow lines into a new page creating by the calling class.
-  // TODO: think about what happens if a paragraph stretches over more than 1 overflow page. If it becomes an issue! (It will!)
-  void addLines(List<Line> lines) {
-    this.lines.addAll(lines);
+  List<Line> addOverflow(List<Line> lines) {
+    List<Line> overflow = [];
+    for (Line line in lines) {
+      if ((line.yPos + line.height) <= PageConstants.canvasHeight) {
+        this.lines.add(line);
+      } else {
+        overflow.add(line);
+      }
+    }
+    return overflow;
   }
 
   // This will add a paragraph of text, line by line, to the current Page.
-  List<Line> addElement(bool newParagraph, HtmlContent content, List<HtmlContent> footnotes) {
-    if (lines.isEmpty || newParagraph) {
-      addLine(paragraph: newParagraph, blockStyle: content.blockStyle);
+  List<Line> addElement(HtmlContent content, List<HtmlContent> footnotes) {
+    if (content.elementStyle.isDropCaps ?? false) {
+      debugPrint('here: $content');
     }
 
     for (LineElement el in content.elements) {
-      // While this is in a loop a dropcaps entry will only have a single element anyway so not a major concern.
       if (content.elementStyle.isDropCaps ?? false) {
         dropCapsYPosition = currentLine!.yPos + el.height;
         dropCapsXPosition = el.width;
@@ -77,38 +85,17 @@ class EpubPage {
 
       if (!currentLine!.willFitHeight(el)) {
         // This would have to be an image, or (theoretically) a suddenly changed font size.
-        addLine(
-          paragraph: newParagraph,
-          blockStyle: content.blockStyle,
-          dropCapsIndent: dropCapsXPosition,
-          overflowRequired: true,
-        );
-
-        currentLine!.addElement(el);
-      } else {
-        if (currentLine!.willFitWidth(el)) {
-          currentLine!.addElement(el);
-        } else {
-          if (dropCapsYPosition < currentLine!.bottomYPosition + currentLine!.height) {
-            // Add the line height to the current bottomYPosition to get the next line position, prior to adding it.
-            if (dropCapsXPosition > 0) {
-              dropCapsXPosition = 0;
-              dropCapsYPosition = 0;
-            }
-          }
-          if (el is! SpaceSeparator) {
-            // No need to add spaces to a new line. Also don't add the Line as we don't need it if we only have
-            // a SpaceSeparator. This will create the line the next time through.
-            addLine(
-              paragraph: false,
-              blockStyle: content.blockStyle,
-              dropCapsIndent: dropCapsXPosition,
-            );
-
-            currentLine!.addElement(el);
-          }
-        }
+        addLine(paragraph: false, blockStyle: content.blockStyle, dropCapsIndent: dropCapsXPosition, overflowRequired: true,);
       }
+      else if (!currentLine!.willFitWidth(el) && el is! SpaceSeparator) {
+        // Reset the dropcaps vars once the line is below the bottom of the dropcaps character.
+        if (dropCapsYPosition < currentLine!.bottomYPosition + currentLine!.height) {
+          dropCapsXPosition = 0;
+          dropCapsYPosition = 0;
+        }
+        addLine(paragraph: false, blockStyle: content.blockStyle, dropCapsIndent: dropCapsXPosition,);
+      }
+      currentLine!.addElement(el);
     }
 
     return overflow;

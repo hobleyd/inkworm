@@ -1,6 +1,4 @@
-import 'package:flutter/foundation.dart';
 import 'package:injectable/injectable.dart';
-import 'package:inkworm/epub/content/margin_content.dart';
 import 'package:inkworm/epub/content/paragraph_break.dart';
 import 'package:xml/xml.dart';
 
@@ -45,10 +43,9 @@ class BlockHandler extends HtmlHandler {
       return [];
     }
 
-    // Add a Paragraph Break before the content if we need a top-margin!
-    if (blockStyle.marginTop > 0) {
-      elements.add(MarginContent(blockStyle: blockStyle.copyWith(topMargin: blockStyle.topMargin, bottomMargin: 0), elementStyle: elementStyle));
-    }
+    // We want to add a new line for every block, obviously. But remove the bottom margin from this break and
+    // keep it in for the break at the end of the block.
+    elements.add(ParagraphBreak(blockStyle: blockStyle.copyWith(bottomMargin: 0), elementStyle: elementStyle));
 
     //debugPrint('BLOCK_HANDLER: ${element.name}: ${element.attributes}: $blockStyle, $elementStyle');
     for (var child in node.children) {
@@ -60,13 +57,10 @@ class BlockHandler extends HtmlHandler {
       }
     }
 
-    if (blockStyle.marginBottom > 0) {
-      elements.add(MarginContent(blockStyle: blockStyle.copyWith(bottomMargin: blockStyle.bottomMargin, topMargin: 0), elementStyle: elementStyle));
-    }
-
-    // We always need a Paragraph Break after the content, as long as we are not in the HEAD of the page.
+    // We always need a Paragraph Break after the content, as long as we are not in the HEAD of the page. Remove
+    // the topMargin to match the break before the text.
     if (element.localName != 'head' && element.localName != 'html') {
-      elements.add(ParagraphBreak(blockStyle: blockStyle.copyWith(topMargin: 0, bottomMargin: 0), elementStyle: elementStyle));
+      elements.add(ParagraphBreak(blockStyle: blockStyle.copyWith(topMargin: 0), elementStyle: elementStyle));
     }
 
     return elements;
