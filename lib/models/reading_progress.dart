@@ -11,4 +11,9 @@ class ReadingProgress with _$ReadingProgress {
   final int pageNumber;
 
   const ReadingProgress({required this.chapterNumber, required this.pageNumber});
+
+  @override
+  String toString() {
+    return 'Chapter: $chapterNumber / Page: $pageNumber';
+  }
 }
