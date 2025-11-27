@@ -40,7 +40,12 @@ class EpubChapter {
       List<Line> overflow = pages.last.addElement(content, [], paragraph: paragraph);
       paragraph = false;
       while (overflow.isNotEmpty) {
+        double dropCapsXPos = pages.last.dropCapsXPosition;
+        double dropCapsYPos = pages.last.dropCapsYPosition;
         pages.add(EpubPage());
+        pages.last.dropCapsXPosition = dropCapsXPos;
+        pages.last.dropCapsYPosition = dropCapsYPos;
+
         overflow = pages.last.addOverflow(overflow);
       }
     }

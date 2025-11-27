@@ -75,10 +75,6 @@ class EpubPage {
 
   // This will add a paragraph of text, line by line, to the current Page.
   List<Line> addElement(HtmlContent content, List<HtmlContent> footnotes, { bool? paragraph }) {
-    if (content.elementStyle.isDropCaps ?? false) {
-      //debugPrint('here: $content');
-    }
-
     for (LineElement el in content.elements) {
       if (content.elementStyle.isDropCaps ?? false) {
         dropCapsYPosition = currentLine!.yPos + el.height;
@@ -87,7 +83,10 @@ class EpubPage {
 
       if (!currentLine!.willFitHeight(el)) {
         // This would have to be an image, or (theoretically) a suddenly changed font size.
-        addLine(paragraph: paragraph ?? false, blockStyle: content.blockStyle, dropCapsIndent: dropCapsXPosition, overflowRequired: true,);
+        // Don't set the DCI here as if we need it, it will be on a subsequent line.
+        addLine(paragraph: paragraph ?? false, blockStyle: content.blockStyle, overflowRequired: true,);
+        // reset the dropcaps y position for the new page.
+        dropCapsYPosition = el.height;
       }
       else if (!currentLine!.willFitWidth(el) && el is! SpaceSeparator) {
         // Reset the dropcaps vars once the line is below the bottom of the dropcaps character.
