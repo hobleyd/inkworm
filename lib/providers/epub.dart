@@ -1,12 +1,11 @@
-
 import 'package:get_it/get_it.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:xml/xml.dart';
 
-import 'elements/epub_chapter.dart';
 import '../models/epub_book.dart';
-import 'parser/epub_parser.dart';
-import 'parser/extensions.dart';
+import '../epub/elements/epub_chapter.dart';
+import '../epub/parser/epub_parser.dart';
+import '../epub/parser/extensions.dart';
 
 part 'epub.g.dart';
 
@@ -23,7 +22,6 @@ class Epub extends _$Epub {
    * When parsing the book, parse the current chapter (the first on initial reading) and then one on either side to allow
    * the reader to continue reading while we complete the book parsing.
    */
-
   void parse(int fromChapterNumber) async {
     try {
       XmlDocument opf = GetIt.instance.get<EpubParser>().parse();
