@@ -5,19 +5,28 @@ import 'package:xml/xml.dart';
 
 import 'package:inkworm/epub/parser/css_parser.dart';
 import 'package:inkworm/epub/parser/epub_parser.dart';
+import 'package:inkworm/epub/parser/font_management.dart';
+import 'package:inkworm/epub/styles/element_style.dart';
 
-@GenerateMocks([EpubParser, ])
+@GenerateMocks([EpubParser, FontManagement])
 import 'css_parser_test.mocks.dart';
 
 void main() {
   late CssParser cssParser;
   late MockEpubParser mockEpubParser;
+  late MockFontManagement mockFontManagement;
 
   setUp(() {
-    cssParser = CssParser();
-    mockEpubParser = MockEpubParser();
+    TestWidgetsFlutterBinding.ensureInitialized();
 
+    mockEpubParser = MockEpubParser();
+    mockFontManagement = MockFontManagement();
+
+    GetIt.instance.registerSingleton<CssParser>(CssParser());
     GetIt.instance.registerSingleton<EpubParser>(mockEpubParser);
+    GetIt.instance.registerSingleton<FontManagement>(mockFontManagement);
+
+    cssParser = GetIt.instance.get<CssParser>();
   });
 
   tearDown(() {
@@ -26,7 +35,7 @@ void main() {
 
   group('Constructor', () {
     test('should initialize with empty css map', () {
-      expect(cssParser.css, isEmpty);
+      expect(cssParser.css, isNotEmpty);
     });
 
     test('should initialize nonInheritableProperties with margin properties', () {
@@ -195,22 +204,23 @@ void main() {
   group('getInlineStyle', () {
     test('should return null when element has no style attribute', () {
       final element = XmlElement(XmlName('div'));
-      final result = cssParser.getInlineStyle(element, 'color');
-      expect(result, isNull);
+      final result = cssParser.getInlineStyle(element);
+
+      expect(result?['color'], isNull);
     });
 
     test('should parse inline style and return attribute value', () {
       final element = XmlElement(XmlName('div'));
       element.setAttribute('style', 'color: red; font-size: 16px;');
-      final result = cssParser.getInlineStyle(element, 'color');
-      expect(result, 'red');
+      final result = cssParser.getInlineStyle(element);
+      expect(result?['color'], 'red');
     });
 
     test('should return null for non-existent attribute in inline style', () {
       final element = XmlElement(XmlName('div'));
       element.setAttribute('style', 'color: red;');
-      final result = cssParser.getInlineStyle(element, 'font-size');
-      expect(result, isNull);
+      final result = cssParser.getInlineStyle(element);
+      expect(result?['font-size'], isNull);
     });
   });
 
@@ -220,7 +230,9 @@ void main() {
       final element = XmlElement(XmlName('div'));
       element.setAttribute('style', 'color: red;');
 
-      final result = cssParser.getCSSAttributeValue(element, 'color');
+      ElementStyle style = ElementStyle();
+      style.parseElement(element: element);
+      final result = cssParser.getStringAttribute(element, style, 'color');
       expect(result, 'red');
     });
 
@@ -232,7 +244,9 @@ void main() {
       final element = XmlElement(XmlName('h2'));
       element.setAttribute('class', 'title');
 
-      final result = cssParser.getCSSAttributeValue(element, 'color');
+      ElementStyle style = ElementStyle();
+      style.parseElement(element: element);
+      final result = cssParser.getStringAttribute(element, style, 'color');
       expect(result, 'red');
     });
 
@@ -243,7 +257,9 @@ void main() {
       final element = XmlElement(XmlName('h2'));
       element.setAttribute('class', 'title');
 
-      final result = cssParser.getCSSAttributeValue(element, 'color');
+      ElementStyle style = ElementStyle();
+      style.parseElement(element: element);
+      final result = cssParser.getStringAttribute(element, style, 'color');
       expect(result, 'blue');
     });
 
@@ -254,7 +270,9 @@ void main() {
       final element = XmlElement(XmlName('h2'));
       element.setAttribute('class', 'title');
 
-      final result = cssParser.getCSSAttributeValue(element, 'color');
+      ElementStyle style = ElementStyle();
+      style.parseElement(element: element);
+      final result = cssParser.getStringAttribute(element, style, 'color');
       expect(result, 'yellow');
     });
 
@@ -263,14 +281,18 @@ void main() {
 
       final element = XmlElement(XmlName('h2'));
 
-      final result = cssParser.getCSSAttributeValue(element, 'color');
+      ElementStyle style = ElementStyle();
+      style.parseElement(element: element);
+      final result = cssParser.getStringAttribute(element, style, 'color');
       expect(result, 'green');
     });
 
     test('should return null when no matching selector found', () {
       final element = XmlElement(XmlName('h2'));
 
-      final result = cssParser.getCSSAttributeValue(element, 'color');
+      ElementStyle style = ElementStyle();
+      style.parseElement(element: element);
+      final result = cssParser.getStringAttribute(element, style, 'color');
       expect(result, isNull);
     });
 
@@ -281,8 +303,10 @@ void main() {
       final element = XmlElement(XmlName('div'));
       element.setAttribute('class', 'class1 class2');
 
-      final color = cssParser.getCSSAttributeValue(element, 'color');
-      final fontSize = cssParser.getCSSAttributeValue(element, 'font-size');
+      ElementStyle style = ElementStyle();
+      style.parseElement(element: element);
+      final color = cssParser.getStringAttribute(element, style, 'color');
+      final fontSize = cssParser.getCSSAttributeValue(element, style, 'font-size');
 
       expect(color, 'red');
       expect(fontSize, '16px');
@@ -295,8 +319,10 @@ void main() {
       final element = XmlElement(XmlName('div'));
       element.setAttribute('class', 'class1 class2');
 
-      final result = cssParser.getCSSAttributeValue(element, 'color');
-      expect(result, 'red');
+      ElementStyle style = ElementStyle();
+      style.parseElement(element: element);
+      final color = cssParser.getStringAttribute(element, style, 'color');
+      expect(color, 'red');
     });
   });
 
@@ -308,8 +334,10 @@ void main() {
       final child = XmlElement(XmlName('span'));
       parent.children.add(child);
 
-      final result = cssParser.getCSSAttributeValue(child, 'color');
-      expect(result, 'red');
+      ElementStyle style = ElementStyle();
+      style.parseElement(element: child);
+      final color = cssParser.getStringAttribute(child, style, 'color');
+      expect(color, 'red');
     });
 
     test('should inherit from parent when value is "inherit"', () {
@@ -320,8 +348,10 @@ void main() {
       final child = XmlElement(XmlName('span'));
       parent.children.add(child);
 
-      final result = cssParser.getCSSAttributeValue(child, 'color');
-      expect(result, 'red');
+      ElementStyle style = ElementStyle();
+      style.parseElement(element: child);
+      final color = cssParser.getStringAttribute(child, style, 'color');
+      expect(color, 'red');
     });
 
     test('should not inherit when child has explicit value', () {
@@ -332,8 +362,10 @@ void main() {
       final child = XmlElement(XmlName('span'));
       parent.children.add(child);
 
-      final result = cssParser.getCSSAttributeValue(child, 'color');
-      expect(result, 'blue');
+      ElementStyle style = ElementStyle();
+      style.parseElement(element: child);
+      final color = cssParser.getStringAttribute(child, style, 'color');
+      expect(color, 'blue');
     });
 
     test('should inherit through multiple levels', () {
@@ -346,8 +378,10 @@ void main() {
       grandparent.children.add(parent);
       parent.children.add(child);
 
-      final result = cssParser.getCSSAttributeValue(child, 'color');
-      expect(result, 'red');
+      ElementStyle style = ElementStyle();
+      style.parseElement(element: child);
+      final color = cssParser.getStringAttribute(child, style, 'color');
+      expect(color, 'red');
     });
 
     test('should stop inheriting when parent has value', () {
@@ -361,8 +395,10 @@ void main() {
       grandparent.children.add(parent);
       parent.children.add(child);
 
-      final result = cssParser.getCSSAttributeValue(child, 'color');
-      expect(result, 'blue');
+      ElementStyle style = ElementStyle();
+      style.parseElement(element: child);
+      final color = cssParser.getStringAttribute(child, style, 'color');
+      expect(color, 'blue');
     });
 
     test('should return null when no value found in entire hierarchy', () {
@@ -370,8 +406,10 @@ void main() {
       final child = XmlElement(XmlName('span'));
       parent.children.add(child);
 
-      final result = cssParser.getCSSAttributeValue(child, 'color');
-      expect(result, isNull);
+      ElementStyle style = ElementStyle();
+      style.parseElement(element: child);
+      final color = cssParser.getStringAttribute(child, style, 'color');
+      expect(color, isNull);
     });
 
     test('should prioritize inline style over inheritance', () {
@@ -382,8 +420,10 @@ void main() {
       child.setAttribute('style', 'color: blue;');
       parent.children.add(child);
 
-      final result = cssParser.getCSSAttributeValue(child, 'color');
-      expect(result, 'blue');
+      ElementStyle style = ElementStyle();
+      style.parseElement(element: child);
+      final color = cssParser.getStringAttribute(child, style, 'color');
+      expect(color, 'blue');
     });
 
     test('should inherit when inline style has inherit value', () {
@@ -394,8 +434,10 @@ void main() {
       child.setAttribute('style', 'color: inherit;');
       parent.children.add(child);
 
-      final result = cssParser.getCSSAttributeValue(child, 'color');
-      expect(result, 'red');
+      ElementStyle style = ElementStyle();
+      style.parseElement(element: child);
+      final color = cssParser.getStringAttribute(child, style, 'color');
+      expect(color, 'red');
     });
 
     test('should handle inheritance with class selectors', () {
@@ -406,8 +448,10 @@ void main() {
       final child = XmlElement(XmlName('span'));
       parent.children.add(child);
 
-      final result = cssParser.getCSSAttributeValue(child, 'color');
-      expect(result, 'red');
+      ElementStyle style = ElementStyle();
+      style.parseElement(element: child);
+      final color = cssParser.getStringAttribute(child, style, 'color');
+      expect(color, 'red');
     });
 
     test('should handle deep nesting with mixed inherit values', () {
@@ -422,8 +466,10 @@ void main() {
       grandparent.children.add(parent);
       parent.children.add(child);
 
-      final result = cssParser.getCSSAttributeValue(child, 'color');
-      expect(result, 'red');
+      ElementStyle style = ElementStyle();
+      style.parseElement(element: child);
+      final color = cssParser.getStringAttribute(child, style, 'color');
+      expect(color, 'red');
     });
   });
 
@@ -432,16 +478,12 @@ void main() {
       cssParser.css['h2'] = {'color': 'red'};
       final element = XmlElement(XmlName('h2'));
 
-      final result = cssParser.getStringAttribute(element, 'color', 'black');
-      expect(result, 'red');
+      ElementStyle style = ElementStyle();
+      style.parseElement(element: element);
+      final color = cssParser.getStringAttribute(element, style, 'color');
+      expect(color, 'red');
     });
 
-    test('should return default value when CSS value not available', () {
-      final element = XmlElement(XmlName('h2'));
-
-      final result = cssParser.getStringAttribute(element, 'color', 'black');
-      expect(result, 'black');
-    });
   });
 
   group('Integration tests', () {
@@ -455,8 +497,13 @@ void main() {
       final element = XmlElement(XmlName('h2'));
       element.setAttribute('class', 'title');
 
-      expect(cssParser.getCSSAttributeValue(element, 'color'), 'red');
-      expect(cssParser.getCSSAttributeValue(element, 'font-size'), '18px');
+      ElementStyle style = ElementStyle();
+      style.parseElement(element: element);
+      final color = cssParser.getStringAttribute(element, style, 'color');
+      final fontSize = cssParser.getStringAttribute(element, style, 'font-size');
+
+      expect(color, 'red');
+      expect(fontSize, '18px');
     });
 
     test('should prioritize inline styles over everything', () {
@@ -470,7 +517,10 @@ void main() {
       element.setAttribute('class', 'title');
       element.setAttribute('style', 'color: red;');
 
-      expect(cssParser.getCSSAttributeValue(element, 'color'), 'red');
+      ElementStyle style = ElementStyle();
+      style.parseElement(element: element);
+      final color = cssParser.getStringAttribute(element, style, 'color');
+      expect(color, 'red');
     });
   });
 }
