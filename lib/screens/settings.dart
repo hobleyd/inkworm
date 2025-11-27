@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../epub/epub.dart';
+import '../providers/epub.dart';
 import '../models/epub_book.dart';
 import '../widgets/inkworm_update.dart';
 

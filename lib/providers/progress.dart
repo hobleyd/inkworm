@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -15,6 +16,8 @@ class Progress extends _$Progress  {
     int? chapter = await asyncPrefs.getInt('chapter');
     int? page = await asyncPrefs.getInt('page');
 
+    debugPrint('building Progress Provider: $chapter, $page');
+
     if (previousBook == book) {
       if (chapter != null && page != null) {
         return ReadingProgress(chapterNumber: chapter, pageNumber: page);
@@ -24,13 +27,16 @@ class Progress extends _$Progress  {
     return ReadingProgress(chapterNumber: 0, pageNumber: 0);
   }
 
-  Future<void> setProgress(String book, int chapter, int page) async{
-    final SharedPreferencesAsync asyncPrefs = SharedPreferencesAsync();
+  Future<void> setProgress(String book, int chapter, int page) async {
+    ReadingProgress? progress = state.value;
+    if (progress == null || progress.chapterNumber != chapter || progress.pageNumber != page) {
+      final SharedPreferencesAsync asyncPrefs = SharedPreferencesAsync();
 
-    await asyncPrefs.setString('book', book);
-    await asyncPrefs.setInt('chapter', chapter);
-    await asyncPrefs.setInt('page', page);
+      await asyncPrefs.setString('book', book);
+      await asyncPrefs.setInt('chapter', chapter);
+      await asyncPrefs.setInt('page', page);
 
-    state = AsyncValue.data(ReadingProgress(chapterNumber: chapter, pageNumber: page));
+      state = AsyncValue.data(ReadingProgress(chapterNumber: chapter, pageNumber: page));
+    }
   }
 }

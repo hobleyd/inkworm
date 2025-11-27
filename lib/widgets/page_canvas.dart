@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../epub/epub.dart';
+import '../providers/epub.dart';
 import '../models/epub_book.dart';
 import '../models/reading_progress.dart';
 import '../providers/progress.dart';
@@ -51,7 +51,7 @@ class PageCanvas extends ConsumerWidget {
                   Navigator.push(context, MaterialPageRoute(builder: (context) => Settings())).then((onValue) {});
                 }
               },
-              child: CustomPaint(painter: PageRenderer(ref),),
+              child: CustomPaint(painter: PageRenderer(ref, progress.chapterNumber, progress.pageNumber),),
             ),
           );
         });

@@ -67,11 +67,18 @@ class CssParser {
     return getCSSAttributeValue(element, style, attribute);
   }
 
-  String? getCSSAttributeValue(XmlNode element, Style style, String attribute) {
+  String? getCSSAttributeValue(XmlNode node, Style style, String attribute) {
+    if (node is XmlElement) {
+      CssDeclarations? local = getInlineStyle(node);
+      if (local != null && local.containsKey(attribute)) {
+        return local['attribute'];
+      }
+    }
+
     // Now look for style inheritance
     if (!nonInheritableProperties.contains(attribute)) {
-      if ((style.declarations.isEmpty || style.declarations[attribute] == 'inherit') && element.parentElement != null) {
-        return getCSSAttributeValue(element.parentElement!, style, attribute);
+      if ((style.declarations.isEmpty || style.declarations[attribute] == 'inherit') && node.parentElement != null) {
+        return getCSSAttributeValue(node.parentElement!, style, attribute);
       }
     }
 

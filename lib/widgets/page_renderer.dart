@@ -4,34 +4,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../epub/constants.dart';
-import '../epub/elements/epub_chapter.dart';
 import '../epub/elements/line.dart';
 import '../epub/elements/line_element.dart';
-import '../epub/epub.dart';
+import '../providers/epub.dart';
 import '../models/epub_book.dart';
-import '../models/reading_progress.dart';
-import '../providers/progress.dart';
 
 class PageRenderer extends CustomPainter {
   late WidgetRef _ref;
+  late int _chapterNumber;
   Timer? _runOnce;
 
-  final bool useTextPainter = true;
   List<Line> lines = [];
-  late ReadingProgress progress;
 
-  PageRenderer(WidgetRef ref) {
+  PageRenderer(WidgetRef ref, int chapterNumber, int pageNumber) {
     _ref = ref;
+    _chapterNumber = chapterNumber;
 
-    EpubBook book = ref.watch(epubProvider);
-    var progressAsync = ref.watch(progressProvider(book.uri));
-
-    if (progressAsync.hasValue) {
-      progress = progressAsync.value!;
-
-      List<EpubChapter> chapters = ref.read(epubProvider).chapters;
-      lines = chapters.elementAtOrNull(progress.chapterNumber)?[progress.pageNumber]?.lines ?? [];
-    }
+    EpubBook book = ref.read(epubProvider);
+    lines = book.chapters.elementAtOrNull(chapterNumber)?[pageNumber]?.lines ?? [];
   }
 
   @override
@@ -66,7 +56,7 @@ class PageRenderer extends CustomPainter {
     _runOnce?.cancel();
 
     _runOnce = Timer(Duration(milliseconds: 500), () {
-      Future.delayed(Duration(seconds: 0), () => _ref.read(epubProvider.notifier).parse(progress.chapterNumber));
+      Future.delayed(Duration(seconds: 0), () => _ref.read(epubProvider.notifier).parse(_chapterNumber));
     });
   }
 }

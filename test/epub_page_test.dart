@@ -8,7 +8,7 @@ import 'package:inkworm/epub/constants.dart';
 import 'package:inkworm/epub/content/text_content.dart';
 import 'package:inkworm/epub/elements/separators/hyphen_separator.dart';
 import 'package:inkworm/epub/elements/separators/space_separator.dart';
-import 'package:inkworm/epub/epub.dart';
+import 'package:inkworm/providers/epub.dart';
 import 'package:inkworm/epub/elements/line.dart';
 import 'package:inkworm/epub/elements/word_element.dart';
 import 'package:inkworm/epub/elements/epub_page.dart';
