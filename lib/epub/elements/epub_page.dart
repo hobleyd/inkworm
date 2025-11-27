@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../constants.dart';
 import '../content/html_content.dart';
+import '../content/text_content.dart';
 import '../styles/block_style.dart';
 import 'separators/space_separator.dart';
 import 'line.dart';
@@ -22,6 +23,7 @@ class EpubPage {
   List<Line> overflow = [];
 
   Line? get currentLine => getActiveLines().last;
+  double get currentLineBottomYPos => currentLine!.yPos + currentLine!.height;
   bool get isCurrentLineEmpty => getActiveLines().isNotEmpty && currentLine!.elements.isEmpty;
 
   double dropCapsXPosition = 0;
@@ -29,7 +31,7 @@ class EpubPage {
 
   EpubPage();
 
-  void addLine({required bool paragraph, double? margin, required BlockStyle blockStyle, double? dropCapsIndent, bool? overflowRequired}) {
+  void addLine({required bool paragraph, required BlockStyle blockStyle, double? margin, double? dropCapsIndent, bool? overflowRequired}) {
     if (lines.isEmpty) {
       lines.add(Line(yPos: 0 + (margin ?? 0), blockStyle: blockStyle));
     } else {
@@ -37,7 +39,7 @@ class EpubPage {
       currentLine!.completeLine();
 
       // If we need to move to a new page, add these to the overflow list and let the calling process worry about creating a new page.
-      Line line = Line(yPos: currentLine!.yPos + currentLine!.height + (margin ?? 0), blockStyle: blockStyle);
+      Line line = Line(yPos: currentLineBottomYPos + (margin ?? 0), blockStyle: blockStyle);
 
       if (dropCapsIndent != null) {
         line.dropCapsIndent = dropCapsIndent;
@@ -72,9 +74,9 @@ class EpubPage {
   }
 
   // This will add a paragraph of text, line by line, to the current Page.
-  List<Line> addElement(HtmlContent content, List<HtmlContent> footnotes) {
+  List<Line> addElement(HtmlContent content, List<HtmlContent> footnotes, { bool? paragraph }) {
     if (content.elementStyle.isDropCaps ?? false) {
-      debugPrint('here: $content');
+      //debugPrint('here: $content');
     }
 
     for (LineElement el in content.elements) {
@@ -85,7 +87,7 @@ class EpubPage {
 
       if (!currentLine!.willFitHeight(el)) {
         // This would have to be an image, or (theoretically) a suddenly changed font size.
-        addLine(paragraph: false, blockStyle: content.blockStyle, dropCapsIndent: dropCapsXPosition, overflowRequired: true,);
+        addLine(paragraph: paragraph ?? false, blockStyle: content.blockStyle, dropCapsIndent: dropCapsXPosition, overflowRequired: true,);
       }
       else if (!currentLine!.willFitWidth(el) && el is! SpaceSeparator) {
         // Reset the dropcaps vars once the line is below the bottom of the dropcaps character.
@@ -93,7 +95,7 @@ class EpubPage {
           dropCapsXPosition = 0;
           dropCapsYPosition = 0;
         }
-        addLine(paragraph: false, blockStyle: content.blockStyle, dropCapsIndent: dropCapsXPosition,);
+        addLine(paragraph: false, blockStyle: content.blockStyle, dropCapsIndent: dropCapsXPosition, overflowRequired: (currentLineBottomYPos + el.height) > PageConstants.canvasHeight);
       }
       currentLine!.addElement(el);
     }
