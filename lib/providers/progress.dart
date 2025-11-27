@@ -16,8 +16,6 @@ class Progress extends _$Progress  {
     int? chapter = await asyncPrefs.getInt('chapter');
     int? page = await asyncPrefs.getInt('page');
 
-    debugPrint('building Progress Provider: $chapter, $page');
-
     if (previousBook == book) {
       if (chapter != null && page != null) {
         return ReadingProgress(chapterNumber: chapter, pageNumber: page);
