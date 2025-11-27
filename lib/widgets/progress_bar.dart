@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:inkworm/providers/progress.dart';
 
-import '../epub/epub.dart';
+import '../providers/epub.dart';
 import '../models/epub_book.dart';
 import '../models/reading_progress.dart';
 
