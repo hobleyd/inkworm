@@ -1,5 +1,9 @@
+import 'package:flutter/foundation.dart';
+import 'package:inkworm/epub/constants.dart';
+
 import '../content/html_content.dart';
 import '../content/paragraph_break.dart';
+import '../content/text_content.dart';
 import 'epub_page.dart';
 import 'line.dart';
 
@@ -9,6 +13,7 @@ import 'line.dart';
 class EpubChapter {
   final int chapterNumber;
   final List<EpubPage> pages = [];
+  bool paragraph = false;
 
   EpubChapter({required this.chapterNumber,});
 
@@ -26,12 +31,14 @@ class EpubChapter {
         pages.last.currentLine?.completeParagraph();
       }
       pages.last.addLine(paragraph: true, margin: content.margin, blockStyle: content.blockStyle, dropCapsIndent: pages.last.dropCapsXPosition);
+      paragraph = true;
     } else {
       // Reset alignment based on this content if we are adding content to an empty line.
       if (pages.last.isCurrentLineEmpty && content.blockStyle.alignment != null) {
         pages.last.currentLine?.alignment = content.blockStyle.alignment!;
       }
-      List<Line> overflow = pages.last.addElement(content, []);
+      List<Line> overflow = pages.last.addElement(content, [], paragraph: paragraph);
+      paragraph = false;
       while (overflow.isNotEmpty) {
         pages.add(EpubPage());
         overflow = pages.last.addOverflow(overflow);
