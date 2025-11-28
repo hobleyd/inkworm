@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get_it/get_it.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:injectable/injectable.dart' as injectable;
 import 'package:inkworm/epub/constants.dart';
 import 'package:inkworm/epub/content/text_content.dart';
 import 'package:inkworm/epub/elements/separators/hyphen_separator.dart';
 import 'package:inkworm/epub/elements/separators/space_separator.dart';
+import 'package:inkworm/epub/parser/css_parser.dart';
 import 'package:inkworm/providers/epub.dart';
 import 'package:inkworm/epub/elements/line.dart';
 import 'package:inkworm/epub/elements/word_element.dart';
@@ -15,11 +15,6 @@ import 'package:inkworm/epub/elements/epub_page.dart';
 import 'package:inkworm/epub/styles/block_style.dart';
 import 'package:inkworm/epub/styles/element_style.dart';
 import 'package:mockito/annotations.dart';
-
-import 'epub_page_test.config.dart';
-
-@injectable.injectableInit
-void configureInjection() => GetIt.instance.init();
 
 // Generate mocks with: flutter pub run build_runner build
 @GenerateMocks([Line, WordElement, SpaceSeparator, Epub])
@@ -30,10 +25,10 @@ void main() {
     late BlockStyle blockStyle;
     late ThemeData themeData;
 
-    configureInjection();
-
     setUp(() {
-      WidgetsFlutterBinding.ensureInitialized();
+      TestWidgetsFlutterBinding.ensureInitialized();
+
+      GetIt.instance.registerSingleton<CssParser>(CssParser());
 
       epubPage = EpubPage();
       PageConstants.canvasHeight = 80;
@@ -71,8 +66,7 @@ void main() {
               builder: (context) {
                 // Access the theme here
                 style = Theme.of(context).textTheme.bodySmall!;
-                blockStyle = BlockStyle();
-                blockStyle.elementStyle = ElementStyle();
+                blockStyle = BlockStyle(elementStyle: ElementStyle());
                 blockStyle.elementStyle.textStyle = style;
                 return Container();
               },
@@ -80,6 +74,10 @@ void main() {
           ),
         ),
       );
+    });
+
+    tearDown(() {
+      GetIt.instance.reset();
     });
 
     group('constructor', () {
@@ -91,13 +89,17 @@ void main() {
 
     group('addText', () {
       test('check for lines, words and separators', () {
-        epubPage.addText(
+        epubPage.addLine(paragraph: true, margin: 0, blockStyle: blockStyle,);
+
+        epubPage.addElement(
             TextContent(
-              span: TextSpan(
-                text: """The cutter passed from sunlit brilliance to soot-black shadow with the knife-edge suddenness possible only in space, and the tall, broad-shouldered woman in the black and gold of the Royal Manticoran Navy gazed out the armorplast port at the battle-steel beauty of her command and frowned.""",
-                style: style,),
-              blockStyle: blockStyle,),
-            []);
+              blockStyle: blockStyle,
+              elementStyle: blockStyle.elementStyle,
+              text: """The cutter passed from sunlit brilliance to soot-black shadow with the knife-edge suddenness possible only in space, and the tall, broad-shouldered woman in the black and gold of the Royal Manticoran Navy gazed out the armorplast port at the battle-steel beauty of her command and frowned.""",
+            ), []);
+
+        epubPage.lines.last.completeParagraph();
+        epubPage.lines.last.completeLine();
 
         Map<Type, int> line0 = groupBy(epubPage.lines[0].elements, (e) => e.runtimeType).map((k, v) => MapEntry(k, v.length));
 
@@ -118,13 +120,12 @@ void main() {
         expect(epubPage.lines[4].textIndent, 0);
         expect(epubPage.lines[4].alignment, LineAlignment.left);
 
-        epubPage.addText(
+        epubPage.addElement(
             TextContent(
-              span: TextSpan(
-                text: """The six-limbed cream-and-gray treecat on her shoulder shifted his balance as she raised her right hand and pointed.""",
-                style: style,),
-              blockStyle: blockStyle,),
-            []);
+              blockStyle: blockStyle,
+              elementStyle: blockStyle.elementStyle,
+              text: """The six-limbed cream-and-gray treecat on her shoulder shifted his balance as she raised her right hand and pointed.""",
+            ), []);
 
         expect(epubPage.overflow.length, 2);
       });
