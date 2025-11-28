@@ -71,7 +71,7 @@ class CssParser {
     if (node is XmlElement) {
       CssDeclarations? local = getInlineStyle(node);
       if (local != null && local.containsKey(attribute)) {
-        return local['attribute'];
+        return local[attribute];
       }
     }
 
@@ -159,8 +159,9 @@ class CssParser {
 
     // Apparently you can specify multiple subsets of the class elements and expect this to match
     // <p class="a,b,c,d,e"> can match css selections ".a.b.e", ".a.c.d", ".a.e.b.d" etc. Go figure.
+    OrderedSet<String> complexSelectors = stripSimpleSelectors(selectors);
     for (String cssKey in css.keys) {
-      if (isMatchedSingleLevelSelectors(cssKey, selectors.toSet())) {
+      if (isMatchedSingleLevelSelectors(cssKey, complexSelectors.toSet())) {
           declarations = declarations.combine(css[cssKey]);
       }
     }
@@ -324,5 +325,13 @@ class CssParser {
 
     // Give up and return the default.
     return preferredSize;
+  }
+
+  OrderedSet<String> stripSimpleSelectors(OrderedSet<String> selectors) {
+    OrderedSet<String> complexSelectors = OrderedSet.simple<String>();
+    complexSelectors.addAll(selectors);
+
+    complexSelectors.removeWhere((selector) => '.'.allMatches(selector).length <= 1);
+    return complexSelectors;
   }
 }
