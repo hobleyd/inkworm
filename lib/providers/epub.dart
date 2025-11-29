@@ -44,7 +44,7 @@ class Epub extends _$Epub {
 
   Future<void> parseRemainingChapters(XmlDocument opf, int chapterIndex) async {
     Set<int> completedChapters = { chapterIndex };
-    if (chapterIndex < _chapters.length) {
+    if (chapterIndex+1 < _chapters.length) {
       _chapters[chapterIndex+1] = await parseChapter(opf, chapterIndex+1);
       state = state.copyWith(chapters: _chapters);
     }
