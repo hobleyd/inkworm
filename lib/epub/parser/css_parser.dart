@@ -86,6 +86,10 @@ class CssParser {
   }
 
   double? getFloatFromString(TextStyle s, String value, bool isHorizontal) {
+    if (value == "0") {
+      return 0;
+    }
+
     TextPainter paint = TextPainter(textDirection: TextDirection.ltr, text: TextSpan(text: "s", style: s));
     paint.layout();
 
