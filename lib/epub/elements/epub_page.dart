@@ -39,7 +39,14 @@ class EpubPage {
       currentLine!.completeLine();
 
       // If we need to move to a new page, add these to the overflow list and let the calling process worry about creating a new page.
-      Line line = Line(yPos: currentLineBottomYPos + (margin ?? 0), blockStyle: blockStyle);
+      double yPos = currentLineBottomYPos + (margin ?? 0);
+      Line line = Line(yPos: yPos, blockStyle: blockStyle);
+
+      // Reset the dropcaps vars once the line is below the bottom of the dropcaps character.
+      if (dropCapsYPosition < yPos + getActiveLines().last.height) {
+        dropCapsXPosition = 0;
+        dropCapsYPosition = 0;
+      }
 
       if (dropCapsIndent != null) {
         line.dropCapsIndent = dropCapsIndent;
@@ -89,11 +96,6 @@ class EpubPage {
         dropCapsYPosition = el.height;
       }
       else if (!currentLine!.willFitWidth(el) && el is! SpaceSeparator) {
-        // Reset the dropcaps vars once the line is below the bottom of the dropcaps character.
-        if (dropCapsYPosition < currentLine!.bottomYPosition + currentLine!.height) {
-          dropCapsXPosition = 0;
-          dropCapsYPosition = 0;
-        }
         addLine(paragraph: false, blockStyle: content.blockStyle, dropCapsIndent: dropCapsXPosition, overflowRequired: (currentLineBottomYPos + el.height) > PageConstants.canvasHeight);
       }
       currentLine!.addElement(el);
