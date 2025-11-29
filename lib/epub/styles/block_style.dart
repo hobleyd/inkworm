@@ -78,6 +78,14 @@ class BlockStyle extends Style {
   }
 
   void getAlignment(XmlNode element) {
+    String? alignAttribute = element.getAttribute('align');
+    if (alignAttribute != null) {
+      if (alignAttribute == 'center') {
+        alignment = LineAlignment.centre;
+        return;
+      }
+    }
+
     String? alignmentAttribute = _parser.getStringAttribute(element, this, "text-align");
     if (alignmentAttribute == null) {
       // This is another way of centering in CSS.
