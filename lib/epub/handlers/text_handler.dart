@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:injectable/injectable.dart';
 import 'package:xml/xml.dart';
 
@@ -17,11 +18,7 @@ class TextHandler extends HtmlHandler {
   @override
   Future<List<HtmlContent>> processElement({required XmlNode node, BlockStyle? parentBlockStyle, ElementStyle? parentElementStyle}) async {
     XmlText element = node as XmlText;
-
-    if (element.value.trim().isEmpty) {
-      return [];
-    }
-
+    
     //debugPrint('TEXT_HANDLER: ${element.value}: $parentElementStyle');
     List<HtmlContent> elements = [];
     elements.add(TextContent(blockStyle: parentBlockStyle!, elementStyle: parentElementStyle!, text: element.value,),);
