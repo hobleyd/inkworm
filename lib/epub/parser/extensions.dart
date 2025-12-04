@@ -58,7 +58,7 @@ extension NodeExtension on XmlNode {
   }
 
   // We get a lot of blank lines in HTML which get processed as Nodes. We want to ignore these.
-  bool get shouldProcess => this is! XmlText || (value != '\n');
+  bool get shouldProcess => this is! XmlText || (value != '\n' && value != '\n ');
 }
 
 extension SelectorSetExtension on XmlElement {
