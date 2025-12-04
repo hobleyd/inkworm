@@ -1,15 +1,16 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:file_open/file_open.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get_it/get_it.dart';
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 
-import '../epub/constants.dart';
-import '../providers/epub.dart';
-import '../epub/parser/epub_parser.dart';
 import '../models/epub_book.dart';
+import '../models/page_size.dart';
+import '../providers/epub.dart';
+import '../providers/progress.dart';
 import '../widgets/fatal_error.dart';
 import '../widgets/page_canvas.dart';
 import '../widgets/progress_bar.dart';
@@ -29,7 +30,8 @@ class _Inkworm extends ConsumerState<Inkworm> {
     EpubBook book = ref.watch(epubProvider);
 
     MediaQueryData data = MediaQueryData.fromView(View.maybeOf(context)!);
-    PageConstants.pixelDensity = data.devicePixelRatio;
+    PageSize size = GetIt.instance.get<PageSize>();
+    size.update(pixelDensity: data.devicePixelRatio);
 
     return Scaffold(
       appBar: null,
@@ -60,27 +62,40 @@ class _Inkworm extends ConsumerState<Inkworm> {
     super.initState();
 
     if (Platform.isAndroid) {
-      // Listen for Intents coming from outside the app while the app is in the memory.
-      _intentSub = ReceiveSharingIntent.instance.getMediaStream().listen((value) {
-        if (value.isNotEmpty) {
-          GetIt.instance.get<EpubParser>().openBook(value.first.path);
-        }
-      }, onError: (e, s) {
-        ref.read(epubProvider.notifier).setError(e.toString(), s);
-      },
-      );
-
-      // Get Intents coming from outside the app while the app is closed.
-      ReceiveSharingIntent.instance.getInitialMedia().then((value) {
-        if (value.isNotEmpty) {
-          GetIt.instance.get<EpubParser>().openBook(value.first.path);
-        }
-
-        ReceiveSharingIntent.instance.reset();
-      });
+      _handleAndroidIntent();
+    } else if (Platform.isMacOS) {
+      _handleMacOSIntent();
     } else {
       // TODO: Support other platforms for debugging.
-      GetIt.instance.get<EpubParser>().openBook(Platform.environment['EBOOK']!);
+      ref.read(epubProvider.notifier).openBook(Platform.environment['EBOOK']!);
     }
+  }
+
+  void _handleAndroidIntent() async {
+    // Listen for Intents coming from outside the app while the app is in the memory.
+    _intentSub = ReceiveSharingIntent.instance.getMediaStream().listen((value) {
+      if (value.isNotEmpty) {
+        ref.read(epubProvider.notifier).openBook(value.first.path);
+      }
+    }, onError: (e, s) {
+      ref.read(epubProvider.notifier).setError(e.toString(), s);
+    },);
+
+    // Get Intents coming from outside the app while the app is closed.
+    ReceiveSharingIntent.instance.getInitialMedia().then((value) {
+      if (value.isNotEmpty) {
+        ref.read(epubProvider.notifier).openBook(value.first.path);
+      }
+
+      ReceiveSharingIntent.instance.reset();
+    });
+  }
+
+  Future<void> _handleMacOSIntent() async {
+    FileOpen.onOpened.listen((uris) {
+      debugPrint('got MacOS open intent: ${uris.first.toFilePath()}');
+      ref.read(epubProvider.notifier).openBook(uris.first.toFilePath());
+      return;
+    });
   }
 }
