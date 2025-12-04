@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
 
+import '../../models/page_size.dart';
 import '../content/html_content.dart';
 import '../content/text_content.dart';
-import '../constants.dart';
 
 abstract class LineElement {
   late double height;
@@ -16,11 +17,13 @@ abstract class LineElement {
   LineElement();
 
   void getConstraints() async {
+    PageSize size = GetIt.instance.get<PageSize>();
+
     TextPainter painter = TextPainter(
       text: (element as TextContent).span,
       textDirection: TextDirection.ltr,
     );
-    painter.layout(maxWidth: PageConstants.canvasWidth - PageConstants.leftIndent - PageConstants.rightIndent);
+    painter.layout(maxWidth: size.canvasWidth - size.leftIndent - size.rightIndent);
 
     width = painter.width;
     height = painter.height;

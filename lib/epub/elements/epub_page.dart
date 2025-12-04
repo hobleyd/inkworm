@@ -1,8 +1,7 @@
-import 'package:flutter/foundation.dart';
+import 'package:get_it/get_it.dart';
 
-import '../constants.dart';
+import '../../models/page_size.dart';
 import '../content/html_content.dart';
-import '../content/text_content.dart';
 import '../styles/block_style.dart';
 import 'separators/space_separator.dart';
 import 'line.dart';
@@ -63,15 +62,18 @@ class EpubPage {
     }
 
     if (paragraph) {
-      getActiveLines().last.textIndent = blockStyle.leftIndent ?? PageConstants.leftIndent * 1.5;
+      PageSize size = GetIt.instance.get<PageSize>();
+      getActiveLines().last.textIndent = blockStyle.leftIndent ?? size.leftIndent * 1.5;
     }
   }
 
   // Used to add overflow lines into a new page creating by the calling class.
   List<Line> addOverflow(List<Line> lines) {
+    PageSize size = GetIt.instance.get<PageSize>();
+
     List<Line> overflow = [];
     for (Line line in lines) {
-      if ((line.yPos + line.height) <= PageConstants.canvasHeight) {
+      if ((line.yPos + line.height) <= size.canvasHeight) {
         this.lines.add(line);
       } else {
         overflow.add(line);
@@ -96,7 +98,12 @@ class EpubPage {
         dropCapsYPosition = el.height;
       }
       else if (!currentLine!.willFitWidth(el) && el is! SpaceSeparator) {
-        addLine(paragraph: false, blockStyle: content.blockStyle, dropCapsIndent: dropCapsXPosition, overflowRequired: (currentLineBottomYPos + el.height) > PageConstants.canvasHeight);
+        PageSize size = GetIt.instance.get<PageSize>();
+        addLine(
+            paragraph: false,
+            blockStyle: content.blockStyle,
+            dropCapsIndent: dropCapsXPosition,
+            overflowRequired: (currentLineBottomYPos + el.height) > size.canvasHeight);
       }
       currentLine!.addElement(el);
     }

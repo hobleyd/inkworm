@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
 
+import '../../models/page_size.dart';
 import '../content/image_content.dart';
-import '../constants.dart';
 import 'line_element.dart';
 
 class ImageElement extends LineElement {
   final ImageContent image;
-
-  double get canvasWidth => PageConstants.canvasWidth - PageConstants.leftIndent - PageConstants.rightIndent;
-  double get canvasHeight => PageConstants.canvasHeight;
 
   @override
   get element => image;
@@ -31,8 +29,9 @@ class ImageElement extends LineElement {
   @override
   void getConstraints() {
     // Resize the image to fit the screen.
+    PageSize size = GetIt.instance.get<PageSize>();
 
-    double scale = calculateAspectRatio(canvasWidth, canvasHeight);
+    double scale = calculateAspectRatio(size.canvasWidth, size.canvasHeight);
 
     width = image.width * scale;
     height = image.height * scale;
@@ -49,7 +48,7 @@ class ImageElement extends LineElement {
     }
 
     // TODO: look at how images with titles are handled and ensure we have enough space for both.
-    if (height == canvasHeight) {
+    if (height == size.canvasHeight) {
       width = width * 0.9;
       height = height * 0.9;
     }
