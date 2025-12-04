@@ -10,7 +10,6 @@ import '../epub/parser/epub_parser.dart';
 import '../epub/parser/extensions.dart';
 import '../models/page_size.dart';
 import '../models/reading_progress.dart';
-import '../providers/progress.dart';
 
 part 'epub.g.dart';
 

@@ -21,7 +21,6 @@ import 'package:inkworm/epub/elements/epub_page.dart';
 import 'package:inkworm/epub/styles/block_style.dart';
 import 'package:inkworm/epub/styles/element_style.dart';
 import 'package:mockito/annotations.dart';
-import 'package:mockito/mockito.dart';
 
 // Generate mocks with: flutter pub run build_runner build
 @GenerateMocks([Line, WordElement, SpaceSeparator, Epub,])

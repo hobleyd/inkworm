@@ -1,9 +1,8 @@
-import 'package:flutter/foundation.dart';
 import 'package:injectable/injectable.dart';
-import 'package:inkworm/epub/content/paragraph_break.dart';
 import 'package:xml/xml.dart';
 
 import '../content/html_content.dart';
+import '../content/paragraph_break.dart';
 import '../parser/extensions.dart';
 import '../styles/block_style.dart';
 import '../styles/element_style.dart';

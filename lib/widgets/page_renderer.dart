@@ -9,13 +9,9 @@ import '../providers/epub.dart';
 import '../models/epub_book.dart';
 
 class PageRenderer extends CustomPainter {
-  late WidgetRef _ref;
-
   List<Line> lines = [];
 
   PageRenderer(WidgetRef ref, int chapterNumber, int pageNumber) {
-    _ref = ref;
-
     EpubBook book = ref.read(epubProvider);
     lines = book.chapters.elementAtOrNull(chapterNumber)?[pageNumber]?.lines ?? [];
   }
