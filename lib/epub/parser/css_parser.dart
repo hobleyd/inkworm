@@ -5,7 +5,7 @@ import 'package:injectable/injectable.dart';
 import 'package:ordered_set/ordered_set.dart';
 import 'package:xml/xml.dart';
 
-import '../constants.dart';
+import '../../models/page_size.dart';
 import '../styles/element_style.dart';
 import '../styles/style.dart';
 import 'epub_parser.dart';
@@ -304,7 +304,7 @@ class CssParser {
 
   void parseFile(String href) {
     if (!css.containsKey(href)) {
-      Map<String, CssDeclarations> declarations = parseCss(GetIt.instance.get<EpubParser>().bookArchive.getContentAsString(href));
+      Map<String, CssDeclarations> declarations = parseCss(GetIt.instance.get<EpubParser>().bookArchive!.getContentAsString(href));
       css.addAll(declarations);
     }
   }
@@ -314,10 +314,11 @@ class CssParser {
       final cssFloatRegex = RegExp(r'^(-?\d+\.?\d*)([a-z%]+)$', caseSensitive: false);
       final match = cssFloatRegex.firstMatch(value.trim());
 
+      PageSize size = GetIt.instance.get<PageSize>();
       if (match != null) {
         return switch (match.group(2)){
-          "px" || "pt" => PageConstants.pixelDensity * double.parse(match.group(1)!),
-          "em" => preferredSize * double.parse(match.group(1)!),
+          "px" || "pt" => size.pixelDensity * double.parse(match.group(1)!),
+          "em" => preferredSize * double.parse(match.group(1)!), // TODO: am I sure this is correct?
           "%" => preferredSize * (double.parse(match.group(1)!) / 100),
           _ => double.parse(match.group(1)!),
         };
