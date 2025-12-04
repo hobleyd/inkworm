@@ -3,7 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get_it/get_it.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:inkworm/epub/constants.dart';
+import 'package:inkworm/epub/elements/epub_chapter.dart';
+import 'package:inkworm/epub/elements/separators/non_breaking_space_separator.dart';
+import 'package:inkworm/epub/handlers/block_handler.dart';
+import 'package:inkworm/epub/handlers/line_break_handler.dart';
+import 'package:inkworm/epub/handlers/text_handler.dart';
+import 'package:inkworm/epub/parser/epub_parser.dart';
+import 'package:inkworm/models/page_size.dart';
 import 'package:inkworm/epub/content/text_content.dart';
 import 'package:inkworm/epub/elements/separators/hyphen_separator.dart';
 import 'package:inkworm/epub/elements/separators/space_separator.dart';
@@ -15,11 +21,11 @@ import 'package:inkworm/epub/elements/epub_page.dart';
 import 'package:inkworm/epub/styles/block_style.dart';
 import 'package:inkworm/epub/styles/element_style.dart';
 import 'package:mockito/annotations.dart';
+import 'package:mockito/mockito.dart';
 
 // Generate mocks with: flutter pub run build_runner build
-@GenerateMocks([Line, WordElement, SpaceSeparator, Epub])
+@GenerateMocks([Line, WordElement, SpaceSeparator, Epub,])
 void main() {
-    group('text parsing', () {
     late EpubPage epubPage;
     late TextStyle style;
     late BlockStyle blockStyle;
@@ -29,10 +35,20 @@ void main() {
       TestWidgetsFlutterBinding.ensureInitialized();
 
       GetIt.instance.registerSingleton<CssParser>(CssParser());
+      GetIt.instance.registerSingleton<PageSize>(PageSize());
+      GetIt.instance.registerSingleton<EpubParser>(EpubParser());
+      GetIt.instance.registerSingleton<BlockHandler>(BlockHandler());
+      GetIt.instance.registerSingleton<TextHandler>(TextHandler());
+      GetIt.instance.registerSingleton<LineBreakHandler>(LineBreakHandler());
 
       epubPage = EpubPage();
-      PageConstants.canvasHeight = 80;
-      PageConstants.canvasWidth = 378;
+
+      PageSize size = GetIt.instance.get<PageSize>();
+      size.canvasHeight = 80;
+      size.canvasWidth = 378;
+      size.pixelDensity = 1;
+      size.leftIndent = 12;
+      size.rightIndent = 12;
 
       themeData = ThemeData(
         colorSchemeSeed: Colors.white,
@@ -106,10 +122,9 @@ void main() {
         expect(epubPage.lines.length, 5);
         expect(epubPage.lines[0].yPos, 0);
         expect(epubPage.lines[0].textIndent, 18);
-        expect(line0[(WordElement)], 10);
-        expect(line0[(SpaceSeparator)], 8);
+        expect(line0[(WordElement)], 11);
+        expect(line0[(SpaceSeparator)], 9);
         expect(line0[(HyphenSeparator)], 1);
-        expect(line0[(WordElement)], 10);
         expect(epubPage.lines[1].yPos, 16);
         expect(epubPage.lines[1].textIndent, 0);
         expect(epubPage.lines[2].yPos, 32);
@@ -127,8 +142,44 @@ void main() {
               text: """The six-limbed cream-and-gray treecat on her shoulder shifted his balance as she raised her right hand and pointed.""",
             ), []);
 
-        expect(epubPage.overflow.length, 2);
+        expect(epubPage.overflow.length, 1);
       });
     });
-  });
+
+    group('blank paragraph', () {
+      test('check single blank paragraph', () async {
+        EpubChapter chapter = EpubChapter(chapterNumber: 0);
+
+        PageSize size = GetIt.instance.get<PageSize>();
+        size.canvasWidth = 800;
+        size.canvasHeight = 600;
+        EpubParser parser = GetIt.instance.get<EpubParser>();
+        await parser.parseChapterFromString(chapter, '''<html><body>
+<p>"I <i>do</i> see," he said in a very different tone. "And I think we should get Lady Harrington and Commodore McKeon in on this ASAP."</p>
+<p>&#160;</p>
+<p>"My, my, my," Honor said softly, gazing at a hardcopy of the data Tremaine had found. "How very convenient .&#160;.&#160;. maybe."</p>
+</body></html>''');
+
+        expect(chapter.pages.length, 1);
+        expect(chapter.pages[0].lines[5].elements[0], isA<NonBreakingSpaceSeparator>());
+    });
+    });
+
+    group('blank paragraph', () {
+      test('check single blank paragraph', () async {
+        EpubChapter chapter = EpubChapter(chapterNumber: 0);
+
+        PageSize size = GetIt.instance.get<PageSize>();
+        size.canvasWidth = 800;
+        size.canvasHeight = 600;
+        EpubParser parser = GetIt.instance.get<EpubParser>();
+        await parser.parseChapterFromString(chapter, '<html><body><h2 align="center"><b>ECHOES OF HONOR</b><br/><b>David Weber</b></h2><blockquote><p class="calibre_class_0">&#160;<br/>This is a work of fiction. All the characters and events portrayed in this book are fictional, and any resemblance to real people or incidents is purely coincidental.<br/><br/>Copyright © 1998 by David M. Weber<br/><br/>All rights reserved, including the right to reproduce this book or portions thereof in any form.</p></blockquote></body></html>');
+
+        expect(chapter.pages.length, 1);
+        expect(chapter.pages[0].lines.length, 18);
+        expect(chapter.pages[0].lines[10].yPos, 80);
+        expect(chapter.pages[0].lines[12].yPos, 104);
+      });
+    });
+
 }

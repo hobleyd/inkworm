@@ -1,3 +1,5 @@
+import 'package:archive/archive.dart';
+import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:xml/xml.dart';
@@ -6,6 +8,9 @@ import '../models/epub_book.dart';
 import '../epub/elements/epub_chapter.dart';
 import '../epub/parser/epub_parser.dart';
 import '../epub/parser/extensions.dart';
+import '../models/page_size.dart';
+import '../models/reading_progress.dart';
+import '../providers/progress.dart';
 
 part 'epub.g.dart';
 
@@ -16,6 +21,38 @@ class Epub extends _$Epub {
   @override
   EpubBook build() {
     return EpubBook(uri: "", author: "", title: "", chapters: [], manifest: {}, parsingBook: true);
+  }
+
+  void openBook(String book) {
+    state = state.copyWith(uri: book);
+
+    debugPrint('opening book: $book');
+    final inputStream = InputFileStream(book);
+    Archive bookArchive = ZipDecoder().decodeStream(inputStream);
+    inputStream.close();
+
+    debugPrint('opened epub');
+    EpubParser parser = GetIt.instance.get<EpubParser>();
+    parser.bookArchive = bookArchive;
+
+    ReadingProgress progress = GetIt.instance.get<ReadingProgress>();
+    debugPrint('openBook got progress: $progress');
+    if (book != progress.book) {
+      progress.book = book;
+      progress.chapterNumber = 0;
+      progress.pageNumber = 0;
+    }
+
+    PageSize size = GetIt.instance.get<PageSize>();
+    if (size.canvasHeight != 0 && size.canvasWidth != 0) {
+      debugPrint('got size of $size');
+      parse(progress.chapterNumber);
+    } else {
+      size.stream.listen((pageSize) {
+        debugPrint('got new size: $size');
+        parse(progress.chapterNumber);
+      });
+    }
   }
 
   /*

@@ -13,7 +13,7 @@ class ProgressBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     EpubBook book = ref.watch(epubProvider);
-    var progressAsync = ref.watch(progressProvider(book.uri));
+    var progressAsync = ref.watch(progressProvider);
 
     String pageNumbers = '';
     if (progressAsync.hasValue) {

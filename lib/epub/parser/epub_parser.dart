@@ -11,24 +11,24 @@ import 'extensions.dart';
 
 @Singleton()
 class EpubParser {
-  late Archive bookArchive;
+  Archive? bookArchive;
 
   EpubParser();
 
   Uint8List getBytes(String path) {
-    return bookArchive.getContentAsBytes(path);
+    return bookArchive!.getContentAsBytes(path);
   }
 
   XmlDocument? getOPFContent(String opfPath) {
-    return XmlDocument.parse(bookArchive.getContentAsString(opfPath));
+    return XmlDocument.parse(bookArchive!.getContentAsString(opfPath));
   }
 
   String? getOPFPath() {
     // We need to check twice, because while most epubs have a single META_INF/container.xml in the root of the Archive,
     // some have it in a sub folder and so _findFileInArchive is required. We can't just search for it that way though
     // because other archives have multiple containers and we need to preference the top level one.
-    ArchiveFile? container = bookArchive.find('META-INF/container.xml');
-    container ??= bookArchive.findFileEndsWith('META-INF/container.xml');
+    ArchiveFile? container = bookArchive!.find('META-INF/container.xml');
+    container ??= bookArchive!.findFileEndsWith('META-INF/container.xml');
 
     InputStream? containerStream = container?.getContent();
     if (containerStream == null) {
@@ -40,12 +40,6 @@ class EpubParser {
 
     containerStream.close();
     return rootfile?.getAttributeNode("full-path")?.value;
-  }
-
-  void openBook(String uri) {
-    final inputStream = InputFileStream(uri);
-    bookArchive = ZipDecoder().decodeStream(inputStream);
-    inputStream.close();
   }
 
   XmlDocument parse() {
@@ -65,7 +59,11 @@ class EpubParser {
   Future<EpubChapter> parseChapter(int index, String href) async {
     EpubChapter chapter = EpubChapter(chapterNumber: index);
 
-    final XmlDocument doc = XmlDocument.parse(bookArchive.getContentAsString(href));
+    return parseChapterFromString(chapter, bookArchive!.getContentAsString(href));
+  }
+
+  Future<EpubChapter> parseChapterFromString(EpubChapter chapter, String chapterText) async {
+    final XmlDocument doc = XmlDocument.parse(chapterText);
     for (final XmlNode node in doc.children) {
       if (node.shouldProcess) {
         List<HtmlContent>? elements = await node.handler?.processElement(node: node,);

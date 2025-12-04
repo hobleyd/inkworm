@@ -40,7 +40,7 @@ class ImageHandler extends HtmlHandler {
     BlockStyle blockStyle = BlockStyle(elementStyle: elementStyle);
     blockStyle.parseElement(element: element, parentStyle: parentBlockStyle);
 
-    ui.Image img = await createImageFromUint8List(GetIt.instance.get<EpubParser>().bookArchive.getContentAsBytes(element.getAttribute('src')!));
+    ui.Image img = await createImageFromUint8List(GetIt.instance.get<EpubParser>().bookArchive!.getContentAsBytes(element.getAttribute('src')!));
 
     elements.add(ImageContent(blockStyle: blockStyle, elementStyle: elementStyle, image: img));
 

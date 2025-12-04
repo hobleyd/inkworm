@@ -10,7 +10,6 @@ import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 import '../models/epub_book.dart';
 import '../models/page_size.dart';
 import '../providers/epub.dart';
-import '../providers/progress.dart';
 import '../widgets/fatal_error.dart';
 import '../widgets/page_canvas.dart';
 import '../widgets/progress_bar.dart';
