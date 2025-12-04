@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:injectable/injectable.dart';
 import 'package:inkworm/epub/content/paragraph_break.dart';
 import 'package:xml/xml.dart';
@@ -52,7 +53,17 @@ class BlockHandler extends HtmlHandler {
       if (child.shouldProcess) {
         List<HtmlContent>? childElements = await child.handler?.processElement(node: child, parentBlockStyle: blockStyle, parentElementStyle: elementStyle);
         if (childElements?.isNotEmpty ?? false) {
-          elements.addAll(childElements!);
+          for (var element in childElements!) {
+            // Check for repeated, empty paragraphs and don't add multiples in.
+            if (childElements.length == 2 && element is ParagraphBreak) {
+              if (elements.length >= 2) {
+                if (elements[elements.length - 2] == element || elements[elements.length - 1] == element) {
+                  continue;
+                }
+              }
+            }
+            elements.add(element);
+          }
         }
       }
     }
