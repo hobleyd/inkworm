@@ -1,19 +1,24 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:injectable/injectable.dart';
 
-part 'reading_progress.freezed.dart';
+@lazySingleton
+class ReadingProgress {
+  String book;
+  int chapterNumber;
+  int pageNumber;
 
-@freezed
-class ReadingProgress with _$ReadingProgress {
-  @override
-  final int chapterNumber;
+  ReadingProgress() : book = "", chapterNumber = 0, pageNumber = 1;
 
-  @override
-  final int pageNumber;
+  ReadingProgress copyWith({required String book, required int chapterNumber, required int pageNumber}) {
+    ReadingProgress progress = ReadingProgress();
+    progress.book          = book;
+    progress.chapterNumber = chapterNumber;
+    progress.pageNumber    = pageNumber;
 
-  const ReadingProgress({required this.chapterNumber, required this.pageNumber});
+    return progress;
+  }
 
   @override
   String toString() {
-    return 'Chapter: $chapterNumber / Page: $pageNumber';
+    return '$book: chapter: $chapterNumber / page: $pageNumber';
   }
 }
