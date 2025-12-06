@@ -25,14 +25,12 @@ class PageCanvas extends ConsumerWidget {
           return const Center(child: CircularProgressIndicator());
         },
         data: (ReadingProgress progress) {
-          debugPrint('PageCanvas: progress: $progress (${book.uri}');
           if (book.uri.isNotEmpty && book.uri != progress.book) {
             progress = GetIt.instance.get<ReadingProgress>();
             progress.book = book.uri;
             progress.chapterNumber = 0;
             progress.pageNumber = 0;
 
-            debugPrint('resetting progress');
             ref.read(progressProvider.notifier).setProgress(book.uri, 0, 0);
           } else if (book.uri.isEmpty && progress.book.isNotEmpty) {
             Future(() => ref.read(epubProvider.notifier).openBook(progress.book));

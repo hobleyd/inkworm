@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -22,7 +21,6 @@ class Progress extends _$Progress  {
     progress.chapterNumber = chapter ?? 0;
     progress.pageNumber    = page ?? 0;
 
-    debugPrint('built progressProvider: $progress');
     return progress;
   }
 
