@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:injectable/injectable.dart';
 import 'package:xml/xml.dart';
 
@@ -49,19 +51,18 @@ class BlockHandler extends HtmlHandler {
 
     //debugPrint('BLOCK_HANDLER: ${element.name}: ${element.attributes}: $blockStyle, $elementStyle');
     for (var child in node.children) {
-      if (child.shouldProcess) {
+      if (child.shouldProcess && !_isParagraphEmpty(child)) {
         List<HtmlContent>? childElements = await child.handler?.processElement(node: child, parentBlockStyle: blockStyle, parentElementStyle: elementStyle);
         if (childElements?.isNotEmpty ?? false) {
-          for (var element in childElements!) {
-            // Check for repeated, empty paragraphs and don't add multiples in.
-            if (childElements.length == 2 && element is ParagraphBreak) {
-              if (elements.length >= 2) {
-                if (elements[elements.length - 2] == element || elements[elements.length - 1] == element) {
-                  continue;
-                }
+          for (var el in childElements!) {
+            if (el is ParagraphBreak && elements.last is ParagraphBreak) {
+              // support margin collapsing if required.
+              if (el.blockStyle.marginTop > 0 && elements.last.blockStyle.marginBottom > 0) {
+                elements.last.blockStyle.bottomMargin = max(elements.last.blockStyle.marginBottom, el.blockStyle.marginTop);
+                continue;
               }
             }
-            elements.add(element);
+            elements.add(el);
           }
         }
       }
@@ -74,5 +75,28 @@ class BlockHandler extends HtmlHandler {
     }
 
     return elements;
+  }
+
+  bool _isParagraphEmpty(XmlNode node) {
+    if (node is XmlElement && node.localName == 'p') {
+      // If there are child elements (not just text nodes), it's not empty
+      if (node.children.any((child) => child is XmlElement)) {
+        return false;
+      }
+
+      // Check if there's any text content or entities
+      for (var child in node.children) {
+        if (child is XmlText) {
+          // Check the raw text (before entity decoding)
+          if (child.value.trimPreservingNbsp().isNotEmpty) {
+            return false;
+          }
+        }
+      }
+
+      return true;
+    }
+
+    return false;
   }
 }

@@ -101,6 +101,39 @@ extension CssDeclarationsExtension on CssDeclarations {
   }
 }
 
+extension WhitespaceTrimExtension on String {
+  /// Trims all whitespace except non-breaking spaces (U+00A0)
+  String trimPreservingNbsp() {
+    if (isEmpty) return this;
+
+    // Non-breaking space character
+    const nbsp = '\u00A0';
+
+    int start = 0;
+    int end = length;
+
+    // Trim from start
+    while (start < end) {
+      final char = this[start];
+      if (char == nbsp || char.trim().isNotEmpty) {
+        break;
+      }
+      start++;
+    }
+
+    // Trim from end
+    while (end > start) {
+      final char = this[end - 1];
+      if (char == nbsp || char.trim().isNotEmpty) {
+        break;
+      }
+      end--;
+    }
+
+    return substring(start, end);
+  }
+}
+
 
 
 
