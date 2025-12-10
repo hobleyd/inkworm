@@ -66,7 +66,9 @@ class _Inkworm extends ConsumerState<Inkworm> {
       _handleMacOSIntent();
     } else {
       // TODO: Support other platforms for debugging.
-      ref.read(epubProvider.notifier).openBook(Platform.environment['EBOOK']!);
+      Future(() {
+        ref.read(epubProvider.notifier).openBook(Platform.environment['EBOOK']!);
+      });
     }
   }
 
@@ -92,7 +94,6 @@ class _Inkworm extends ConsumerState<Inkworm> {
 
   Future<void> _handleMacOSIntent() async {
     FileOpen.onOpened.listen((uris) {
-      debugPrint('got MacOS open intent: ${uris.first.toFilePath()}');
       ref.read(epubProvider.notifier).openBook(uris.first.toFilePath());
       return;
     });
