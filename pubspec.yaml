@@ -30,6 +30,8 @@ dependencies:
   receive_sharing_intent: ^1.8.1
   riverpod_annotation: ^3.0.3
   shared_preferences: ^2.5.3
+  sqflite_common_ffi: ^2.3.6
+  sqlite3_flutter_libs: ^0.5.39
   version: ^3.0.2
   xml: ^6.6.1
 

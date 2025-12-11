@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get_it/get_it.dart';
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 
+import '../database/reading_db.dart';
 import '../models/epub_book.dart';
 import '../models/page_size.dart';
 import '../providers/epub.dart';
@@ -27,25 +28,32 @@ class _Inkworm extends ConsumerState<Inkworm> {
   @override
   Widget build(BuildContext context) {
     EpubBook book = ref.watch(epubProvider);
+    var asyncDb = ref.watch(readingDBProvider);
 
     MediaQueryData data = MediaQueryData.fromView(View.maybeOf(context)!);
     PageSize size = GetIt.instance.get<PageSize>();
     size.update(pixelDensity: data.devicePixelRatio);
 
-    return Scaffold(
-      appBar: null,
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(
-              child: book.error != null || book.errorDescription != null ? FatalError() : PageCanvas(),
-            ),
-            ProgressBar(),
-          ],
+    return asyncDb.when(error: (error, stackTrace) {
+      return const Text("It's time to panic; we can't open the database!");
+    }, loading: () {
+      return const Center(child: CircularProgressIndicator());
+    }, data: (var db) {
+      return Scaffold(
+        appBar: null,
+        body: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: book.error != null || book.errorDescription != null ? FatalError() : PageCanvas(),
+              ),
+              ProgressBar(),
+            ],
+          ),
         ),
-      ),
-    );
+      );
+    });
   }
 
   @override
