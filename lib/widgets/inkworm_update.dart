@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:android_package_installer/android_package_installer.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -21,30 +23,45 @@ class _InkwormUpdate extends ConsumerState<InkwormUpdate> {
   Widget build(BuildContext context) {
     VersionCheck? versions = ref.watch(updateProvider).value;
 
-    final String noUpdateLabel = 'There are no updates for Inkworm as at this time.';
-    return downloading == true
-        ? CircularProgressIndicator()
-        : versions == null
-        ? Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Padding(padding: EdgeInsetsGeometry.only(top: 30), child: Text(noUpdateLabel, style: Theme.of(context).textTheme.labelMedium)),
-        IconButton(icon: const Icon(Icons.refresh), onPressed: () => ref.read(updateProvider.notifier).checkVersion()),
-      ],
-    )
-        : Column(
+    if (downloading) {
+      return Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [CircularProgressIndicator()]
+      );
+    } else if (versions == null) {
+      final String noUpdateLabel = Platform.isAndroid
+          ? 'There are no updates for Inkworm as at this time.'
+          : 'Only Android is supported for in-application updates at this time.';
+
+      return Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Padding(padding: EdgeInsetsGeometry.only(top: 30), child: Text('Installed Version: ${versions.currentVersion}', style: Theme.of(context).textTheme.bodyMedium)),
-          Text('Current Version: ${versions.newVersion}', style: Theme.of(context).textTheme.bodyMedium),
-          if (versions.hasUpdate)
-            Padding(padding: const EdgeInsets.only(top: 10),
-                child: IconButton(icon: const Icon(Icons.download), onPressed: () => _download(ref, versions.downloadUrl, versions.downloadPackage))),
-          if (!versions.hasUpdate)
-            Padding(padding: const EdgeInsets.only(top: 10), child: IconButton(icon: const Icon(Icons.refresh), onPressed: () => ref.read(updateProvider.notifier).checkVersion())),
-
-        ]
-    );
+          Padding(padding: EdgeInsetsGeometry.only(top: 30), child: Text(noUpdateLabel, style: Theme.of(context).textTheme.labelMedium)),
+          IconButton(icon: const Icon(Icons.refresh), onPressed: () => ref.read(updateProvider.notifier).checkVersion()),
+        ],
+      );
+    } else {
+      return Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Padding(
+                padding: EdgeInsetsGeometry.only(top: 30),
+                child: Text('Installed Version: ${versions.currentVersion}', style: Theme.of(context).textTheme.bodyMedium),
+            ),
+            Text('Current Version: ${versions.newVersion}', style: Theme.of(context).textTheme.bodyMedium),
+            if (versions.hasUpdate)
+              Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: IconButton(icon: const Icon(Icons.download), onPressed: () => _download(ref, versions.downloadUrl, versions.downloadPackage)),
+              ),
+            if (!versions.hasUpdate)
+              Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: IconButton(icon: const Icon(Icons.refresh), onPressed: () => ref.read(updateProvider.notifier).checkVersion()),
+              ),
+          ]
+      );
+    }
   }
 
   // TODO: UX affordance for when we are downloading.
