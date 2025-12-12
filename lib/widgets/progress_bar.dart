@@ -7,7 +7,6 @@ import '../models/epub_book.dart';
 import '../models/reading_progress.dart';
 
 class ProgressBar extends ConsumerWidget {
-
   const ProgressBar({super.key});
 
   @override

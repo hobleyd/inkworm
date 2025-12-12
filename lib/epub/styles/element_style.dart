@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:xml/xml.dart';
 
+import '../../models/reading_progress.dart';
 import '../parser/css_parser.dart';
 import 'style.dart';
 
@@ -63,6 +64,8 @@ class ElementStyle extends Style {
     final String? fontWeight = _parser.getStringAttribute(element, this, "font-weight");
     final String? fontDecoration  = _parser.getStringAttribute(element, this, "text-decoration");
 
+    ReadingProgress progress = GetIt.instance.get<ReadingProgress>();
+
     textStyle = textStyle.copyWith(
       color: Colors.black,
       decoration: switch (fontDecoration) {
@@ -71,7 +74,7 @@ class ElementStyle extends Style {
                      _ => textStyle.decoration,
       },
       fontFamily: fontFamily ?? textStyle.fontFamily,
-      fontSize: 12 * fontSizeMultipler, // TODO: drive from config when created.
+      fontSize: progress.fontSize * fontSizeMultipler,
       fontStyle: fontStyle == "italic" ? FontStyle.italic : textStyle.fontStyle,
       fontWeight: fontWeight != null ? _parser.getFontWeight(fontWeight) : textStyle.fontWeight,
     );

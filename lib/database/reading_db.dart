@@ -6,6 +6,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
+import '../models/reading_progress.dart';
+
 part 'reading_db.g.dart';
 
 @Riverpod(keepAlive: true)
@@ -38,21 +40,28 @@ class ReadingDB extends _$ReadingDB {
     return _inkworm;
   }
 
+  static const String _settings = '''
+        create table if not exists settings(
+          fontSize int not null
+        );
+        ''';
+
   static const String _readingHistory = '''
         create table if not exists reading_history(
-          path text not null, 
+          path text not null primary key, 
           fontSize int not null,
           chapterNumber int not null, 
-          pageNumber int not null, 
-          );
-          ''';
+          pageNumber int not null 
+        );
+        ''';
 
   static const String _indexReadingHistory = 'create index reading_history_idx on reading_history(path);';
 
   void _createTables(Database db, int oldVersion, int newVersion) {
-    _enableForeignKeys(db);
+    //_enableForeignKeys(db);
     if (oldVersion < 1) {
       db.execute(_readingHistory);
+      db.execute(_settings);
       db.execute(_indexReadingHistory);
     }
 
@@ -70,9 +79,9 @@ class ReadingDB extends _$ReadingDB {
         Directory documentsDirectory = await getApplicationDocumentsDirectory();
         dir = documentsDirectory.path;
       } else if (Platform.isWindows) {
-        dir = path.join(Platform.environment['LOCALAPPDATA']!, 'Paladin');
+        dir = path.join(Platform.environment['LOCALAPPDATA']!, 'Inkworm');
       } else {
-        dir = path.join(Platform.environment['HOME']!, '.paladin');
+        dir = path.join(Platform.environment['HOME']!, '.inkworm');
       }
     }
 
@@ -85,16 +94,40 @@ class ReadingDB extends _$ReadingDB {
 
     await Directory(_databasePath).create(recursive: true);
 
-    _databasePath = path.join(_databasePath, 'paladin.db');
+    _databasePath = path.join(_databasePath, 'inkworm.db');
     return _databasePath;
   }
 
-  Future<int> _insertInitialShelves(Database db, String name, int type, int size) async {
-    return db.rawInsert('insert into shelves(name, type, size) values(?, ?, ?)', [name, type, size]);
+  Future<int> getDefaultFontSize() async {
+    List<Map<String, dynamic>> rows = await query(table: 'settings',);
+    if (rows.isEmpty) {
+      return 12;
+    }
+
+    return rows.first['fontSize'] ?? 12;
   }
 
-  Future<void> cleanDanglingTags() async {
-    _inkworm.rawDelete('delete from tags where id in (select tagId from book_tags where bookId not in (select uuid from books));');
+  Future<ReadingProgress> getReadingProgress(String? path) async {
+    List<Map<String, dynamic>> rows = path != null
+      ? await query(table: 'reading_history', where: 'path = ?', whereArgs: [path])
+      : await query(table: 'reading_history', orderBy: 'rowid desc');
+
+    if (rows.isEmpty) {
+      ReadingProgress result = ReadingProgress();
+      result.book = path ?? '';
+      result.fontSize = await getDefaultFontSize();
+
+      return result;
+    }
+    return ReadingProgress.fromMap(rows.first);
+  }
+
+  Future<void> setDefaultFontSize(int fontSize) async {
+    await _inkworm.insert('settings', { 'fontSize' : fontSize }, conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
+  Future<void> setProgress(ReadingProgress progress) async {
+    await _inkworm.insert('reading_history', progress.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
   Future<int> insert({ required String table, required Map<String, dynamic> rows, ConflictAlgorithm? conflictAlgorithm }) async {

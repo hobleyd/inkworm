@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../widgets/font_size_selector.dart';
 import '../widgets/inkworm_update.dart';
 
 class Settings extends ConsumerWidget {
@@ -14,6 +15,7 @@ class Settings extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            FontSize(),
             Expanded(
               child: InkwormUpdate(),
         ),

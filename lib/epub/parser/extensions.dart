@@ -134,6 +134,18 @@ extension WhitespaceTrimExtension on String {
   }
 }
 
+extension RemoveContiguousDuplicates<T> on List<T> {
+  List<T> removeContiguousDuplicates() {
+    if (isEmpty) return [];
+    return fold<List<T>>(
+      [],
+          (result, item) => result.isEmpty || result.last != item
+          ? [...result, item]
+          : result,
+    );
+  }
+}
+
 
 
 
