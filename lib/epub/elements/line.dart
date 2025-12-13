@@ -24,8 +24,8 @@ class Line {
 
   int    get separators      => elements.whereType<Separator>().length;
   double get bottomYPosition => yPos + height;
-  double get indents         => leftIndent + textIndent + dropCapsIndent;
-  double get width           => indents + elements.fold(0, (sum, item) => sum + item.width);
+  double get leftIndents     => leftIndent + textIndent + dropCapsIndent;
+  double get width           => leftIndents + elements.fold(0, (sum, item) => sum + item.width);
 
   Line({required this.yPos, required BlockStyle blockStyle}) {
     PageSize size = GetIt.instance.get<PageSize>();
@@ -58,7 +58,7 @@ class Line {
   void calculateSeparatorWidth() {
     PageSize size = GetIt.instance.get<PageSize>();
     if (alignment == LineAlignment.justify) {
-      double additionSpaceWidth = (size.canvasWidth - rightIndent - width) / separators;
+      double additionalSpaceWidth = (size.canvasWidth - rightIndent - width) / separators;
 
       bool printedSpaces = false;
       for (LineElement e in elements) {
@@ -66,7 +66,7 @@ class Line {
           if (!printedSpaces) {
             printedSpaces = true;
           }
-          e.width = e.width + additionSpaceWidth;
+          e.width = e.width + additionalSpaceWidth;
         }
       }
     } else if (alignment == LineAlignment.centre) {
