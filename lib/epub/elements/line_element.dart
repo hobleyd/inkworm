@@ -18,13 +18,11 @@ abstract class LineElement {
 
   void getConstraints() async {
     PageSize size = GetIt.instance.get<PageSize>();
-
     TextPainter painter = TextPainter(
       text: (element as TextContent).span,
       textDirection: TextDirection.ltr,
     );
     painter.layout(maxWidth: size.canvasWidth - size.leftIndent - size.rightIndent);
-
     width = painter.width;
     height = painter.height;
 

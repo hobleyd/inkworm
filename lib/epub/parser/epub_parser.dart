@@ -68,7 +68,7 @@ class EpubParser {
       if (node.shouldProcess) {
         List<HtmlContent>? elements = await node.handler?.processElement(node: node,);
         if (elements != null) {
-          for (var el in elements.removeContiguousDuplicates()) {
+          for (var el in elements) {
             chapter.addContentToCurrentPage(el);
           }
         }
