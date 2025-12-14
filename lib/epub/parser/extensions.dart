@@ -13,7 +13,7 @@ typedef CssDeclarations = Map<String, String>;
 // ending in what we are looking for and this should catch everything I've seen; so far, at least.
 extension FindFileExtension on Archive {
   ArchiveFile? findFileEndsWith(String filename) {
-    return files.firstWhere((file) => file.name.endsWith(Uri.decodeFull(filename)));
+    return files.firstWhere((file) => file.name.endsWith(Uri.decodeFull(filename).replaceAll('../', '')));
   }
 
   String getContentAsString(String filename) {
