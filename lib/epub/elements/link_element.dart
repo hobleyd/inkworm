@@ -17,7 +17,9 @@ class LinkElement extends LineElement {
 
   @override
   void getConstraints() async {
-    return src.getConstraints();
+    src.getConstraints();
+    height = src.height;
+    width = src.width;
   }
 
   @override
