@@ -3,7 +3,6 @@ import 'package:xml/xml.dart';
 
 import '../content/html_content.dart';
 import '../content/link_content.dart';
-import '../content/text_content.dart';
 import '../parser/extensions.dart';
 import '../styles/block_style.dart';
 import '../styles/element_style.dart';
@@ -25,8 +24,6 @@ class LinkHandler extends HtmlHandler {
 
     BlockStyle blockStyle = BlockStyle(elementStyle: elementStyle);
     blockStyle.parseElement(element: element, parentStyle: parentBlockStyle);
-
-    //debugPrint('LINK_HANDLER: ${element.name}: ${element.attributes}: $blockStyle, $elementStyle');
 
     if (node.children.isNotEmpty) {
       List<HtmlContent>? childElements = await node.firstChild!.handler?.processElement(node: node.firstChild!, parentBlockStyle: blockStyle, parentElementStyle: elementStyle);
