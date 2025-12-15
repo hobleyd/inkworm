@@ -24,11 +24,12 @@ class ProgressBar extends ConsumerWidget {
         pageNumbers = progress.chapterNumber > 0 ? '${book.currentPageNumber(progress.chapterNumber, progress.pageNumber)}-${book.nextChapterPageNumber(progress.chapterNumber)}/${book.totalPages}' : '';
       }
     }
+    String title = book.title.length > 30 ? '${book.title.substring(0, 27)}...' : book.title;
     return Padding(
-      padding: EdgeInsets.fromLTRB(6, 3, 6, 3),
+      padding: EdgeInsets.fromLTRB(12, 3, 12, 3),
       child: Stack(
         children: [
-          Align(alignment: Alignment.centerLeft, child: Text(book.title, style: Theme.of(context).textTheme.labelSmall)),
+          Align(alignment: Alignment.centerLeft, child: Text(title, style: Theme.of(context).textTheme.labelSmall)),
           Align(alignment: Alignment.center, child: Text(pageNumbers, textAlign: TextAlign.center, style: Theme.of(context).textTheme.labelSmall)),
           Align(alignment: Alignment.centerRight, child: Text(book.author, textAlign: TextAlign.right, style: Theme.of(context).textTheme.labelSmall)),
         ],
