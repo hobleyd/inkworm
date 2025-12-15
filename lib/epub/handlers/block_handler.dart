@@ -24,9 +24,11 @@ class BlockHandler extends HtmlHandler {
     HtmlHandler.registerHandler('h4', this);
     HtmlHandler.registerHandler('h5', this);
     HtmlHandler.registerHandler('h6', this);
-    HtmlHandler.registerHandler('li', this);
     HtmlHandler.registerHandler('div', this);
+    HtmlHandler.registerHandler('ol', this);
+    HtmlHandler.registerHandler('li', this);
     HtmlHandler.registerHandler('blockquote', this);
+    HtmlHandler.registerHandler('section', this);
   }
 
   @override
@@ -49,7 +51,6 @@ class BlockHandler extends HtmlHandler {
     // keep it in for the break at the end of the block.
     elements.add(ParagraphBreak(blockStyle: blockStyle.copyWith(bottomMargin: 0), elementStyle: elementStyle));
 
-    //debugPrint('BLOCK_HANDLER: ${element.name}: ${element.attributes}: $blockStyle, $elementStyle');
     for (var child in node.children) {
       if (child.shouldProcess && !_isParagraphEmpty(child)) {
         List<HtmlContent>? childElements = await child.handler?.processElement(node: child, parentBlockStyle: blockStyle, parentElementStyle: elementStyle);
