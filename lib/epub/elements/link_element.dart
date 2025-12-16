@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../content/html_content.dart';
-import '../content/text_content.dart';
 import 'line_element.dart';
 
 class LinkElement extends LineElement {
