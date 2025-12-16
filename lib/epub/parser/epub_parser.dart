@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
+import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:injectable/injectable.dart';
 import 'package:xml/xml.dart';
@@ -19,8 +20,23 @@ class EpubParser {
     return bookArchive!.getContentAsBytes(path);
   }
 
-  XmlDocument? getOPFContent(String opfPath) {
-    return XmlDocument.parse(bookArchive!.getContentAsString(opfPath));
+  XmlElement? getFootnote(String href) {
+    List<String> hrefDetails = href.split('#');
+    String path = hrefDetails.first;
+    String id = hrefDetails.last;
+
+    debugPrint('looking for footnote in $path with $id');
+
+    final document = getXmlDocument(path);
+    if (document != null) {
+      return document.findAllElements('*').firstWhereOrNull((element) => element.getAttribute('id') == id,);
+    }
+
+    return null;
+}
+
+  XmlDocument? getXmlDocument(String path) {
+    return XmlDocument.parse(bookArchive!.getContentAsString(path));
   }
 
   String? getOPFPath() {
@@ -48,7 +64,7 @@ class EpubParser {
       throw FormatException("No OPF path registered in epub");
     }
 
-    XmlDocument? opf = getOPFContent(opfPath);
+    XmlDocument? opf = getXmlDocument(opfPath);
     if (opf == null) {
       throw FormatException("No OPF file registered in epub");
     }

@@ -28,6 +28,7 @@ class LinkHandler extends HtmlHandler {
     if (node.children.isNotEmpty) {
       List<HtmlContent>? childElements = await node.firstChild!.handler?.processElement(node: node.firstChild!, parentBlockStyle: blockStyle, parentElementStyle: elementStyle);
       String? href = node.getAttribute('href');
+
       if (childElements != null && childElements.isNotEmpty) {
         return [LinkContent(blockStyle: blockStyle, elementStyle: elementStyle, src: childElements.first, href: href!)];
       }
