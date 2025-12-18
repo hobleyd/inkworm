@@ -14,16 +14,20 @@ import 'line_element.dart';
 // With regards footnotes, if the Span has a footnote, check to see if the footnote size fits on the page with the span.
 // If not, add the footnote and split the span until it all fits. If the footnote moves to a subsequent page, we need to get tricky.
 // I am thinking we display one or two lines of the footnote on this page and move the rest to the next page. If the footnote reference
-// is too close to the bottom to do this, mayne adjust the line heights to justify the height and move the footnote to the next page.
+// is too close to the bottom to do this, maybe adjust the line heights to justify the height and move the footnote to the next page.
 // This will require careful testing.
+
+// Note that when dealing with Footnotes, some footnotes will also contain footnotes! Blame Terry Pratchett.
 
 class EpubPage {
   List<Line> lines = [];
   List<Line> overflow = [];
+  List<Line> footnotes = [];
+  List<Line> footnotesOverflow = [];
 
-  Line? get currentLine => getActiveLines().last;
+  Line?  get currentLine           => getActiveLines().last;
   double get currentLineBottomYPos => currentLine!.yPos + currentLine!.height;
-  bool get isCurrentLineEmpty => getActiveLines().isNotEmpty && currentLine!.elements.isEmpty;
+  bool   get isCurrentLineEmpty    => getActiveLines().isNotEmpty && currentLine!.elements.isEmpty;
 
   double dropCapsXPosition = 0;
   double dropCapsYPosition = 0;

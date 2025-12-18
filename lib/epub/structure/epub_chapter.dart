@@ -1,5 +1,6 @@
 import '../content/html_content.dart';
 import '../content/line_break.dart';
+import '../content/link_content.dart';
 import '../content/paragraph_break.dart';
 import 'epub_page.dart';
 import 'line.dart';
@@ -48,14 +49,13 @@ class EpubChapter {
       if (pages.last.isCurrentLineEmpty && content.blockStyle.alignment != null) {
         pages.last.currentLine?.alignment = content.blockStyle.alignment!;
       }
-      List<Line> overflow = pages.last.addElement(content, [], paragraph: paragraph);
+      List<Line> overflow = pages.last.addElement(content, content is LinkContent ? content.footnotes : [], paragraph: paragraph);
       paragraph = false;
       while (overflow.isNotEmpty) {
-        double dropCapsXPos = pages.last.dropCapsXPosition;
-        double dropCapsYPos = pages.last.dropCapsYPosition;
+        EpubPage previousPage = pages.last;
         pages.add(EpubPage());
-        pages.last.dropCapsXPosition = dropCapsXPos;
-        pages.last.dropCapsYPosition = dropCapsYPos;
+        pages.last.dropCapsXPosition = previousPage.dropCapsXPosition;
+        pages.last.dropCapsYPosition = previousPage.dropCapsYPosition;
 
         overflow = pages.last.addOverflow(overflow);
       }
