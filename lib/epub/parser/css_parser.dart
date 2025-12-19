@@ -114,6 +114,14 @@ class CssParser {
     };
   }
 
+  double? getFontSize(XmlNode element, Style style, String attribute, double preferredSize) {
+    String? fontSizeString = getStringAttribute(element, style, attribute);
+    if (fontSizeString != null) {
+      final fontSize = parseFloatCssValue(fontSizeString, preferredSize);
+      return fontSize;
+    }
+  }
+
   FontWeight getFontWeight(String fontWeight) {
     return switch(fontWeight) {
       "normal"  || "400"  => FontWeight.w400,

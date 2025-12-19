@@ -58,13 +58,13 @@ class ElementStyle extends Style {
   }
 
   void getTextStyle(XmlNode element) {
+    ReadingProgress progress = GetIt.instance.get<ReadingProgress>();
+
     final String? fontFamily = _parser.getFontAttribute(element, this, "font-family")?.replaceAll('"', '');
-    final double fontSizeMultipler = _parser.getPercentAttribute(element, this, "font-size") ?? 1;
+    final double? fontSize   = _parser.getFontSize(element, this, "font-size", progress.fontSize.toDouble());
     final String? fontStyle  = _parser.getStringAttribute(element, this, "font-style");
     final String? fontWeight = _parser.getStringAttribute(element, this, "font-weight");
     final String? fontDecoration  = _parser.getStringAttribute(element, this, "text-decoration");
-
-    ReadingProgress progress = GetIt.instance.get<ReadingProgress>();
 
     textStyle = textStyle.copyWith(
       color: Colors.black,
@@ -74,8 +74,8 @@ class ElementStyle extends Style {
                      _ => textStyle.decoration,
       },
       fontFamily: fontFamily ?? textStyle.fontFamily,
-      fontSize: progress.fontSize * fontSizeMultipler,
-      fontStyle: fontStyle == "italic" ? FontStyle.italic : textStyle.fontStyle,
+      fontSize:   fontSize ?? textStyle.fontSize,
+      fontStyle:  fontStyle == "italic" ? FontStyle.italic : textStyle.fontStyle,
       fontWeight: fontWeight != null ? _parser.getFontWeight(fontWeight) : textStyle.fontWeight,
     );
   }
