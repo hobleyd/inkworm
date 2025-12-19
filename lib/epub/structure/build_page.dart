@@ -2,6 +2,7 @@ import 'package:injectable/injectable.dart';
 
 import '../content/html_content.dart';
 import '../content/line_break.dart';
+import '../content/link_content.dart';
 import '../content/paragraph_break.dart';
 import '../elements/line_element.dart';
 import '../elements/separators/space_separator.dart';
@@ -40,6 +41,10 @@ class BuildPage {
       line!.alignment = content.alignment!;
     }
 
+    if (content is LinkContent && content.footnotes.isNotEmpty) {
+      // Layout the Footnotes on the page and try to work out how to display everything
+    }
+
     for (LineElement el in content.elements) {
       if (content.isDropCaps) {
         currentPage.dropCapsYPosition = line!.yPos + el.height;
@@ -72,17 +77,12 @@ class BuildPage {
     return newLine;
   }
 
+  // So, the first <br> tag completes the current line if it isn't empty, or adds a line if it is empty.
   void addLineBreak(LineBreak content) {
-    // So, the first <br> tag completes the current line if it isn't empty, or adds a line if it is empty. If we have
-    // subsequent <br> tags after this, they each add a new line in!
     line!.completeParagraph();
     currentPage.addLine(line!);
 
-    if (line!.isEmpty) {
-      line = addLine(margin: line!.height, blockStyle: content.blockStyle, dropCapsIndent: currentPage.dropCapsXPosition);
-    } else {
-      line = addLine(margin: 0, blockStyle: content.blockStyle, dropCapsIndent: currentPage.dropCapsXPosition);
-    }
+    line = addLine(margin: line!.isEmpty ? line!.height : 0, blockStyle: content.blockStyle, dropCapsIndent: currentPage.dropCapsXPosition);
     line!.setTextIndent(content.leftIndent);
   }
 
