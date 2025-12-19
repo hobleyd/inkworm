@@ -6,7 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:injectable/injectable.dart';
 import 'package:xml/xml.dart';
 
-import '../elements/epub_chapter.dart';
+import '../structure/epub_chapter.dart';
 import '../content/html_content.dart';
 import 'extensions.dart';
 
@@ -56,7 +56,7 @@ class EpubParser {
     return rootfile?.getAttributeNode("full-path")?.value;
   }
 
-  XmlDocument parse() {
+  XmlDocument getOPF() {
     String? opfPath = getOPFPath();
     if (opfPath == null) {
       throw FormatException("No OPF path registered in epub");
@@ -80,12 +80,8 @@ class EpubParser {
     final XmlDocument doc = XmlDocument.parse(chapterText);
     for (final XmlNode node in doc.children) {
       if (node.shouldProcess) {
-        List<HtmlContent>? elements = await node.handler?.processElement(node: node,);
-        if (elements != null) {
-          for (var el in elements) {
-            chapter.addContentToCurrentPage(el);
-          }
-        }
+        final List<HtmlContent>? elements = await node.handler?.processElement(node: node,);
+        chapter.addContent(elements!);
       }
     }
 

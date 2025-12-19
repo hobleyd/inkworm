@@ -4,10 +4,10 @@ import 'package:get_it/get_it.dart';
 
 import '../../models/page_size.dart';
 import '../styles/block_style.dart';
-import 'separators/non_breaking_space_separator.dart';
-import 'separators/separator.dart';
-import 'separators/space_separator.dart';
-import 'line_element.dart';
+import '../elements/separators/non_breaking_space_separator.dart';
+import '../elements/separators/separator.dart';
+import '../elements/separators/space_separator.dart';
+import '../elements/line_element.dart';
 
 class Line {
   LineAlignment alignment = LineAlignment.justify;
@@ -21,6 +21,7 @@ class Line {
 
   List<LineElement> elements = [];
 
+  bool   get isEmpty         => elements.isEmpty;
   int    get separators      => elements.whereType<Separator>().length;
   double get bottomYPosition => yPos + height;
   double get leftIndents     => leftIndent + textIndent + dropCapsIndent;
@@ -75,7 +76,7 @@ class Line {
       rightIndent = size.canvasWidth - margin;
     } else {
       if (alignment == LineAlignment.right) {
-        leftIndent = rightIndent - width;
+        leftIndent = size.canvasWidth - width;
         textIndent = 0;
       }
     }
@@ -98,19 +99,19 @@ class Line {
     }
   }
 
+  void setTextIndent(double? leftIndent) {
+    PageSize size = GetIt.instance.get<PageSize>();
+    textIndent = leftIndent ?? size.leftIndent * 1.5;
+  }
+
   @override
   String toString() {
-    String result = "$yPos: $bottomYPosition: ${alignment.name}: LI: $leftIndent: TI: $textIndent: DCI: $dropCapsIndent: ";
+    String result = "$yPos: $bottomYPosition: $width: ${alignment.name}: LI: $leftIndent: TI: $textIndent: DCI: $dropCapsIndent: ";
     for (var el in elements) {
       result += '$el';
     }
 
     return result;
-  }
-
-  bool willFitHeight(LineElement e) {
-    PageSize size = GetIt.instance.get<PageSize>();
-    return (yPos + e.height) <= size.canvasHeight;
   }
 
   bool willFitWidth(LineElement e) {

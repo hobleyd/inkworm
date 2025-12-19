@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get_it/get_it.dart';
 
 import '../models/page_size.dart';
-import '../epub/elements/line.dart';
+import '../epub/structure/line.dart';
 import '../epub/elements/line_element.dart';
 import '../providers/epub.dart';
 import '../models/epub_book.dart';

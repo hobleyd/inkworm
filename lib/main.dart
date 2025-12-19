@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:get_it/get_it.dart';
 import 'package:injectable/injectable.dart';
 import 'package:logger/logger.dart';
+import 'package:window_manager/window_manager.dart';
 
 import 'config/provider_logger.dart';
 import 'inkworm_app.dart';
@@ -14,9 +15,10 @@ import 'main.config.dart';
 @injectableInit
 void configureInjection() => GetIt.instance.init();
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   configureInjection();
+  await windowManager.ensureInitialized();
 
   LicenseRegistry.addLicense(() async* {
     final license = await rootBundle.loadString('google_fonts/OFL.txt');
@@ -24,6 +26,18 @@ void main() {
   });
 
   Logger.level = Level.error;
+
+  WindowOptions windowOptions = WindowOptions(
+    size: Size(600, 800),
+    center: false,
+    backgroundColor: Colors.transparent,
+    skipTaskbar: false,
+    titleBarStyle: TitleBarStyle.normal,
+  );
+  windowManager.waitUntilReadyToShow(windowOptions, () async {
+    await windowManager.show();
+    await windowManager.focus();
+  });
 
   runApp(ProviderScope(
       observers: [ProviderLogger()],

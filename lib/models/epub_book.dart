@@ -1,7 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-import '../epub/elements/epub_chapter.dart';
-import 'manifest_item.dart';
+import '../epub/structure/epub_chapter.dart';
 
 part 'epub_book.freezed.dart';
 
@@ -20,9 +19,6 @@ class EpubBook with _$EpubBook {
   List<EpubChapter> chapters;
 
   @override
-  Map<String, ManifestItem> manifest;
-
-  @override
   StackTrace? error;
 
   @override
@@ -36,7 +32,7 @@ class EpubBook with _$EpubBook {
   int get lastChapterIndex => chapters.length - 1;
   int get totalPages => chapters.fold(0, (sum, chapter) => sum + chapter.pages.length);
 
-  EpubBook({required this.uri, required this.author, required this.title, this.error, this.errorDescription, required this.chapters, required this.manifest, required this.parsingBook});
+  EpubBook({required this.uri, required this.author, required this.title, this.error, this.errorDescription, required this.chapters, required this.parsingBook});
 
   int currentPageNumber(int chapterNumber, int pageNumber) {
     return chapterNumber == 0
