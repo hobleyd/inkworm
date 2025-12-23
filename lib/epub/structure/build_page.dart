@@ -54,6 +54,7 @@ class BuildPage {
       if (!line!.willFitWidth(el) && el is! SpaceSeparator) {
         if (!currentPage.willFitHeight(line!)) {
           addPage();
+          currentPage.dropCapsYPosition = el.height;
           line!.yPos = 0;
         }
         currentPage.addLine(line!);
@@ -92,8 +93,7 @@ class BuildPage {
     Page newPage = Page();
     newPage.dropCapsXPosition = currentPage.dropCapsXPosition;
     newPage.dropCapsYPosition = currentPage.dropCapsYPosition;
-    // reset the dropcaps y position for the new page.
-    //currentPage!.dropCapsYPosition = el.height;
+
 
     currentPage = newPage;
   }
