@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:file_open/file_open.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get_it/get_it.dart';
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
@@ -72,7 +73,9 @@ class _Inkworm extends ConsumerState<Inkworm> {
       _handleAndroidIntent();
     } else if (Platform.isMacOS) {
       _handleMacOSIntent();
-    } else {
+    } /*else if (Platform.isLinux) {
+      _handleLinuxIntent();
+    }*/ else {
       // TODO: Support other platforms for debugging.
       Future(() {
         ref.read(epubProvider.notifier).openBook(Platform.environment['EBOOK']!);
@@ -98,6 +101,19 @@ class _Inkworm extends ConsumerState<Inkworm> {
 
       ReceiveSharingIntent.instance.reset();
     });
+  }
+
+  Future<void> _handleLinuxIntent() async {
+    const platform = MethodChannel('au.com.sharpblue.inkworm/file');
+    try {
+      final String? filePath = await platform.invokeMethod('getOpenedFile');
+      if (filePath != null && filePath.isNotEmpty) {
+        debugPrint('Linux - Received EPUB: $filePath');
+        ref.read(epubProvider.notifier).openBook(filePath);
+      }
+    } catch (e, s) {
+      ref.read(epubProvider.notifier).setError(e.toString(), s);
+    }
   }
 
   Future<void> _handleMacOSIntent() async {
