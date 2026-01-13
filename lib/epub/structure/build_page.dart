@@ -8,11 +8,12 @@ import '../elements/line_element.dart';
 import '../elements/separators/space_separator.dart';
 import '../styles/block_style.dart';
 import 'line.dart';
+import 'line_listener.dart';
 import 'page.dart';
 import 'page_listener.dart';
 
 @LazySingleton()
-class BuildPage {
+class BuildPage implements LineListener {
   PageListener? _pageListener;
   Page currentPage = Page();
   Line? line;
@@ -35,7 +36,7 @@ class BuildPage {
     line = null;
   }
 
-  // This will add a paragraph of text, line by line, to the current Page.
+  // This will add a paragraph of text, element by element, to the current Line, creating a new Page when required.
   void addElements(HtmlContent content,) {
     if (line!.isEmpty && content.alignment != null) {
       line!.alignment = content.alignment!;
