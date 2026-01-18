@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get_it/get_it.dart';
 
@@ -54,12 +55,14 @@ class PageCanvas extends ConsumerWidget {
                   if (progress.pageNumber == book[progress.chapterNumber].lastPageIndex) {
                     if (progress.chapterNumber < book.lastChapterIndex) {
                       ref.read(progressProvider.notifier).setProgress(book.uri, progress.fontSize, progress.chapterNumber + 1, 0);
+                    } else {
+                      // Exit the app if we hit the last page and try to go right.
+                      SystemChannels.platform.invokeMethod('SystemNavigator.pop');
                     }
                   } else {
                     ref.read(progressProvider.notifier).setProgress(book.uri, progress.fontSize, progress.chapterNumber, progress.pageNumber + 1);
                   }
                 } else {
-                  // TODO: display  menu
                   Navigator.push(context, MaterialPageRoute(builder: (context) => Settings())).then((onValue) {});
                 }
               },
