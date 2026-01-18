@@ -1,3 +1,4 @@
+import 'package:get_it/get_it.dart';
 import 'package:injectable/injectable.dart';
 
 import '../content/html_content.dart';
@@ -7,6 +8,7 @@ import '../content/paragraph_break.dart';
 import '../elements/line_element.dart';
 import '../elements/separators/space_separator.dart';
 import '../styles/block_style.dart';
+import 'build_line.dart';
 import 'line.dart';
 import 'line_listener.dart';
 import 'page.dart';
@@ -26,9 +28,9 @@ class BuildPage implements LineListener {
     for (HtmlContent content in contents) {
       // A Paragraph break will complete the previous line, before adding a new line for the new paragraph.
       switch (content) {
-        case ParagraphBreak c: addParagraphBreak(c);
-        case      LineBreak l: addLineBreak(l);
-        default:               addElements(content);
+        case ParagraphBreak pb: addParagraphBreak(pb);
+        case      LineBreak lb: addLineBreak(lb);
+        default:                addElements(content);
       }
     }
     _pageListener?.addPage(currentPage);
@@ -38,6 +40,8 @@ class BuildPage implements LineListener {
 
   // This will add a paragraph of text, element by element, to the current Line, creating a new Page when required.
   void addElements(HtmlContent content,) {
+    BuildLine buildLine = GetIt.instance.get<BuildLine>();
+
     if (line!.isEmpty && content.alignment != null) {
       line!.alignment = content.alignment!;
     }
@@ -65,9 +69,14 @@ class BuildPage implements LineListener {
     }
   }
 
+  @override
+  void addLine(Line line) {
+    currentPage.addLine(line);
+  }
+
   Line addLine({required BlockStyle blockStyle, double? margin, double? dropCapsIndent}) {
-    line?.completeLine();
-    double lastHeight = line?.height ?? 0;
+    currentLine?.completeLine();
+    double lastHeight = currentLine?.height ?? 0;
     double yPos = currentPage.currentBottomYPos + (margin ?? 0);
     Line newLine = Line(yPos: yPos, blockStyle: blockStyle);
 
@@ -81,6 +90,8 @@ class BuildPage implements LineListener {
 
   // So, the first <br> tag completes the current line if it isn't empty, or adds a line if it is empty.
   void addLineBreak(LineBreak content) {
+    BuildLine buildLine = GetIt.instance.get<BuildLine>();
+
     line!.completeParagraph();
     currentPage.addLine(line!);
 
@@ -95,11 +106,12 @@ class BuildPage implements LineListener {
     newPage.dropCapsXPosition = currentPage.dropCapsXPosition;
     newPage.dropCapsYPosition = currentPage.dropCapsYPosition;
 
-
     currentPage = newPage;
   }
 
   void addParagraphBreak(ParagraphBreak content) {
+    BuildLine buildLine = GetIt.instance.get<BuildLine>();
+
     if (line != null) {
       line!.completeParagraph();
       currentPage.addLine(line!);
