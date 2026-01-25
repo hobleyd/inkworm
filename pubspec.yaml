@@ -20,7 +20,7 @@ dependencies:
   flutter_riverpod: ^3.0.1
   freezed: 3.2.3
   freezed_annotation: ^3.1.0
-  google_fonts: ^7.0.0
+  google_fonts: ^8.0.0
   html: ^0.15.6
   injectable: ^2.7.1+2
   logger: ^2.6.1
