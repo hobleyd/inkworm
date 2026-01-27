@@ -1,7 +1,9 @@
 name: inkworm-android-ci
 
 on: [workflow_dispatch, push]
-
+permissions:
+  contents: write
+  
 jobs:
   build:
     runs-on: ubuntu-latest
