@@ -13,47 +13,31 @@ class Line {
   LineAlignment alignment = LineAlignment.justify;
 
   double dropCapsIndent = 0;
-  double height = 0;
+  double maxHeight = 0;
   double leftIndent = 0;
   double rightIndent = 0;
   double textIndent = 0;
-  double yPos = 0;
+  double yPosOnPage = 0; // Should only be used when rendering the line. Otherwise, the calculations should be off the Page.
 
   List<LineElement> elements = [];
 
-  bool   get isEmpty         => elements.isEmpty;
-  int    get separators      => elements.whereType<Separator>().length;
-  double get bottomYPosition => yPos + height;
-  double get leftIndents     => leftIndent + textIndent + dropCapsIndent;
-  double get width           => leftIndents + elements.fold(0, (sum, item) => sum + item.width);
+  bool   get isEmpty            => elements.isEmpty;
+  bool   get lastElementIsSpace => elements.isNotEmpty && (elements.last is SpaceSeparator || elements.last is NonBreakingSpaceSeparator);
+  int    get separators         => elements.whereType<Separator>().length;
+  double get leftIndents        => leftIndent + textIndent + dropCapsIndent;
+  double get width              => leftIndents + elements.fold(0, (sum, item) => sum + item.width);
 
-  Line({required this.yPos, required BlockStyle blockStyle}) {
+  set height(double height)     => maxHeight = max(height, maxHeight);
+  set yPos(double pos)          => yPosOnPage = pos;
+
+  Line() {
     PageSize size = GetIt.instance.get<PageSize>();
 
     leftIndent = size.leftIndent;
     rightIndent = size.rightIndent;
-
-    alignment = blockStyle.alignment != null ? blockStyle.alignment! : LineAlignment.justify;
   }
 
-  void addElement(LineElement e) {
-    // We don't add multiple spaces together unless they are non-breaking.
-    if (e is SpaceSeparator) {
-      if (elements.isEmpty) {
-        return;
-      } else if (elements.last is SpaceSeparator || elements.last is NonBreakingSpaceSeparator) {
-        return;
-      }
-    }
-
-    if (!(e.element.elementStyle.isDropCaps ?? false)) {
-      // Only adjust the line height if this is not a dropcaps element. For obvious reasons. Given the use of dropcaps I can't
-      // imagine it will be possible that this is the only thing on the line. On the other hand. HTML. Sigh.
-      height = max(height, e.height);
-    }
-
-    elements.add(e);
-  }
+  void add(LineElement e) => elements.add(e);
 
   void calculateSeparatorWidth() {
     PageSize size = GetIt.instance.get<PageSize>();
@@ -99,14 +83,14 @@ class Line {
     }
   }
 
-  void setTextIndent(double? leftIndent) {
+  void setTextIndent(double? indent) {
     PageSize size = GetIt.instance.get<PageSize>();
-    textIndent = leftIndent ?? size.leftIndent * 1.5;
+    textIndent = indent ?? size.leftIndent * 1.5;
   }
 
   @override
   String toString() {
-    String result = "$yPos: $bottomYPosition: $width: ${alignment.name}: LI: $leftIndent: TI: $textIndent: DCI: $dropCapsIndent: ";
+    String result = "YP: $yPosOnPage: YP+H: ${yPosOnPage + maxHeight}: WI: $width: ${alignment.name}: LI: $leftIndent: RI: $rightIndent: TI: $textIndent: DCI: $dropCapsIndent: ";
     for (var el in elements) {
       result += '$el';
     }

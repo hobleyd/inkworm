@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 import 'package:injectable/injectable.dart';
+import 'package:inkworm/epub/elements/word_element.dart';
 
 import '../content/html_content.dart';
 import '../content/line_break.dart';
@@ -23,6 +25,9 @@ class BuildPage implements LineListener {
   set pageListener(PageListener? listener) => _pageListener = listener;
 
   void addContent(List<HtmlContent> contents) {
+    BuildLine buildLine = GetIt.instance.get<BuildLine>();
+    buildLine.lineListener = this;
+
     // Construct a line from the elements; once complete check whether it will fit on the current page, or will require a new
     // page to sit in. Send the completed page to any listeners.
     for (HtmlContent content in contents) {
@@ -30,73 +35,61 @@ class BuildPage implements LineListener {
       switch (content) {
         case ParagraphBreak pb: addParagraphBreak(pb);
         case      LineBreak lb: addLineBreak(lb);
+        case    LinkContent lc: addFootnote(lc);
         default:                addElements(content);
       }
     }
-    _pageListener?.addPage(currentPage);
-    currentPage = Page();
-    line = null;
+    addPage();
   }
 
-  // This will add a paragraph of text, element by element, to the current Line, creating a new Page when required.
+  // This will add text, element by element, to the current Line, creating a new Page when required. It will not necessarily
+  // be a complete paragraph.
   void addElements(HtmlContent content,) {
     BuildLine buildLine = GetIt.instance.get<BuildLine>();
-
-    if (line!.isEmpty && content.alignment != null) {
-      line!.alignment = content.alignment!;
-    }
-
-    if (content is LinkContent && content.footnotes.isNotEmpty) {
-      // Layout the Footnotes on the page and try to work out how to display everything
-    }
+    buildLine.setAlignment(content.alignment);
 
     for (LineElement el in content.elements) {
       if (content.isDropCaps) {
-        currentPage.dropCapsYPosition = line!.yPos + el.height;
+        currentPage.dropCapsYPosition = currentPage.currentBottomYPos + el.height;
         currentPage.dropCapsXPosition = el.width;
       }
 
-      if (!line!.willFitWidth(el) && el is! SpaceSeparator) {
-        if (!currentPage.willFitHeight(line!)) {
-          addPage();
-          currentPage.dropCapsYPosition = el.height;
-          line!.yPos = 0;
-        }
-        currentPage.addLine(line!);
-        line = addLine(blockStyle: content.blockStyle, dropCapsIndent: currentPage.dropCapsXPosition,);
-      }
-      line!.addElement(el);
+      buildLine.addElement(el);
     }
+  }
+
+  void addFootnote(LinkContent content,) {
+    BuildLine buildLine = GetIt.instance.get<BuildLine>();
+    buildLine.setAlignment(content.alignment);
+    addElements(content.src);
   }
 
   @override
   void addLine(Line line) {
-    currentPage.addLine(line);
-  }
-
-  Line addLine({required BlockStyle blockStyle, double? margin, double? dropCapsIndent}) {
-    currentLine?.completeLine();
-    double lastHeight = currentLine?.height ?? 0;
-    double yPos = currentPage.currentBottomYPos + (margin ?? 0);
-    Line newLine = Line(yPos: yPos, blockStyle: blockStyle);
-
-    if (dropCapsIndent != null) {
-      newLine.dropCapsIndent = dropCapsIndent;
+    if (!currentPage.willFitHeight(line)) {
+      addPage();
     }
-    currentPage.resetDropCaps(yPos+lastHeight);
+    line.yPos = currentPage.currentBottomYPos;
+    currentPage.addLine(line);
 
-    return newLine;
+    BuildLine buildLine = GetIt.instance.get<BuildLine>();
+    buildLine.addLine();
+    buildLine.setAlignment(line.alignment);
+
+    if (currentPage.currentBottomYPos + line.maxHeight < currentPage.dropCapsYPosition) {
+      buildLine.dropCapsIndent = currentPage.dropCapsXPosition;
+    } else {
+      currentPage.dropCapsXPosition = 0;
+      currentPage.dropCapsYPosition = 0;
+    }
   }
 
   // So, the first <br> tag completes the current line if it isn't empty, or adds a line if it is empty.
   void addLineBreak(LineBreak content) {
     BuildLine buildLine = GetIt.instance.get<BuildLine>();
+    buildLine.completeParagraph();
 
-    line!.completeParagraph();
-    currentPage.addLine(line!);
-
-    line = addLine(margin: line!.isEmpty ? line!.height : 0, blockStyle: content.blockStyle, dropCapsIndent: currentPage.dropCapsXPosition);
-    line!.setTextIndent(content.leftIndent);
+    currentPage.currentBottomYPos += buildLine.isNotEmpty ? buildLine.maxHeight : 0;
   }
 
   void addPage() {
@@ -107,16 +100,14 @@ class BuildPage implements LineListener {
     newPage.dropCapsYPosition = currentPage.dropCapsYPosition;
 
     currentPage = newPage;
+    line = null;
   }
 
   void addParagraphBreak(ParagraphBreak content) {
     BuildLine buildLine = GetIt.instance.get<BuildLine>();
+    buildLine.completeParagraph();
+    buildLine.textIndent = content.leftIndent ?? 0;
 
-    if (line != null) {
-      line!.completeParagraph();
-      currentPage.addLine(line!);
-    }
-    line = addLine(margin: content.margin, blockStyle: content.blockStyle, dropCapsIndent: currentPage.dropCapsXPosition);
-    line!.setTextIndent(content.leftIndent);
+    currentPage.currentBottomYPos += content.margin;
   }
 }

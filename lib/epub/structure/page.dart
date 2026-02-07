@@ -18,19 +18,11 @@ class Page {
 
   void addLine(Line line) {
     lines.add(line);
-    currentBottomYPos = line.yPos + line.height;
-  }
-
-  void resetDropCaps(double yPos) {
-    // Reset the dropcaps vars once the line is below the bottom of the dropcaps character.
-    if (dropCapsYPosition < yPos) {
-      dropCapsXPosition = 0;
-      dropCapsYPosition = 0;
-    }
+    currentBottomYPos += line.maxHeight;
   }
 
   bool willFitHeight(Line line) {
     PageSize size = GetIt.instance.get<PageSize>();
-    return (line.yPos + line.height) <= size.canvasHeight;
+    return (currentBottomYPos + line.maxHeight) <= size.canvasHeight;
   }
 }

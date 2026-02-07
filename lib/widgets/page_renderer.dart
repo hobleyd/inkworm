@@ -29,7 +29,7 @@ class PageRenderer extends CustomPainter {
       //debugPrint('$line');
       double xPos = line.leftIndent + line.textIndent + line.dropCapsIndent;
       for (LineElement el in line.elements) {
-        el.paint(canvas, line.height, xPos, line.yPos);
+        el.paint(canvas, line.maxHeight, xPos, line.yPosOnPage);
         xPos += el.width;
       }
     }
