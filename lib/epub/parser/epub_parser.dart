@@ -81,7 +81,9 @@ class EpubParser {
     for (final XmlNode node in doc.children) {
       if (node.shouldProcess) {
         final List<HtmlContent>? elements = await node.handler?.processElement(node: node,);
-        chapter.addContent(elements!);
+        if (elements != null) {
+          chapter.addContent(elements);
+        }
       }
     }
 
