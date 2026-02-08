@@ -67,7 +67,7 @@ class BuildLine {
   }
 
   void notifyListeners() {
-    _lineListener?.addLine(currentLine);
+    _lineListener?.addLine(currentLine, this);
   }
 
   void setAlignment(LineAlignment? alignment) {

@@ -10,10 +10,21 @@ import '../models/epub_book.dart';
 
 class PageRenderer extends CustomPainter {
   List<Line> lines = [];
+  List<Line> footnotes = [];
 
   PageRenderer(WidgetRef ref, int chapterNumber, int pageNumber) {
     EpubBook book = ref.read(epubProvider);
     lines = book.chapters.elementAtOrNull(chapterNumber)?[pageNumber]?.lines ?? [];
+    footnotes = book.chapters.elementAtOrNull(chapterNumber)?[pageNumber]?.footnotes ?? [];
+  }
+
+  void paintLine(Canvas canvas, Line line) {
+    //debugPrint('$line');
+    double xPos = line.leftIndent + line.textIndent + line.dropCapsIndent;
+    for (LineElement el in line.elements) {
+      el.paint(canvas, line.maxHeight, xPos, line.yPosOnPage);
+      xPos += el.width;
+    }
   }
 
   @override
@@ -26,12 +37,11 @@ class PageRenderer extends CustomPainter {
     canvas.clipRect(Offset(0, 0) & size);
 
     for (Line line in lines) {
-      //debugPrint('$line');
-      double xPos = line.leftIndent + line.textIndent + line.dropCapsIndent;
-      for (LineElement el in line.elements) {
-        el.paint(canvas, line.maxHeight, xPos, line.yPosOnPage);
-        xPos += el.width;
-      }
+      paintLine(canvas, line);
+    }
+
+    for (Line line in footnotes) {
+      paintLine(canvas, line);
     }
   }
 

@@ -103,3 +103,7 @@ class Line {
     return (width + e.width) <= (size.canvasWidth - rightIndent);
   }
 }
+
+extension LineListMetrics on List<Line> {
+  double get totalHeight => fold(0.0, (sum, line) => sum + line.maxHeight);
+}
