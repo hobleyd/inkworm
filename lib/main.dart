@@ -28,7 +28,6 @@ void main() async {
   Logger.level = Level.error;
 
   WindowOptions windowOptions = WindowOptions(
-    size: Size(600, 800),
     center: false,
     backgroundColor: Colors.transparent,
     skipTaskbar: false,
