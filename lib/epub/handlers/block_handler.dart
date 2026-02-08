@@ -29,6 +29,8 @@ class BlockHandler extends HtmlHandler {
     HtmlHandler.registerHandler('li', this);
     HtmlHandler.registerHandler('blockquote', this);
     HtmlHandler.registerHandler('section', this);
+    HtmlHandler.registerHandler('figure', this);
+    HtmlHandler.registerHandler('hgroup', this);
   }
 
   @override

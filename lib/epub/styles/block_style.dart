@@ -177,8 +177,9 @@ class BlockStyle extends Style {
 
   void getMax(XmlNode element) {
     // TODO: decide on a default size, for Cover images 100% is probably correct.
-    maxHeight = _parser.getPercentAttribute(element,  this, "max-height") ?? maxHeight;
-    maxWidth  = _parser.getPercentAttribute(element,  this, "max-width") ?? maxWidth;
+    maxHeight ??= _parser.getPercentAttribute(element,  this, "max-height");
+    maxWidth  ??= _parser.getPercentAttribute(element,  this, "max-width");
+    maxWidth  ??= _parser.getPercentAttribute(element,  this, "width");
   }
 
   void getTableStyles(XmlNode element) {
