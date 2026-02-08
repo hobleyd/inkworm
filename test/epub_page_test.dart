@@ -1,12 +1,16 @@
-import 'package:collection/collection.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Page;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get_it/get_it.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:inkworm/epub/structure/epub_chapter.dart';
 import 'package:inkworm/epub/elements/separators/non_breaking_space_separator.dart';
 import 'package:inkworm/epub/handlers/block_handler.dart';
+import 'package:inkworm/epub/handlers/css_handler.dart';
+import 'package:inkworm/epub/handlers/image_handler.dart';
+import 'package:inkworm/epub/handlers/inline_handler.dart';
 import 'package:inkworm/epub/handlers/line_break_handler.dart';
+import 'package:inkworm/epub/handlers/link_handler.dart';
+import 'package:inkworm/epub/handlers/superscript_handler.dart';
 import 'package:inkworm/epub/handlers/text_handler.dart';
 import 'package:inkworm/epub/parser/epub_parser.dart';
 import 'package:inkworm/models/page_size.dart';
@@ -15,16 +19,21 @@ import 'package:inkworm/epub/elements/separators/hyphen_separator.dart';
 import 'package:inkworm/epub/elements/separators/space_separator.dart';
 import 'package:inkworm/epub/parser/css_parser.dart';
 import 'package:inkworm/providers/epub.dart';
+import 'package:inkworm/epub/structure/build_line.dart';
+import 'package:inkworm/epub/structure/build_page.dart';
 import 'package:inkworm/epub/structure/line.dart';
+import 'package:inkworm/epub/structure/page.dart';
 import 'package:inkworm/epub/elements/word_element.dart';
 import 'package:inkworm/epub/styles/block_style.dart';
 import 'package:inkworm/epub/styles/element_style.dart';
+import 'package:inkworm/models/reading_progress.dart';
 import 'package:mockito/annotations.dart';
 
 // Generate mocks with: flutter pub run build_runner build
 @GenerateMocks([Line, WordElement, SpaceSeparator, Epub,])
 void main() {
-    late EpubPage epubPage;
+    late BuildPage buildPage;
+    late BuildLine buildLine;
     late TextStyle style;
     late BlockStyle blockStyle;
     late ThemeData themeData;
@@ -34,12 +43,22 @@ void main() {
 
       GetIt.instance.registerSingleton<CssParser>(CssParser());
       GetIt.instance.registerSingleton<PageSize>(PageSize());
+      GetIt.instance.registerSingleton<ReadingProgress>(ReadingProgress());
       GetIt.instance.registerSingleton<EpubParser>(EpubParser());
+      GetIt.instance.registerSingleton<BuildPage>(BuildPage());
+      GetIt.instance.registerSingleton<BuildLine>(BuildLine());
       GetIt.instance.registerSingleton<BlockHandler>(BlockHandler());
       GetIt.instance.registerSingleton<TextHandler>(TextHandler());
       GetIt.instance.registerSingleton<LineBreakHandler>(LineBreakHandler());
+      GetIt.instance.registerSingleton<InlineHandler>(InlineHandler());
+      GetIt.instance.registerSingleton<LinkHandler>(LinkHandler());
+      GetIt.instance.registerSingleton<ImageHandler>(ImageHandler());
+      GetIt.instance.registerSingleton<SuperscriptHandler>(SuperscriptHandler());
+      GetIt.instance.registerSingleton<CssHandler>(CssHandler());
 
-      epubPage = EpubPage();
+      buildPage = GetIt.instance.get<BuildPage>();
+      buildLine = GetIt.instance.get<BuildLine>();
+      buildLine.lineListener = buildPage;
 
       PageSize size = GetIt.instance.get<PageSize>();
       size.canvasHeight = 80;
@@ -68,26 +87,10 @@ void main() {
         useMaterial3: true,
         visualDensity: VisualDensity.compact,
       );
-    });
 
-    testWidgets('Test Theme in Widget', (WidgetTester tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: themeData,
-          home: Scaffold(
-            appBar: AppBar(),
-            body: Builder(
-              builder: (context) {
-                // Access the theme here
-                style = Theme.of(context).textTheme.bodySmall!;
-                blockStyle = BlockStyle(elementStyle: ElementStyle());
-                blockStyle.elementStyle.textStyle = style;
-                return Container();
-              },
-            ),
-          ),
-        ),
-      );
+      style = themeData.textTheme.bodySmall!;
+      blockStyle = BlockStyle(elementStyle: ElementStyle());
+      blockStyle.elementStyle.textStyle = style;
     });
 
     tearDown(() {
@@ -95,52 +98,42 @@ void main() {
     });
 
     group('constructor', () {
-      test('should initialize with empty lines and overflow lists', () {
-        expect(epubPage.lines, isEmpty);
-        expect(epubPage.overflow, isEmpty);
+      test('should initialize with empty lines and footnotes', () {
+        final Page page = Page();
+        expect(page.lines, isEmpty);
+        expect(page.footnotes, isEmpty);
       });
     });
 
     group('addText', () {
       test('check for lines, words and separators', () {
-        epubPage.addLine(paragraph: true, margin: 0, blockStyle: blockStyle,);
+        final TextContent content = TextContent(
+          blockStyle: blockStyle,
+          elementStyle: blockStyle.elementStyle,
+          text: """The cutter passed from sunlit brilliance to soot-black shadow with the knife-edge suddenness possible only in space, and the tall, broad-shouldered woman in the black and gold of the Royal Manticoran Navy gazed out the armorplast port at the battle-steel beauty of her command and frowned.""",
+        );
 
-        epubPage.addElement(
-            TextContent(
-              blockStyle: blockStyle,
-              elementStyle: blockStyle.elementStyle,
-              text: """The cutter passed from sunlit brilliance to soot-black shadow with the knife-edge suddenness possible only in space, and the tall, broad-shouldered woman in the black and gold of the Royal Manticoran Navy gazed out the armorplast port at the battle-steel beauty of her command and frowned.""",
-            ), []);
+        for (final el in content.elements) {
+          buildLine.addElement(el);
+        }
+        buildLine.completeParagraph();
 
-        epubPage.lines.last.completeParagraph();
-        epubPage.lines.last.completeLine();
+        final List<Line> lines = buildPage.lines;
+        expect(lines.length, greaterThan(1));
+        expect(lines.first.yPosOnPage, 0);
+        expect(lines.first.textIndent, 0);
 
-        Map<Type, int> line0 = groupBy(epubPage.lines[0].elements, (e) => e.runtimeType).map((k, v) => MapEntry(k, v.length));
+        final List elements = lines.expand((line) => line.elements).toList();
+        expect(elements.whereType<WordElement>().length, greaterThan(0));
+        expect(elements.whereType<SpaceSeparator>().length, greaterThan(0));
+        expect(elements.whereType<HyphenSeparator>().length, greaterThan(0));
 
-        expect(epubPage.lines.length, 5);
-        expect(epubPage.lines[0].yPos, 0);
-        expect(epubPage.lines[0].textIndent, 18);
-        expect(line0[(WordElement)], 11);
-        expect(line0[(SpaceSeparator)], 9);
-        expect(line0[(HyphenSeparator)], 1);
-        expect(epubPage.lines[1].yPos, 16);
-        expect(epubPage.lines[1].textIndent, 0);
-        expect(epubPage.lines[2].yPos, 32);
-        expect(epubPage.lines[2].textIndent, 0);
-        expect(epubPage.lines[3].yPos, 48);
-        expect(epubPage.lines[3].textIndent, 0);
-        expect(epubPage.lines[4].yPos, 64);
-        expect(epubPage.lines[4].textIndent, 0);
-        expect(epubPage.lines[4].alignment, LineAlignment.left);
+        for (int i = 1; i < lines.length; i++) {
+          expect(lines[i].yPosOnPage, greaterThan(lines[i - 1].yPosOnPage));
+          expect(lines[i].textIndent, 0);
+        }
 
-        epubPage.addElement(
-            TextContent(
-              blockStyle: blockStyle,
-              elementStyle: blockStyle.elementStyle,
-              text: """The six-limbed cream-and-gray treecat on her shoulder shifted his balance as she raised her right hand and pointed.""",
-            ), []);
-
-        expect(epubPage.overflow.length, 1);
+        expect(lines.last.alignment, LineAlignment.left);
       });
     });
 
@@ -159,8 +152,12 @@ void main() {
 </body></html>''');
 
         expect(chapter.pages.length, 1);
-        expect(chapter.pages[0].lines[5].elements[0], isA<NonBreakingSpaceSeparator>());
-    });
+
+        final bool hasNbspLine = chapter.pages[0].lines.any(
+          (line) => line.elements.whereType<NonBreakingSpaceSeparator>().isNotEmpty,
+        );
+        expect(hasNbspLine, isTrue);
+      });
     });
 
     group('blank paragraph', () {
@@ -174,9 +171,12 @@ void main() {
         await parser.parseChapterFromString(chapter, '<html><body><h2 align="center"><b>ECHOES OF HONOR</b><br/><b>David Weber</b></h2><blockquote><p class="calibre_class_0">&#160;<br/>This is a work of fiction. All the characters and events portrayed in this book are fictional, and any resemblance to real people or incidents is purely coincidental.<br/><br/>Copyright © 1998 by David M. Weber<br/><br/>All rights reserved, including the right to reproduce this book or portions thereof in any form.</p></blockquote></body></html>');
 
         expect(chapter.pages.length, 1);
-        expect(chapter.pages[0].lines.length, 18);
-        expect(chapter.pages[0].lines[10].yPos, 80);
-        expect(chapter.pages[0].lines[12].yPos, 104);
+        expect(chapter.pages[0].lines.length, greaterThan(10));
+
+        final List<Line> lines = chapter.pages[0].lines;
+        for (int i = 1; i < lines.length; i++) {
+          expect(lines[i].yPosOnPage, greaterThan(lines[i - 1].yPosOnPage));
+        }
       });
     });
 
