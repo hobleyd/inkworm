@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:get_it/get_it.dart';
 import 'package:injectable/injectable.dart';
 import 'package:xml/xml.dart';
@@ -26,7 +28,7 @@ class SuperscriptHandler extends HtmlHandler {
 
     ElementStyle elementStyle = ElementStyle();
     elementStyle.parseElement(element: element, parentStyle: parentElementStyle);
-    elementStyle.textStyle = elementStyle.textStyle.copyWith(fontSize: elementStyle.textStyle.fontSize! * 0.6);
+    elementStyle.textStyle = elementStyle.textStyle.copyWith(fontSize: elementStyle.textStyle.fontSize! * 0.6, fontWeight: FontWeight.w500);
 
     BlockStyle blockStyle = BlockStyle(elementStyle: elementStyle);
     blockStyle.parseElement(element: element, parentStyle: parentBlockStyle);
