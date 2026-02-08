@@ -18,7 +18,8 @@ class BuildPage implements LineListener {
   Page currentPage = Page();
   Line? line;
 
-  List<Line> get lines => currentPage.lines;
+  List<Line> get       lines => currentPage.lines;
+  double     get totalHeight => lines.totalHeight;
 
   set pageListener(PageListener? listener) => _pageListener = listener;
 
@@ -68,8 +69,6 @@ class BuildPage implements LineListener {
     if (content.footnotes.isEmpty) {
       return addElements(content.src, buildLine);
     }
-    buildLine.setAlignment(content.alignment);
-    addElements(content.src, buildLine);
 
     // Create a temp space to build the footnotes. While I use GetIt to provide a singleton generally for page & line builds,
     // footnotes require a separate space to build. Hence the direct instantiation. This is the only place I break the rules.
@@ -77,8 +76,15 @@ class BuildPage implements LineListener {
     BuildPage footnotesPage = BuildPage();
     BuildLine footnotesLine = BuildLine();
     footnotesLine.lineListener = footnotesPage;
-
     footnotesPage.addContents(content.footnotes, footnotesLine);
+
+    if (currentPage.currentBottomYPos + buildLine.maxHeight + footnotesPage.totalHeight > currentPage.pageHeight) {
+      addPage();
+    }
+    // At this point, we have the footnote and the current Line and we need to check they both fit on the page.
+    buildLine.setAlignment(content.alignment);
+    addElements(content.src, buildLine);
+
     for (Line line in footnotesPage.lines) {
       currentPage.addFootnote(line);
     }
