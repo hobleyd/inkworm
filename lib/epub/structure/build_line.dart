@@ -5,7 +5,6 @@ import '../elements/separators/space_separator.dart';
 import '../styles/block_style.dart';
 import 'line.dart';
 import 'line_listener.dart';
-import 'page.dart';
 
 @LazySingleton()
 class BuildLine {

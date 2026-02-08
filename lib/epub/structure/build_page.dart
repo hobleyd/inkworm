@@ -1,15 +1,11 @@
-import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 import 'package:injectable/injectable.dart';
-import 'package:inkworm/epub/elements/word_element.dart';
 
 import '../content/html_content.dart';
 import '../content/line_break.dart';
 import '../content/link_content.dart';
 import '../content/paragraph_break.dart';
 import '../elements/line_element.dart';
-import '../elements/separators/space_separator.dart';
-import '../styles/block_style.dart';
 import 'build_line.dart';
 import 'line.dart';
 import 'line_listener.dart';

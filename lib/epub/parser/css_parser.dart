@@ -120,6 +120,8 @@ class CssParser {
       final fontSize = parseFloatCssValue(fontSizeString, preferredSize);
       return fontSize;
     }
+
+    return null;
   }
 
   FontWeight getFontWeight(String fontWeight) {
