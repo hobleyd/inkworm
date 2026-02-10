@@ -146,6 +146,18 @@ extension RemoveContiguousDuplicates<T> on List<T> {
   }
 }
 
+extension StringFootnotes on String {
+  bool get isFootnote {
+    if (isEmpty) return false;
+
+    final allAsterisks = !RegExp(r'[^\*]').hasMatch(this);
+    if (allAsterisks) return true;
+
+    final allDigits = !RegExp(r'[^0-9]').hasMatch(this);
+    return allDigits;
+  }
+}
+
 
 
 
