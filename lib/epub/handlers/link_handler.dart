@@ -1,8 +1,11 @@
+import 'package:get_it/get_it.dart';
 import 'package:injectable/injectable.dart';
 import 'package:xml/xml.dart';
 
 import '../content/html_content.dart';
 import '../content/link_content.dart';
+import '../content/text_content.dart';
+import '../parser/epub_parser.dart';
 import '../parser/extensions.dart';
 import '../styles/block_style.dart';
 import '../styles/element_style.dart';
@@ -30,7 +33,22 @@ class LinkHandler extends HtmlHandler {
       String? href = node.getAttribute('href');
 
       if (childElements != null && childElements.isNotEmpty) {
-        return [LinkContent(blockStyle: blockStyle, elementStyle: elementStyle, src: childElements.first, href: href!)];
+        LinkContent lc = LinkContent(blockStyle: blockStyle, elementStyle: elementStyle, src: childElements.first, href: href!);
+
+        if (childElements.first is TextContent) {
+          TextContent tc = childElements.first as TextContent;
+          if (tc.text.isFootnote) {
+            EpubParser parser = GetIt.instance.get<EpubParser>();
+            XmlNode? footnote = parser.getFootnote(href);
+            if (footnote != null) {
+              List<HtmlContent>? fnElements = await footnote.handler?.processElement(node: footnote, );
+              if (fnElements != null) {
+                lc.footnotes = fnElements;
+              }
+            }
+          }
+        }
+        return [lc];
       }
     }
 
