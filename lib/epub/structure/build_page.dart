@@ -18,8 +18,9 @@ class BuildPage implements LineListener {
   Page currentPage = Page();
   Line? line;
 
+  List<Line> get   footnotes => currentPage.footnotes;
   List<Line> get       lines => currentPage.lines;
-  double     get totalHeight => lines.totalHeight;
+  double     get totalHeight => lines.totalHeight + footnotes.totalHeight;
 
   set pageListener(PageListener? listener) => _pageListener = listener;
 
@@ -78,14 +79,21 @@ class BuildPage implements LineListener {
     footnotesLine.lineListener = footnotesPage;
     footnotesPage.addContents(content.footnotes, footnotesLine);
 
+    // At this point, we have the footnote and the current Line and we need to check they both fit on the page.
     if (currentPage.currentBottomYPos + buildLine.maxHeight + footnotesPage.totalHeight > currentPage.pageHeight) {
       addPage();
     }
-    // At this point, we have the footnote and the current Line and we need to check they both fit on the page.
+
     buildLine.setAlignment(content.alignment);
     addElements(content.src, buildLine);
 
     for (Line line in footnotesPage.lines) {
+      currentPage.addFootnote(line);
+    }
+
+    // If the footnotes have footnotes, then the footNotesPage will also contain footnotes!
+    // And if you have never read a Terry Pratchett book, go out and buy one immediately.
+    for (Line line in footnotesPage.footnotes) {
       currentPage.addFootnote(line);
     }
   }
