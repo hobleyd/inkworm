@@ -13,6 +13,7 @@ import 'extensions.dart';
 @Singleton()
 class EpubParser {
   Archive? bookArchive;
+  bool decodeImages = true;
 
   EpubParser();
 
@@ -72,21 +73,27 @@ class EpubParser {
 
   Future<EpubChapter> parseChapter(int index, String href) async {
     EpubChapter chapter = EpubChapter(chapterNumber: index);
-
-    return parseChapterFromString(chapter, bookArchive!.getContentAsString(href));
+    final contents = await parseChapterContentsFromString(bookArchive!.getContentAsString(href));
+    chapter.addContent(contents);
+    return chapter;
   }
 
-  Future<EpubChapter> parseChapterFromString(EpubChapter chapter, String chapterText) async {
+  Future<List<HtmlContent>> parseChapterContents(int index, String href) async {
+    return parseChapterContentsFromString(bookArchive!.getContentAsString(href));
+  }
+
+  Future<List<HtmlContent>> parseChapterContentsFromString(String chapterText) async {
     final XmlDocument doc = XmlDocument.parse(chapterText);
+    final List<HtmlContent> contents = [];
     for (final XmlNode node in doc.children) {
       if (node.shouldProcess) {
         final List<HtmlContent>? elements = await node.handler?.processElement(node: node,);
         if (elements != null) {
-          chapter.addContent(elements);
+          contents.addAll(elements);
         }
       }
     }
 
-    return chapter;
+    return contents;
   }
 }

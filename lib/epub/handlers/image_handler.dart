@@ -7,6 +7,7 @@ import 'package:injectable/injectable.dart';
 import 'package:xml/xml.dart';
 
 import '../content/html_content.dart';
+import '../content/image_bytes_content.dart';
 import '../content/image_content.dart';
 import '../parser/epub_parser.dart';
 import '../parser/extensions.dart';
@@ -35,14 +36,19 @@ class ImageHandler extends HtmlHandler {
     List<HtmlContent> elements = [];
 
     ElementStyle elementStyle = ElementStyle();
-    elementStyle.parseElement(element: element, parentStyle: parentElementStyle);
+    await elementStyle.parseElement(element: element, parentStyle: parentElementStyle);
 
     BlockStyle blockStyle = BlockStyle(elementStyle: elementStyle);
-    blockStyle.parseElement(element: element, parentStyle: parentBlockStyle);
+    await blockStyle.parseElement(element: element, parentStyle: parentBlockStyle);
 
-    ui.Image img = await createImageFromUint8List(GetIt.instance.get<EpubParser>().bookArchive!.getContentAsBytes(element.getAttribute('src')!));
-
-    elements.add(ImageContent(blockStyle: blockStyle, elementStyle: elementStyle, image: img));
+    final parser = GetIt.instance.get<EpubParser>();
+    final bytes = parser.bookArchive!.getContentAsBytes(element.getAttribute('src')!);
+    if (parser.decodeImages) {
+      ui.Image img = await createImageFromUint8List(bytes);
+      elements.add(ImageContent(blockStyle: blockStyle, elementStyle: elementStyle, image: img));
+    } else {
+      elements.add(ImageBytesContent(blockStyle: blockStyle, elementStyle: elementStyle, bytes: bytes));
+    }
 
     return elements;
   }

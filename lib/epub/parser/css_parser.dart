@@ -1,3 +1,5 @@
+import 'dart:isolate';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get_it/get_it.dart';
@@ -16,20 +18,26 @@ import 'extensions.dart';
 class CssParser {
   final Map<String, CssDeclarations> css = {};
   final Set<String> nonInheritableProperties = {};
+  final TextMeasureDelegate _textMeasureDelegate;
 
   CssDeclarations? operator [](String key) => css[key];
 
-  CssParser() {
+  CssParser({String? defaultCss, TextMeasureDelegate? textMeasureDelegate})
+      : _textMeasureDelegate = textMeasureDelegate ?? MainTextMeasureDelegate() {
     nonInheritableProperties.add("margin");
     nonInheritableProperties.add("margin-left");
     nonInheritableProperties.add("margin-right");
     nonInheritableProperties.add("margin-top");
     nonInheritableProperties.add("margin-bottom");
 
-    parseDefaultCss();
+    if (defaultCss != null) {
+      css.addAll(parseCss(defaultCss));
+    } else {
+      parseDefaultCss();
+    }
   }
 
-  double? getFloatAttribute(XmlNode element, String attribute, Style style, bool isHorizontal) {
+  Future<double?> getFloatAttribute(XmlNode element, String attribute, Style style, bool isHorizontal) async {
     String? textIndent = getStringAttribute(element, style, "text-indent");
     if (textIndent != null) {
       return getFloatFromString((style as ElementStyle).textStyle, textIndent, true);
@@ -85,16 +93,12 @@ class CssParser {
     return style.declarations[attribute];
   }
 
-  double? getFloatFromString(TextStyle s, String value, bool isHorizontal) {
+  Future<double?> getFloatFromString(TextStyle s, String value, bool isHorizontal) async {
     if (value == "0") {
       return 0;
     }
 
-    TextPainter paint = TextPainter(textDirection: TextDirection.ltr, text: TextSpan(text: "s", style: s));
-    paint.layout();
-
-    double preferredSize = isHorizontal ? paint.width : paint.height;
-    paint.dispose();
+    double preferredSize = await _textMeasureDelegate.measure("s", s, isHorizontal);
 
     return value.isEmpty ? null : parseFloatCssValue(value, preferredSize);
   }
@@ -348,5 +352,44 @@ class CssParser {
 
     complexSelectors.removeWhere((selector) => '.'.allMatches(selector).length <= 1);
     return complexSelectors;
+  }
+}
+
+abstract class TextMeasureDelegate {
+  Future<double> measure(String text, TextStyle style, bool isHorizontal);
+}
+
+class MainTextMeasureDelegate implements TextMeasureDelegate {
+  @override
+  Future<double> measure(String text, TextStyle style, bool isHorizontal) async {
+    TextPainter paint = TextPainter(textDirection: TextDirection.ltr, text: TextSpan(text: text, style: style));
+    paint.layout();
+    double preferredSize = isHorizontal ? paint.width : paint.height;
+    paint.dispose();
+    return preferredSize;
+  }
+}
+
+class IsolateTextMeasureDelegate implements TextMeasureDelegate {
+  final SendPort _sendPort;
+
+  IsolateTextMeasureDelegate(this._sendPort);
+
+  @override
+  Future<double> measure(String text, TextStyle style, bool isHorizontal) async {
+    final reply = ReceivePort();
+    _sendPort.send({
+      'type': 'measure',
+      'text': text,
+      'fontSize': style.fontSize,
+      'fontFamily': style.fontFamily,
+      'fontWeight': style.fontWeight?.index,
+      'fontStyle': style.fontStyle?.index,
+      'isHorizontal': isHorizontal,
+      'replyPort': reply.sendPort,
+    });
+    final result = await reply.first as double;
+    reply.close();
+    return result;
   }
 }

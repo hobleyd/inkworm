@@ -12,7 +12,7 @@ abstract class Style {
   OrderedSet<String> selectors = OrderedSet.simple<String>();
   CssDeclarations declarations = {};
 
-  Style parseElement({required XmlNode element, Style? parentStyle});
+  Future<Style> parseElement({required XmlNode element, Style? parentStyle});
 
   void addDeclarations(CssParser parser, XmlNode node) {
     if (node is XmlElement) {

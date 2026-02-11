@@ -23,10 +23,10 @@ class LinkHandler extends HtmlHandler {
     XmlElement element = node as XmlElement;
 
     ElementStyle elementStyle = ElementStyle();
-    elementStyle.parseElement(element: element, parentStyle: parentElementStyle);
+    await elementStyle.parseElement(element: element, parentStyle: parentElementStyle);
 
     BlockStyle blockStyle = BlockStyle(elementStyle: elementStyle);
-    blockStyle.parseElement(element: element, parentStyle: parentBlockStyle);
+    await blockStyle.parseElement(element: element, parentStyle: parentBlockStyle);
 
     if (node.children.isNotEmpty) {
       List<HtmlContent>? childElements = await node.firstChild!.handler?.processElement(node: node.firstChild!, parentBlockStyle: blockStyle, parentElementStyle: elementStyle);
@@ -41,7 +41,7 @@ class LinkHandler extends HtmlHandler {
             EpubParser parser = GetIt.instance.get<EpubParser>();
             XmlNode? footnote = parser.getFootnote(href);
             if (footnote != null) {
-              List<HtmlContent>? fnElements = await footnote.handler?.processElement(node: footnote, );
+              List<HtmlContent>? fnElements = []; //await footnote.handler?.processElement(node: footnote, );
               if (fnElements != null) {
                 lc.footnotes = fnElements;
               }

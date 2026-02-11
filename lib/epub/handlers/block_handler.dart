@@ -40,10 +40,10 @@ class BlockHandler extends HtmlHandler {
     List<HtmlContent> elements = [];
 
     ElementStyle elementStyle = ElementStyle();
-    elementStyle.parseElement(element: element, parentStyle: parentElementStyle);
+    await elementStyle.parseElement(element: element, parentStyle: parentElementStyle);
 
     BlockStyle blockStyle = BlockStyle(elementStyle: elementStyle);
-    blockStyle.parseElement(element: element, parentStyle: parentBlockStyle);
+    await blockStyle.parseElement(element: element, parentStyle: parentBlockStyle);
 
     if (blockStyle.display != null && blockStyle.display == "none") {
       return [];
