@@ -41,7 +41,7 @@ class LinkHandler extends HtmlHandler {
             EpubParser parser = GetIt.instance.get<EpubParser>();
             XmlNode? footnote = parser.getFootnote(href);
             if (footnote != null) {
-              List<HtmlContent>? fnElements = await footnote.handler?.processElement(node: footnote, );
+              List<HtmlContent>? fnElements = []; //await footnote.handler?.processElement(node: footnote, );
               if (fnElements != null) {
                 lc.footnotes = fnElements;
               }
