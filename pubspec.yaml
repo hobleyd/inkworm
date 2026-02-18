@@ -23,6 +23,7 @@ dependencies:
   google_fonts: ^8.0.0
   html: ^0.15.6
   injectable: ^2.7.1+2
+  json_annotation: ^4.9.0
   logger: ^2.6.1
   mockito: ^5.5.0
   ordered_set: ^8.0.0
@@ -48,6 +49,7 @@ dev_dependencies:
   flutter_launcher_icons: ^0.14.4
   flutter_lints: ^6.0.0
   injectable_generator: ^2.9.1
+  json_serializable: ^6.9.0
   riverpod_lint: ^3.0.3
   riverpod_generator: ^3.0.3
 

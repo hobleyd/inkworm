@@ -12,6 +12,7 @@ import '../content/paragraph_break.dart';
 import '../content/text_content.dart';
 import '../styles/block_style.dart';
 import '../styles/element_style.dart';
+import 'epub_isolate_dto.dart';
 
 Future<ui.Image> _decodeImage(Uint8List bytes) {
   final completer = Completer<ui.Image>();
@@ -37,87 +38,82 @@ TextDecoration? _decorationFromBits(int? bits) {
   return TextDecoration.combine(values);
 }
 
-BlockStyle _blockStyleFromMap(Map<String, Object?> map, ElementStyle elementStyle) {
+BlockStyle _blockStyleFromDto(BlockStyleDto dto, ElementStyle elementStyle) {
   final style = BlockStyle(elementStyle: elementStyle);
-  style.leftMargin = map['leftMargin'] as double?;
-  style.rightMargin = map['rightMargin'] as double?;
-  style.topMargin = map['topMargin'] as double?;
-  style.bottomMargin = map['bottomMargin'] as double?;
-  style.leftIndent = map['leftIndent'] as double?;
-  final alignmentIndex = map['alignment'] as int?;
+  style.leftMargin = dto.leftMargin;
+  style.rightMargin = dto.rightMargin;
+  style.topMargin = dto.topMargin;
+  style.bottomMargin = dto.bottomMargin;
+  style.leftIndent = dto.leftIndent;
+  final alignmentIndex = dto.alignment;
   if (alignmentIndex != null) {
     style.alignment = LineAlignment.values[alignmentIndex];
   }
-  style.maxHeight = map['maxHeight'] as double?;
-  style.maxWidth = map['maxWidth'] as double?;
+  style.maxHeight = dto.maxHeight;
+  style.maxWidth = dto.maxWidth;
   return style;
 }
 
-ElementStyle _elementStyleFromMap(Map<String, Object?> map) {
+ElementStyle _elementStyleFromDto(ElementStyleDto dto) {
   final style = ElementStyle();
-  final fontWeightIndex = map['fontWeight'] as int?;
-  final fontStyleIndex = map['fontStyle'] as int?;
-  final colorValue = map['color'] as int?;
+  final fontWeightIndex = dto.fontWeight;
+  final fontStyleIndex = dto.fontStyle;
+  final colorValue = dto.color;
   style.textStyle = TextStyle(
-    fontSize: map['fontSize'] as double?,
-    fontFamily: map['fontFamily'] as String?,
+    fontSize: dto.fontSize,
+    fontFamily: dto.fontFamily,
     fontWeight: fontWeightIndex != null ? FontWeight.values[fontWeightIndex] : null,
     fontStyle: fontStyleIndex != null ? FontStyle.values[fontStyleIndex] : null,
-    decoration: _decorationFromBits(map['decoration'] as int?),
+    decoration: _decorationFromBits(dto.decoration),
     color: colorValue != null ? Color(colorValue) : null,
   );
-  style.isDropCaps = map['isDropCaps'] as bool?;
+  style.isDropCaps = dto.isDropCaps;
   return style;
 }
 
-Future<HtmlContent> contentFromMap(Map<String, Object?> map) async {
-  final type = map['type'] as String?;
-  if (type == null) {
-    throw StateError('Missing content type');
-  }
+Future<HtmlContent> contentFromDto(ContentDto dto) async {
+  final elementStyle = _elementStyleFromDto(dto.elementStyle);
+  final blockStyle = _blockStyleFromDto(dto.blockStyle, elementStyle);
 
-  final elementStyle = _elementStyleFromMap((map['elementStyle'] as Map).cast<String, Object?>());
-  final blockStyle = _blockStyleFromMap((map['blockStyle'] as Map).cast<String, Object?>(), elementStyle);
-
-  switch (type) {
-    case 'text':
+  switch (dto) {
+    case TextContentDto text:
       return TextContent(
         blockStyle: blockStyle,
         elementStyle: elementStyle,
-        text: map['text'] as String? ?? '',
+        text: text.text,
       );
-    case 'link':
-      final src = await contentFromMap((map['src'] as Map).cast<String, Object?>());
+    case LinkContentDto link:
+      final src = await contentFromDto(link.src);
       final footnotes = <HtmlContent>[];
-      final rawFootnotes = map['footnotes'] as List? ?? const [];
-      for (final item in rawFootnotes) {
-        footnotes.add(await contentFromMap((item as Map).cast<String, Object?>()));
+      for (final item in link.footnotes) {
+        footnotes.add(await contentFromDto(item));
       }
-      final link = LinkContent(
+      final linkContent = LinkContent(
         blockStyle: blockStyle,
         elementStyle: elementStyle,
         src: src,
-        href: map['href'] as String? ?? '',
+        href: link.href,
       );
-      link.footnotes = footnotes;
-      return link;
-    case 'line_break':
+      linkContent.footnotes = footnotes;
+      return linkContent;
+    case LineBreakDto _:
       return LineBreak(blockStyle: blockStyle, elementStyle: elementStyle);
-    case 'paragraph_break':
+    case ParagraphBreakDto _:
       return ParagraphBreak(blockStyle: blockStyle, elementStyle: elementStyle);
-    case 'image':
-      final bytes = map['bytes'] as Uint8List;
-      final image = await _decodeImage(bytes);
-      return ImageContent(blockStyle: blockStyle, elementStyle: elementStyle, image: image);
+    case ImageBytesDto image:
+      final bytes = image.bytes;
+      final imageObj = await _decodeImage(bytes);
+      return ImageContent(blockStyle: blockStyle, elementStyle: elementStyle, image: imageObj);
     default:
-      throw StateError('Unknown content type: $type');
+      throw StateError('Unknown content type: ${dto.runtimeType}');
   }
 }
 
 Future<List<HtmlContent>> contentsFromMapList(List<dynamic> data) async {
   final contents = <HtmlContent>[];
   for (final item in data) {
-    contents.add(await contentFromMap((item as Map).cast<String, Object?>()));
+    final dto = ContentDto.fromJson((item as Map).cast<String, dynamic>());
+    contents.add(await contentFromDto(dto));
   }
   return contents;
 }

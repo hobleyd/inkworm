@@ -101,7 +101,7 @@ void chapterParseIsolateEntry(Map<String, Object?> message) async {
       final List<int> batchOrder = (message['chapterOrder'] as List).cast<int>();
       for (final chapterIndex in batchOrder) {
         final contents = await parser.parseChapterContents(chapterIndex, chapterHrefs[chapterIndex]);
-        final serialized = contents.map(contentToMap).toList(growable: false);
+        final serialized = contents.map((content) => contentToDto(content).toJson()).toList(growable: false);
         sendPort.send({
           _kMessageType: _kMessageTypeChapter,
           'index': chapterIndex,

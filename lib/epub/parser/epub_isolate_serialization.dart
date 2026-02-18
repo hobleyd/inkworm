@@ -8,21 +8,53 @@ import '../content/paragraph_break.dart';
 import '../content/text_content.dart';
 import '../styles/block_style.dart';
 import '../styles/element_style.dart';
+import 'epub_isolate_dto.dart';
 
-Map<String, Object?> blockStyleToMap(BlockStyle style) {
-  return {
-    'leftMargin': style.leftMargin,
-    'rightMargin': style.rightMargin,
-    'topMargin': style.topMargin,
-    'bottomMargin': style.bottomMargin,
-    'leftIndent': style.leftIndent,
-    'alignment': style.alignment?.index,
-    'maxHeight': style.maxHeight,
-    'maxWidth': style.maxWidth,
+ContentDto contentToDto(HtmlContent content) {
+  return switch (content) {
+    TextContent text => TextContentDto(
+        text: text.text,
+        blockStyle: _blockStyleToDto(text.blockStyle),
+        elementStyle: _elementStyleToDto(text.elementStyle),
+      ),
+    LinkContent link => LinkContentDto(
+        href: link.href,
+        src: contentToDto(link.src),
+        footnotes: link.footnotes.map(contentToDto).toList(),
+        blockStyle: _blockStyleToDto(link.blockStyle),
+        elementStyle: _elementStyleToDto(link.elementStyle),
+      ),
+    LineBreak lineBreak => LineBreakDto(
+        blockStyle: _blockStyleToDto(lineBreak.blockStyle),
+        elementStyle: _elementStyleToDto(lineBreak.elementStyle),
+      ),
+    ParagraphBreak paragraphBreak => ParagraphBreakDto(
+        blockStyle: _blockStyleToDto(paragraphBreak.blockStyle),
+        elementStyle: _elementStyleToDto(paragraphBreak.elementStyle),
+      ),
+    ImageBytesContent imageBytes => ImageBytesDto(
+        bytes: imageBytes.bytes,
+        blockStyle: _blockStyleToDto(imageBytes.blockStyle),
+        elementStyle: _elementStyleToDto(imageBytes.elementStyle),
+      ),
+    _ => throw StateError('Unsupported content type: ${content.runtimeType}'),
   };
 }
 
-Map<String, Object?> elementStyleToMap(ElementStyle style) {
+BlockStyleDto _blockStyleToDto(BlockStyle style) {
+  return BlockStyleDto(
+    leftMargin: style.leftMargin,
+    rightMargin: style.rightMargin,
+    topMargin: style.topMargin,
+    bottomMargin: style.bottomMargin,
+    leftIndent: style.leftIndent,
+    alignment: style.alignment?.index,
+    maxHeight: style.maxHeight,
+    maxWidth: style.maxWidth,
+  );
+}
+
+ElementStyleDto _elementStyleToDto(ElementStyle style) {
   final decoration = style.textStyle.decoration;
   int? decorationBits;
   if (decoration != null) {
@@ -39,49 +71,13 @@ Map<String, Object?> elementStyleToMap(ElementStyle style) {
     decorationBits = bits == 0 ? null : bits;
   }
 
-  return {
-    'fontSize': style.textStyle.fontSize,
-    'fontFamily': style.textStyle.fontFamily,
-    'fontWeight': style.textStyle.fontWeight?.index,
-    'fontStyle': style.textStyle.fontStyle?.index,
-    'decoration': decorationBits,
-    'color': style.textStyle.color?.value,
-    'isDropCaps': style.isDropCaps,
-  };
-}
-
-Map<String, Object?> contentToMap(HtmlContent content) {
-  return switch (content) {
-    TextContent text => {
-        'type': 'text',
-        'text': text.text,
-        'blockStyle': blockStyleToMap(text.blockStyle),
-        'elementStyle': elementStyleToMap(text.elementStyle),
-      },
-    LinkContent link => {
-        'type': 'link',
-        'href': link.href,
-        'src': contentToMap(link.src),
-        'footnotes': link.footnotes.map(contentToMap).toList(),
-        'blockStyle': blockStyleToMap(link.blockStyle),
-        'elementStyle': elementStyleToMap(link.elementStyle),
-      },
-    LineBreak lineBreak => {
-        'type': 'line_break',
-        'blockStyle': blockStyleToMap(lineBreak.blockStyle),
-        'elementStyle': elementStyleToMap(lineBreak.elementStyle),
-      },
-    ParagraphBreak paragraphBreak => {
-        'type': 'paragraph_break',
-        'blockStyle': blockStyleToMap(paragraphBreak.blockStyle),
-        'elementStyle': elementStyleToMap(paragraphBreak.elementStyle),
-      },
-    ImageBytesContent imageBytes => {
-        'type': 'image',
-        'bytes': imageBytes.bytes,
-        'blockStyle': blockStyleToMap(imageBytes.blockStyle),
-        'elementStyle': elementStyleToMap(imageBytes.elementStyle),
-      },
-    _ => throw StateError('Unsupported content type: ${content.runtimeType}'),
-  };
+  return ElementStyleDto(
+    fontSize: style.textStyle.fontSize,
+    fontFamily: style.textStyle.fontFamily,
+    fontWeight: style.textStyle.fontWeight?.index,
+    fontStyle: style.textStyle.fontStyle?.index,
+    decoration: decorationBits,
+    color: style.textStyle.color?.value,
+    isDropCaps: style.isDropCaps,
+  );
 }
