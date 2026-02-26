@@ -9,7 +9,7 @@ abstract class Separator extends LineElement {
   final ElementStyle elementStyle;
 
   @override
-  get element => TextContent(text: separator, blockStyle: blockStyle, elementStyle: elementStyle);
+  get element => TextContent(text: separator, blockStyle: blockStyle, elementStyle: elementStyle, mustSplit: false);
 
   Separator({required this.separator, required this.blockStyle, required this.elementStyle});
 }

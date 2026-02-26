@@ -1,12 +1,10 @@
-import 'dart:isolate';
 
-import 'package:archive/archive.dart';
 import 'package:get_it/get_it.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:xml/xml.dart';
 
 import '../models/epub_book.dart';
-import '../epub/parser/epub_parser.dart';
+import '../epub/parser/epub_parser_worker.dart';
 import '../epub/parser/extensions.dart';
 import '../epub/structure/epub_chapter.dart';
 import '../models/page_size.dart';
@@ -17,22 +15,43 @@ part 'epub.g.dart';
 @Riverpod(keepAlive: true)
 class Epub extends _$Epub {
   late List<EpubChapter> _chapters;
-  late XmlDocument opf;
+  late EpubParserWorker _worker;
+  late int _spineLength;
+  late int _initialChapter;
 
   @override
   EpubBook build() {
+    _worker = EpubParserWorker(onBookDetails: onBookDetails, onParsedChapter: onParsedChapter, onError: onError, onComplete: onComplete);
     return EpubBook(uri: "", author: "", title: "", chapters: [], parsingBook: true);
+  }
+
+  void onBookDetails(String author, String title, int spineLength) {
+    state = state.copyWith(author: author, title: title);
+    _spineLength = spineLength;
+
+    _chapters = List.generate(_spineLength, (int index) => EpubChapter(chapterNumber: index), growable: false);
+    parseChapters(_initialChapter);
+  }
+
+  void onComplete() {
+    if (_chapters.where((chapter) => chapter.pages.isEmpty).isEmpty) {
+      state = state.copyWith(parsingBook: false);
+    }
+  }
+
+  void onError(String error, String stackTrace) {
+      state = state.copyWith(errorDescription: error, error: StackTrace.fromString(stackTrace));
+  }
+
+  void onParsedChapter(int index, EpubChapter chapter) {
+    _chapters[index] = chapter;
+    state = state.copyWith(chapters: _chapters);
   }
 
   void openBook(String book) {
     state = state.copyWith(uri: book);
-
-    final inputStream = InputFileStream(book);
-    Archive bookArchive = ZipDecoder().decodeStream(inputStream);
-    inputStream.close();
-
-    EpubParser parser = GetIt.instance.get<EpubParser>();
-    parser.bookArchive = bookArchive;
+    _worker.openBook(book);
+    _worker.parseDefaultCss();
 
     ReadingProgress progress = GetIt.instance.get<ReadingProgress>();
     if (book != progress.book) {
@@ -40,13 +59,16 @@ class Epub extends _$Epub {
       progress.chapterNumber = 0;
       progress.pageNumber = 0;
     }
+    _worker.setFontSize(progress.fontSize);
 
     PageSize size = GetIt.instance.get<PageSize>();
+    _worker.setPageSize(size);
+
     if (size.canvasHeight != 0 && size.canvasWidth != 0) {
-      parse(progress.chapterNumber);
+      getBookDetails(progress.chapterNumber);
     } else {
       size.stream.listen((pageSize) {
-        parse(progress.chapterNumber);
+        getBookDetails(progress.chapterNumber);
       });
     }
   }
@@ -55,50 +77,33 @@ class Epub extends _$Epub {
    * When parsing the book, parse the current chapter (the first on initial reading) and then one on either side to allow
    * the reader to continue reading while we complete the book parsing.
    */
-  void parse(int fromChapterNumber) async {
-    try {
-      opf = GetIt.instance.get<EpubParser>().getOPF();
-
-      _chapters = List.generate(opf.spine.length, (int index) => EpubChapter(chapterNumber: index), growable: false);
-      _chapters[fromChapterNumber] = await parseChapter(fromChapterNumber);
-
-      // Allow the page to be rendered.
-      state = state.copyWith(author: opf.author, title: opf.title, chapters: _chapters);
-
-      //Isolate.run(() => parseRemainingChapters(fromChapterNumber));
-      parseRemainingChapters(fromChapterNumber);
-    } catch (e, s) {
-      state = state.copyWith(errorDescription: e.toString(), error: s);
-    }
+  void getBookDetails(int chapterIndex) {
+      _initialChapter = chapterIndex;
+      _worker.getBookDetails();
   }
 
-  Future <EpubChapter> parseChapter(int chapterIndex) async {
-    return await GetIt.instance.get<EpubParser>().parseChapter(chapterIndex, opf.manifest[opf.spine[chapterIndex]]!.href);
-  }
-
-  Future<void> parseRemainingChapters(int chapterIndex) async {
+  void parseChapters(int chapterIndex) {
     Set<int> completedChapters = { chapterIndex };
+
+    _worker.parseChapter(_initialChapter);
+    completedChapters.add(chapterIndex);
+
     if (chapterIndex+1 < _chapters.length) {
-      _chapters[chapterIndex+1] = await parseChapter(chapterIndex+1);
+      //_worker.parseChapter(chapterIndex+1);
       completedChapters.add(chapterIndex+1);
-      state = state.copyWith(chapters: _chapters);
     }
 
     if (chapterIndex > 0) {
-      await parseChapter(chapterIndex-1);
-      _chapters[chapterIndex-1] = await parseChapter(chapterIndex-1);
+      //_worker.parseChapter(chapterIndex-1);
       completedChapters.add(chapterIndex-1);
-      state = state.copyWith(chapters: _chapters);
     }
 
-    for (int chapterIndex = 0; chapterIndex < opf.spine.length; chapterIndex++) {
+    for (int chapterIndex = 0; chapterIndex < _spineLength; chapterIndex++) {
       if (completedChapters.contains(chapterIndex)) {
         continue;
       }
-      _chapters[chapterIndex] = await parseChapter(chapterIndex);
-      state = state.copyWith(chapters: _chapters);
+      //_worker.parseChapter(chapterIndex);
     }
-    state = state.copyWith(parsingBook: false);
   }
 
   void setError(String description, StackTrace stackTrace) {

@@ -8,10 +8,12 @@ class HyphenSeparator extends Separator {
   }
 
   @override
-  void getConstraints() {
+  Future<bool> getConstraints() async {
     // I want to ensure Hyphens are a little more visible when displaying them.
-    super.getConstraints();
+    await super.getConstraints();
     width = width * 1.5;
+
+    return true;
   }
 
   @override

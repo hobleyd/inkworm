@@ -119,19 +119,19 @@ class BlockStyle extends Style {
     display = _parser.getStringAttribute(element, this, "display");
   }
 
-  void getLineHeightMultiplier(XmlNode element) {
+  Future<void> getLineHeightMultiplier(XmlNode element) async {
     // TODO: Should we support this?
     if (false) {
-      lineHeightMultiplier = _parser.getFloatAttribute(element, "line-height", elementStyle, false) ?? lineHeightMultiplier;
+      lineHeightMultiplier = await _parser.getFloatAttribute(element, "line-height", elementStyle, false) ?? lineHeightMultiplier;
     }
     lineHeightMultiplier = 1;
   }
 
-  void getLineIndent(XmlNode element) {
-    leftIndent = _parser.getFloatAttribute(element, "text-indent", elementStyle, true) ?? leftIndent;
+  Future<void> getLineIndent(XmlNode element) async {
+    leftIndent = await _parser.getFloatAttribute(element, "text-indent", elementStyle, true) ?? leftIndent;
   }
 
-  void getMargins(XmlNode element) {
+  Future<void> getMargins(XmlNode element) async {
     String? leftMarginString;
     String? rightMarginString;
     String? topMarginString;
@@ -169,10 +169,10 @@ class BlockStyle extends Style {
       }
     }
 
-    if (leftMarginString != null) leftMargin = _parser.getFloatFromString(elementStyle.textStyle, leftMarginString, true);
-    if (rightMarginString != null) rightMargin = _parser.getFloatFromString(elementStyle.textStyle, rightMarginString, true);
-    if (topMarginString != null) topMargin = _parser.getFloatFromString(elementStyle.textStyle, topMarginString, false);
-    if (bottomMarginString != null) bottomMargin = _parser.getFloatFromString(elementStyle.textStyle, bottomMarginString, false);
+    if (leftMarginString != null)    leftMargin  = await _parser.getFloatFromString(elementStyle.textStyle, leftMarginString, true);
+    if (rightMarginString != null)   rightMargin = await _parser.getFloatFromString(elementStyle.textStyle, rightMarginString, true);
+    if (topMarginString != null)       topMargin = await _parser.getFloatFromString(elementStyle.textStyle, topMarginString, false);
+    if (bottomMarginString != null) bottomMargin = await _parser.getFloatFromString(elementStyle.textStyle, bottomMarginString, false);
   }
 
   void getMax(XmlNode element) {

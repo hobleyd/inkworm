@@ -14,10 +14,12 @@ class LinkElement extends LineElement {
   }
 
   @override
-  void getConstraints() async {
-    src.getConstraints();
+  Future<bool> getConstraints() async {
+    await src.getConstraints();
     height = src.height;
     width = src.width;
+
+    return true;
   }
 
   @override

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:get_it/get_it.dart';
+import 'package:inkworm/epub/parser/epub_parser_worker.dart';
 
-import '../../models/page_size.dart';
 import '../content/html_content.dart';
 import '../content/text_content.dart';
 
@@ -13,18 +12,16 @@ abstract class LineElement {
   // Link _link;
 
   HtmlContent get element;
+  bool        get isDropCaps => element.elementStyle.isDropCaps ?? false;
 
   LineElement();
 
-  void getConstraints() async {
-    PageSize size = GetIt.instance.get<PageSize>();
-    TextPainter painter = TextPainter(
-      text: (element as TextContent).span,
-      textDirection: TextDirection.ltr,
-    );
-    painter.layout(maxWidth: size.canvasWidth - size.leftIndent - size.rightIndent);
-    width = painter.width;
-    height = painter.height;
+  Future<bool> getConstraints() async {
+    debugPrint('getConstraints($element)');
+    Map<String, double> size = await EpubParserWorker.measureTextInMainThread((element as TextContent).text, (element as TextContent).span.style!);
+    width = size['width']!;
+    height = size['height']!;
+    debugPrint('getConstraints($element) $width/$height');
 
     // TODO: this is completely fucked. Flutter literally doesn't return the correct width and everything else I have
     // tried: getBoxesForSelection, computeLineMetrics, getOffsetForCaret and even PictureRecorder don't work.
@@ -33,7 +30,7 @@ abstract class LineElement {
       width = width * 1.5;
     }
 
-    painter.dispose();
+    return true;
   }
 
   void paint(Canvas c, double height, double xPos, double yPos);

@@ -1,9 +1,13 @@
 import 'package:get_it/get_it.dart';
+import 'package:json_annotation/json_annotation.dart';
 
 import '../../models/page_size.dart';
 import '../styles/block_style.dart';
 import 'line.dart';
 
+part 'page.g.dart';
+
+@JsonSerializable()
 class Page {
   List<Line> lines = [];
   List<Line> footnotes = [];
@@ -12,6 +16,11 @@ class Page {
   double dropCapsYPosition = 0;
   double currentBottomYPos = 0;
   double pageHeight = 0;
+
+  Page();
+
+  factory Page.fromJson(Map<String, dynamic> json) => _$PageFromJson(json);
+  Map<String, dynamic> toJson() => _$PageToJson(this);
 
   Line?  get currentLine        => lines.lastOrNull;
   bool   get isCurrentLineEmpty => currentLine?.isEmpty ?? true;

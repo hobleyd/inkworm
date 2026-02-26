@@ -10,26 +10,33 @@ import 'html_content.dart';
 class TextContent extends HtmlContent {
   final String text;
 
+  @override
+  final List<LineElement> elements = [];
+
   TextSpan get span => TextSpan(text: text, style: elementStyle.textStyle);
 
-  @override
-  Iterable<LineElement> get elements {
-    // Split the span into text and spaces or hyphens - such that we can modify the width of the latter two in order to support justification.
-    final List<String> words = splitSpan(text);
+  TextContent({required super.blockStyle, required super.elementStyle, required this.text, bool mustSplit = true}) {
+    if (mustSplit) {
+      _splitText();
+    }
+  }
 
-    return words.map((word) {
+  void _splitText() {
+    // Split the span into text and spaces or hyphens - such that we can modify the width of the latter two in order to support justification.
+    final List<String> words = _splitString(text);
+
+    elements.addAll(words.map((word) {
       return switch (word) {
         '-' || '\u{2014}' => HyphenSeparator(blockStyle: blockStyle, elementStyle: elementStyle),
         ' '               => SpaceSeparator(blockStyle: blockStyle, elementStyle: elementStyle),
         '\u{00A0}'        => NonBreakingSpaceSeparator(blockStyle: blockStyle, elementStyle: elementStyle),
-        _                 => WordElement(word: TextContent(blockStyle: blockStyle, text: word.trim(), elementStyle: elementStyle)),
+        _                 => WordElement(word: TextContent(blockStyle: blockStyle, text: word.trim(), elementStyle: elementStyle, mustSplit: false)),
       };
-    });
+    }));
   }
 
-  const TextContent({required super.blockStyle, required super.elementStyle, required this.text});
 
-  List<String> splitSpan(String span) {
+  List<String> _splitString(String span) {
     List<String> result = [];
     String current = "";
 

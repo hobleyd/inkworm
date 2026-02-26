@@ -13,6 +13,7 @@ import 'extensions.dart';
 @Singleton()
 class EpubParser {
   Archive? bookArchive;
+  XmlDocument? opf;
 
   EpubParser();
 
@@ -57,17 +58,27 @@ class EpubParser {
   }
 
   XmlDocument getOPF() {
+    if (opf != null) {
+      return opf!;
+    }
+
     String? opfPath = getOPFPath();
     if (opfPath == null) {
       throw FormatException("No OPF path registered in epub");
     }
 
-    XmlDocument? opf = getXmlDocument(opfPath);
+    opf = getXmlDocument(opfPath);
     if (opf == null) {
       throw FormatException("No OPF file registered in epub");
     }
 
-    return opf;
+    return opf!;
+  }
+
+  void openBook(String book) {
+    final inputStream = InputFileStream(book);
+    bookArchive = ZipDecoder().decodeStream(inputStream);
+    inputStream.close();
   }
 
   Future<EpubChapter> parseChapter(int index, String href) async {

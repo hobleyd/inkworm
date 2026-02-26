@@ -11,6 +11,7 @@ class ElementStyle extends Style {
   late TextStyle textStyle;
 
   bool? isDropCaps;
+  static int defaultFontSize = 12;
 
   // Character: (superscript subscript)
   static const Map<String, ({String sup, String sub})> unicodeMap = {
@@ -58,10 +59,8 @@ class ElementStyle extends Style {
   }
 
   void getTextStyle(XmlNode element) {
-    ReadingProgress progress = GetIt.instance.get<ReadingProgress>();
-
     final String? fontFamily = _parser.getFontAttribute(element, this, "font-family")?.replaceAll('"', '');
-    final double? fontSize   = _parser.getFontSize(element, this, "font-size", progress.fontSize.toDouble());
+    final double? fontSize   = _parser.getFontSize(element, this, "font-size", defaultFontSize.toDouble());
     final String? fontStyle  = _parser.getStringAttribute(element, this, "font-style");
     final String? fontWeight = _parser.getStringAttribute(element, this, "font-weight");
     final String? fontDecoration  = _parser.getStringAttribute(element, this, "text-decoration");

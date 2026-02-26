@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import '../elements/image_element.dart';
@@ -5,15 +7,21 @@ import '../elements/line_element.dart';
 import 'html_content.dart';
 
 class ImageContent extends HtmlContent {
-  final ui.Image image;
+  String image;
 
-  double get height => image.height.toDouble();
-  double get width => image.width.toDouble();
+  double height;
+  double width;
 
   @override
   Iterable<LineElement> get elements => [ImageElement(image: this)];
 
-  const ImageContent({required super.blockStyle, required super.elementStyle, required this.image});
+  ImageContent({
+    required super.blockStyle,
+    required super.elementStyle,
+    required this.image,
+    required this.width,
+    required this.height,
+  });
 
   @override
   String toString() {

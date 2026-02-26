@@ -11,9 +11,9 @@ class BuildLine {
   LineListener? _lineListener;
   Line currentLine = Line();
 
-  bool get isEmpty     =>  currentLine.isEmpty;
-  bool get isNotEmpty  => !currentLine.isEmpty;
-  double get maxHeight => currentLine.maxHeight;
+  bool   get isEmpty    =>  currentLine.isEmpty;
+  bool   get isNotEmpty => !currentLine.isEmpty;
+  double get maxHeight  =>  currentLine.maxHeight;
 
   set dropCapsIndent(double indent)        => currentLine.dropCapsIndent = indent;
   set lineListener(LineListener? listener) => _lineListener = listener;
@@ -31,7 +31,7 @@ class BuildLine {
       }
     }
 
-    if (!(e.element.elementStyle.isDropCaps ?? false)) {
+    if (!e.isDropCaps) {
       // Only adjust the line height if this is not a dropcaps element. For obvious reasons. Given the use of dropcaps I can't
       // imagine it will be possible that this is the only thing on the line. On the other hand. HTML. Sigh.
       currentLine.height = e.height;

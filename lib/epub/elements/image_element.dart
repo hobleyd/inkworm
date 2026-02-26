@@ -1,8 +1,9 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide ImageCache;
 import 'package:get_it/get_it.dart';
 
 import '../../models/page_size.dart';
 import '../content/image_content.dart';
+import '../structure/image_cache.dart';
 import 'line_element.dart';
 
 class ImageElement extends LineElement {
@@ -27,10 +28,9 @@ class ImageElement extends LineElement {
   }
 
   @override
-  void getConstraints() {
+  Future<bool> getConstraints() async {
     // Resize the image to fit the screen.
     PageSize size = GetIt.instance.get<PageSize>();
-
     double scale = calculateAspectRatio(size.canvasWidth, size.canvasHeight);
 
     width = image.width * scale;
@@ -52,12 +52,16 @@ class ImageElement extends LineElement {
       width = width * 0.9;
       height = height * 0.9;
     }
+
+    return true;
   }
 
   @override
   void paint(Canvas c, double height, double xPos, double yPos) {
+    ImageCache cache = GetIt.instance.get<ImageCache>();
+
     c.drawImageRect(
-      image.image,
+      cache[image.image],
       Rect.fromLTWH(0, 0, image.width, image.height),
       Rect.fromLTWH(xPos, yPos, width, this.height),
       Paint(),

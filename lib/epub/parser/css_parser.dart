@@ -1,3 +1,5 @@
+import 'dart:isolate';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get_it/get_it.dart';
@@ -9,6 +11,7 @@ import '../../models/page_size.dart';
 import '../styles/element_style.dart';
 import '../styles/style.dart';
 import 'epub_parser.dart';
+import 'epub_parser_worker.dart';
 import 'font_management.dart';
 import 'extensions.dart';
 
@@ -25,11 +28,9 @@ class CssParser {
     nonInheritableProperties.add("margin-right");
     nonInheritableProperties.add("margin-top");
     nonInheritableProperties.add("margin-bottom");
-
-    parseDefaultCss();
   }
 
-  double? getFloatAttribute(XmlNode element, String attribute, Style style, bool isHorizontal) {
+  Future <double?> getFloatAttribute(XmlNode element, String attribute, Style style, bool isHorizontal) async {
     String? textIndent = getStringAttribute(element, style, "text-indent");
     if (textIndent != null) {
       return getFloatFromString((style as ElementStyle).textStyle, textIndent, true);
@@ -85,16 +86,12 @@ class CssParser {
     return style.declarations[attribute];
   }
 
-  double? getFloatFromString(TextStyle s, String value, bool isHorizontal) {
+  Future<double?> getFloatFromString(TextStyle s, String value, bool isHorizontal) async {
     if (value == "0") {
       return 0;
     }
-
-    TextPainter paint = TextPainter(textDirection: TextDirection.ltr, text: TextSpan(text: "s", style: s));
-    paint.layout();
-
-    double preferredSize = isHorizontal ? paint.width : paint.height;
-    paint.dispose();
+    Map<String, double> result = await EpubParserWorker.measureTextInMainThread("s", s);
+    double preferredSize = result[isHorizontal ? 'width' : 'height']!;
 
     return value.isEmpty ? null : parseFloatCssValue(value, preferredSize);
   }
@@ -305,11 +302,6 @@ class CssParser {
     }
 
     return declarations;
-  }
-
-  Future<void> parseDefaultCss() async {
-    String defaultCss = await rootBundle.loadString('assets/default.css');
-    css.addAll(parseCss(defaultCss));
   }
 
   void parseFile(String href) {

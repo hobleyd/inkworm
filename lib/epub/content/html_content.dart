@@ -11,6 +11,7 @@ abstract class HtmlContent {
   final ElementStyle elementStyle;
 
   Iterable<LineElement> get elements;
+
   LineAlignment? get alignment  => blockStyle.alignment;
   double?        get leftIndent => blockStyle.leftIndent;
   bool           get isDropCaps => elementStyle.isDropCaps ?? false;

@@ -10,6 +10,7 @@ class NonBreakingSpaceSeparator extends Separator {
   @override
   void paint(Canvas c, double height, double xPos, double yPos) {
     // No need to do anything for a Space character!
+    // TODO: this is not true is we are underlining a sentence.
   }
 
   @override
