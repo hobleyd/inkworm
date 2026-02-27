@@ -1,6 +1,7 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../epub/structure/epub_chapter.dart';
+import 'book_state_management.dart';
 
 part 'epub_book.freezed.dart';
 
@@ -25,14 +26,14 @@ class EpubBook with _$EpubBook {
   String? errorDescription;
 
   @override
-  bool parsingBook;
+  BookStateManagement workerState;
 
   EpubChapter operator [](int index) => chapters[index];
 
   int get lastChapterIndex => chapters.length - 1;
   int get totalPages => chapters.fold(0, (sum, chapter) => sum + chapter.pages.length);
 
-  EpubBook({required this.uri, required this.author, required this.title, this.error, this.errorDescription, required this.chapters, required this.parsingBook});
+  EpubBook({required this.uri, required this.author, required this.title, this.error, this.errorDescription, required this.chapters, required this.workerState});
 
   int currentPageNumber(int chapterNumber, int pageNumber) {
     return chapters.length < chapterNumber || chapterNumber == 0

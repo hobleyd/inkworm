@@ -15,7 +15,7 @@ class PageCanvas extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    EpubBook book = ref.read(epubProvider);
+    EpubBook book = ref.watch(epubProvider);
     var progressAsync =  ref.watch(progressProvider);
 
     return progressAsync.when(
@@ -33,7 +33,7 @@ class PageCanvas extends ConsumerWidget {
             progress.pageNumber = 0;
 
             ref.read(progressProvider.notifier).setProgress(book.uri, progress.fontSize, 0, 0);
-          } else if (book.uri.isEmpty && progress.book.isNotEmpty) {
+          } else if (book.uri.isEmpty && progress.book.isNotEmpty && book.workerState == BookState.initialised) {
             Future(() => ref.read(epubProvider.notifier).openBook(progress.book));
           }
 

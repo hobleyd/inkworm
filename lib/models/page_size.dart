@@ -4,19 +4,19 @@ import 'package:injectable/injectable.dart';
 
 @lazySingleton
 class PageSize {
-  final StreamController<PageSize> _controller = StreamController<PageSize>();
+  //final StreamController<PageSize> _controller = StreamController<PageSize>();
   double canvasWidth;
   double canvasHeight;
   double pixelDensity;
   double leftIndent;
   double rightIndent;
 
-  Stream<PageSize> get stream => _controller.stream;
+  //Stream<PageSize> get stream => _controller.stream;
 
   PageSize() : canvasWidth = 0, canvasHeight = 0, pixelDensity = 1, leftIndent = 12, rightIndent = 12;
 
   void closeStream() {
-    _controller.close();
+    //_controller.close();
   }
 
   void update({double? canvasWidth, double? canvasHeight, double? pixelDensity, double? leftIndent, double? rightIndent}) {
@@ -32,7 +32,7 @@ class PageSize {
     this.rightIndent = rightIndent ?? this.rightIndent;
 
     if (sendUpdate) {
-      _controller.sink.add(this);
+      //_controller.sink.add(this);
     }
   }
 

@@ -38,7 +38,8 @@ const String _textPaint   = 'paint';
 class EpubParserWorker {
   final void Function(String author, String title, int spineLength) onBookDetails;
   final void Function() onComplete;
-  final void Function(String error, String stackTrace, ) onError;
+  final void Function(String error, String stackTrace) onError;
+  final void Function(bool initialised) onInitialised;
   final void Function(int index, EpubChapter chapter) onParsedChapter;
 
   late SendPort _sendPort;
@@ -46,7 +47,12 @@ class EpubParserWorker {
 
   final Completer<void> _isolateReady = Completer.sync();
 
-  EpubParserWorker({ required this.onBookDetails, required this.onComplete, required this.onError, required this.onParsedChapter}) {
+  EpubParserWorker({
+    required this.onBookDetails,
+    required this.onComplete,
+    required this.onError,
+    required this.onInitialised,
+    required this.onParsedChapter}) {
     spawn();
   }
 
@@ -126,6 +132,7 @@ class EpubParserWorker {
     debugPrint('message: $message');
     if (message is SendPort) {
       _sendPort = message;
+      onInitialised(true);
     }
     if (message is Map) {
       switch (message['type']) {

@@ -5,15 +5,11 @@ import 'package:json_annotation/json_annotation.dart';
 
 import '../../models/page_size.dart';
 import '../styles/block_style.dart';
-import '../elements/line_element_json.dart';
 import '../elements/separators/non_breaking_space_separator.dart';
 import '../elements/separators/separator.dart';
 import '../elements/separators/space_separator.dart';
 import '../elements/line_element.dart';
 
-part 'line.g.dart';
-
-@JsonSerializable()
 class Line {
   LineAlignment alignment = LineAlignment.justify;
 
@@ -24,7 +20,6 @@ class Line {
   double textIndent = 0;
   double yPosOnPage = 0; // Should only be used when rendering the line. Otherwise, the calculations should be off the Page.
 
-  @LineElementListConverter()
   List<LineElement> elements = [];
 
   bool   get isEmpty            => elements.isEmpty;
@@ -42,9 +37,6 @@ class Line {
     leftIndent = size.leftIndent;
     rightIndent = size.rightIndent;
   }
-
-  factory Line.fromJson(Map<String, dynamic> json) => _$LineFromJson(json);
-  Map<String, dynamic> toJson() => _$LineToJson(this);
 
   void add(LineElement e) => elements.add(e);
 

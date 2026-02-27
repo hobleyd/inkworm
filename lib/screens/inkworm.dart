@@ -25,11 +25,16 @@ class Inkworm extends ConsumerStatefulWidget {
 
 class _Inkworm extends ConsumerState<Inkworm> {
   late StreamSubscription _intentSub;
+  String bookPath = "";
 
   @override
   Widget build(BuildContext context) {
     EpubBook book = ref.watch(epubProvider);
     var asyncDb = ref.watch(readingDBProvider);
+
+    if (book.workerState == BookState.initialised && bookPath.isNotEmpty) {
+      Future(() => ref.read(epubProvider.notifier).openBook(bookPath));
+    }
 
     MediaQueryData data = MediaQueryData.fromView(View.maybeOf(context)!);
     PageSize size = GetIt.instance.get<PageSize>();
@@ -77,8 +82,8 @@ class _Inkworm extends ConsumerState<Inkworm> {
       _handleLinuxIntent();
     }*/ else {
       // TODO: Support other platforms for debugging.
-      Future(() {
-        ref.read(epubProvider.notifier).openBook(Platform.environment['EBOOK']!);
+      setState(() {
+        bookPath = Platform.environment['EBOOK']!;
       });
     }
   }
@@ -87,7 +92,9 @@ class _Inkworm extends ConsumerState<Inkworm> {
     // Listen for Intents coming from outside the app while the app is in the memory.
     _intentSub = ReceiveSharingIntent.instance.getMediaStream().listen((value) {
       if (value.isNotEmpty) {
-        ref.read(epubProvider.notifier).openBook(value.first.path);
+        setState(() {
+          bookPath = value.first.path;
+        });
       }
     }, onError: (e, s) {
       ref.read(epubProvider.notifier).setError(e.toString(), s);
@@ -96,7 +103,9 @@ class _Inkworm extends ConsumerState<Inkworm> {
     // Get Intents coming from outside the app while the app is closed.
     ReceiveSharingIntent.instance.getInitialMedia().then((value) {
       if (value.isNotEmpty) {
-        ref.read(epubProvider.notifier).openBook(value.first.path);
+        setState(() {
+          bookPath = value.first.path;
+        });
       }
 
       ReceiveSharingIntent.instance.reset();
@@ -109,7 +118,9 @@ class _Inkworm extends ConsumerState<Inkworm> {
       final String? filePath = await platform.invokeMethod('getOpenedFile');
       if (filePath != null && filePath.isNotEmpty) {
         debugPrint('Linux - Received EPUB: $filePath');
-        ref.read(epubProvider.notifier).openBook(filePath);
+        setState(() {
+          bookPath = filePath;
+        });
       }
     } catch (e, s) {
       ref.read(epubProvider.notifier).setError(e.toString(), s);
@@ -118,8 +129,9 @@ class _Inkworm extends ConsumerState<Inkworm> {
 
   Future<void> _handleMacOSIntent() async {
     FileOpen.onOpened.listen((uris) {
-      ref.read(epubProvider.notifier).openBook(uris.first.toFilePath());
-      return;
+      setState(() {
+        bookPath = uris.first.toFilePath();
+      });
     });
   }
 }

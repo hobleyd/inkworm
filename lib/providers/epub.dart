@@ -1,11 +1,8 @@
-
 import 'package:get_it/get_it.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:xml/xml.dart';
 
 import '../models/epub_book.dart';
 import '../epub/parser/epub_parser_worker.dart';
-import '../epub/parser/extensions.dart';
 import '../epub/structure/epub_chapter.dart';
 import '../models/page_size.dart';
 import '../models/reading_progress.dart';
@@ -21,8 +18,14 @@ class Epub extends _$Epub {
 
   @override
   EpubBook build() {
-    _worker = EpubParserWorker(onBookDetails: onBookDetails, onParsedChapter: onParsedChapter, onError: onError, onComplete: onComplete);
-    return EpubBook(uri: "", author: "", title: "", chapters: [], parsingBook: true);
+    _worker = EpubParserWorker(
+        onBookDetails:   onBookDetails,
+        onError:         onError,
+        onComplete:      onComplete,
+        onInitialised:   onInitialised,
+        onParsedChapter: onParsedChapter
+    );
+    return EpubBook(uri: "", author: "", title: "", chapters: [], workerState: BookState.created);
   }
 
   void onBookDetails(String author, String title, int spineLength) {
@@ -35,12 +38,18 @@ class Epub extends _$Epub {
 
   void onComplete() {
     if (_chapters.where((chapter) => chapter.pages.isEmpty).isEmpty) {
-      state = state.copyWith(parsingBook: false);
+      state = state.copyWith(workerState: BookState.complete);
     }
   }
 
   void onError(String error, String stackTrace) {
       state = state.copyWith(errorDescription: error, error: StackTrace.fromString(stackTrace));
+  }
+
+  void onInitialised(bool workerState) {
+    if (workerState) {
+      state = state.copyWith(workerState: BookState.initialised);
+    }
   }
 
   void onParsedChapter(int index, EpubChapter chapter) {
@@ -67,9 +76,9 @@ class Epub extends _$Epub {
     if (size.canvasHeight != 0 && size.canvasWidth != 0) {
       getBookDetails(progress.chapterNumber);
     } else {
-      size.stream.listen((pageSize) {
-        getBookDetails(progress.chapterNumber);
-      });
+      //size.stream.listen((pageSize) {
+      //  getBookDetails(progress.chapterNumber);
+      //});
     }
   }
 

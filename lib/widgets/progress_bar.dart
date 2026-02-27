@@ -18,12 +18,14 @@ class ProgressBar extends ConsumerWidget {
     if (progressAsync.hasValue) {
       ReadingProgress progress = progressAsync.value!;
 
-      if (book.parsingBook) {
-        pageNumbers = 'Parsing eBook; please be patient';
-      } else {
-        pageNumbers = progress.chapterNumber > 0 ? '${book.currentPageNumber(progress.chapterNumber, progress.pageNumber)}-${book.nextChapterPageNumber(progress.chapterNumber)}/${book.totalPages}' : '';
-      }
+      pageNumbers = switch (book.workerState) {
+        BookState.complete    => progress.chapterNumber > 0 ? '${book.currentPageNumber(progress.chapterNumber, progress.pageNumber)}-${book.nextChapterPageNumber(progress.chapterNumber)}/${book.totalPages}' : '',
+        BookState.created     => 'Searching for the Book Elves',
+        BookState.initialised => 'Book Elves engaged and initialised',
+        BookState.parsing     => 'Book Elves are parsing the eBook; please be patient'
+      };
     }
+
     String title = book.title.length > 30 ? '${book.title.substring(0, 27)}...' : book.title;
     return Padding(
       padding: EdgeInsets.fromLTRB(12, 3, 12, 3),
