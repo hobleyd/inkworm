@@ -1,35 +1,34 @@
-import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:flutter/foundation.dart';
 
-part 'book_state_management.g.dart';
-
-@Riverpod(keepAlive: true)
-class BookStateManagement extends _$BookStateManagement {
+@immutable
+class BookState {
   // State flags as bit masks
-  static const int created     = 1 << 0; // 0000 0001
-  static const int initialised = 1 << 1; // 0000 0010
-  static const int sized       = 1 << 2; // 0000 0100
-  static const int progress    = 1 << 3; // 0000 1000
-  static const int parsing     = 1 << 4; // 0001 0000
-  static const int complete    = 1 << 5; // 0010 0000
+  static const int created     = 1 << 0; // 0000 0001 - epubProvider created
+  static const int initialised = 1 << 1; // 0000 0010 - bi-directional communication configured between the main and parsing isolate(s)
+  static const int sized       = 1 << 2; // 0000 0100 - PageSize received from widget build
+  static const int progress    = 1 << 3; // 0000 1000 - ReadingProgress retrieved from DB
+  static const int parsing     = 1 << 4; // 0001 0000 - Chapter parsing commenced
+  static const int details     = 1 << 5; // 0010 0000 - Book details retrieved.
+  static const int complete    = 1 << 6; // 0100 0000 - All chapter's parsed.
+
+  final int state;
 
   @override
-  int build () {
-    return 0;
-  }
+  const BookState({required this.state});
 
   // ── Core operations ──────────────────────────────────────────
 
   /// Set one or more states
-  void set(int flags) => state |= flags;
+  BookState set(int flags) => BookState(state: state |= flags);
 
   /// Clear one or more states
-  void clear(int flags) => state &= ~flags;
+  BookState clear(int flags) => BookState(state: state &= ~flags);
 
   /// Toggle one or more states
-  void toggle(int flags) => state ^= flags;
+  BookState toggle(int flags) => BookState(state: state ^= flags);
 
   /// Replace all state at once
-  void reset([int flags = 0]) => state = flags;
+  BookState reset([int flags = 0]) => BookState(state: state = flags);
 
   // ── Queries ───────────────────────────────────────────────────
 
@@ -50,8 +49,6 @@ class BookStateManagement extends _$BookStateManagement {
   bool get inProgress    => hasAll(progress);
   bool get isParsing     => hasAll(parsing);
   bool get isComplete    => hasAll(complete);
-
-  // ── Debug ─────────────────────────────────────────────────────
 
   @override
   String toString() {

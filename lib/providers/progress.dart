@@ -1,4 +1,6 @@
 import 'package:get_it/get_it.dart';
+import 'package:inkworm/models/book_state.dart';
+import 'package:inkworm/providers/epub.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../database/reading_db.dart';
@@ -19,6 +21,9 @@ class Progress extends _$Progress  {
     progress.chapterNumber = saved.chapterNumber;
     progress.pageNumber    = saved.pageNumber;
 
+    ref.read(epubProvider.notifier).setFontSize(saved.fontSize);
+    ref.read(epubProvider.notifier).setInitialChapter(saved.chapterNumber);
+    ref.read(bookStateManagementProvider.notifier).set(BookStateManagement.progress);
     return progress;
   }
 
@@ -34,6 +39,8 @@ class Progress extends _$Progress  {
 
       readingHistory.setProgress(progress);
 
+      ref.read(epubProvider.notifier).setFontSize(fontSize);
+      ref.read(epubProvider.notifier).setInitialChapter(chapter);
       state = AsyncValue.data(progress.copyWith(book: book, fontSize: fontSize, chapterNumber: chapter, pageNumber: page));
     }
   }

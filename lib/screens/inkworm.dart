@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get_it/get_it.dart';
+import 'package:inkworm/models/book_state.dart';
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 
 import '../database/reading_db.dart';
@@ -32,7 +33,10 @@ class _Inkworm extends ConsumerState<Inkworm> {
     EpubBook book = ref.watch(epubProvider);
     var asyncDb = ref.watch(readingDBProvider);
 
-    if (book.workerState == BookState.initialised && bookPath.isNotEmpty) {
+    int bookState = ref.watch(bookStateManagementProvider);
+    var bookStateProvider = ref.read(bookStateManagementProvider.notifier);
+
+    if (bookStateProvider.hasAll(BookStateManagement.initialised|BookStateManagement.progress)) {
       Future(() => ref.read(epubProvider.notifier).openBook(bookPath));
     }
 

@@ -1,28 +1,25 @@
-import 'dart:async';
-
 import 'package:injectable/injectable.dart';
 
 @lazySingleton
 class PageSize {
-  //final StreamController<PageSize> _controller = StreamController<PageSize>();
+  void Function(PageSize size)? onSizeChanged;
+
   double canvasWidth;
   double canvasHeight;
   double pixelDensity;
   double leftIndent;
   double rightIndent;
 
-  //Stream<PageSize> get stream => _controller.stream;
-
   PageSize() : canvasWidth = 0, canvasHeight = 0, pixelDensity = 1, leftIndent = 12, rightIndent = 12;
 
-  void closeStream() {
-    //_controller.close();
+  void setOnSizeChanged(Function(PageSize size) onSizeChanged) {
+    this.onSizeChanged = onSizeChanged;
   }
 
   void update({double? canvasWidth, double? canvasHeight, double? pixelDensity, double? leftIndent, double? rightIndent}) {
-    bool sendUpdate = false;
-    if (canvasWidth != null && this.canvasWidth != canvasWidth || canvasHeight != null && this.canvasHeight != canvasHeight) {
-      sendUpdate = true;
+    bool sizeChanged = false;
+    if ((canvasWidth != null && canvasWidth != this.canvasWidth) || (canvasHeight != null && canvasHeight != this.canvasHeight)) {
+      sizeChanged = true;
     }
 
     this.canvasWidth = canvasWidth ?? this.canvasWidth;
@@ -31,8 +28,8 @@ class PageSize {
     this.leftIndent = leftIndent ?? this.leftIndent;
     this.rightIndent = rightIndent ?? this.rightIndent;
 
-    if (sendUpdate) {
-      //_controller.sink.add(this);
+    if (sizeChanged && onSizeChanged != null) {
+      onSizeChanged!(this);
     }
   }
 

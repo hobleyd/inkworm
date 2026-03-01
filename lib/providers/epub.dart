@@ -1,4 +1,5 @@
 import 'package:get_it/get_it.dart';
+import 'package:inkworm/models/book_state.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../models/epub_book.dart';
@@ -23,9 +24,22 @@ class Epub extends _$Epub {
         onError:         onError,
         onComplete:      onComplete,
         onInitialised:   onInitialised,
-        onParsedChapter: onParsedChapter
+        onParsedChapter: onParsedChapter,
+        onSizeReceived: onSizeReceived,
     );
-    return EpubBook(uri: "", author: "", title: "", chapters: [], workerState: BookState.created);
+    ref.read(bookStateManagementProvider.notifier).set(BookStateManagement.created);
+    PageSize size = GetIt.instance.get<PageSize>();
+    size.setOnSizeChanged(onSizeChanged);
+    return EpubBook(uri: "", author: "", title: "", chapters: []);
+  }
+
+  /*
+   * When parsing the book, parse the current chapter (the first on initial reading) and then one on either side to allow
+   * the reader to continue reading while we complete the book parsing.
+   */
+  void getBookDetails(int chapterIndex) {
+    _initialChapter = chapterIndex;
+    _worker.getBookDetails();
   }
 
   void onBookDetails(String author, String title, int spineLength) {
@@ -33,12 +47,14 @@ class Epub extends _$Epub {
     _spineLength = spineLength;
 
     _chapters = List.generate(_spineLength, (int index) => EpubChapter(chapterNumber: index), growable: false);
+
+    ref.read(bookStateManagementProvider.notifier).set(BookStateManagement.details);
     parseChapters(_initialChapter);
   }
 
   void onComplete() {
     if (_chapters.where((chapter) => chapter.pages.isEmpty).isEmpty) {
-      state = state.copyWith(workerState: BookState.complete);
+      ref.read(bookStateManagementProvider.notifier).set(BookStateManagement.complete);
     }
   }
 
@@ -48,7 +64,7 @@ class Epub extends _$Epub {
 
   void onInitialised(bool workerState) {
     if (workerState) {
-      state = state.copyWith(workerState: BookState.initialised);
+      ref.read(bookStateManagementProvider.notifier).set(BookStateManagement.initialised);
     }
   }
 
@@ -57,40 +73,26 @@ class Epub extends _$Epub {
     state = state.copyWith(chapters: _chapters);
   }
 
+  // Called when the size changes and is passed to the parsing isolate.
+  void onSizeChanged(PageSize size) {
+    _worker.setPageSize(size);
+  }
+
+  // Called by the parsing isolate once the Size change has been sent.
+  void onSizeReceived() {
+    getBookDetails(_initialChapter);
+  }
+
   void openBook(String book) {
     state = state.copyWith(uri: book);
     _worker.openBook(book);
     _worker.parseDefaultCss();
-
-    ReadingProgress progress = GetIt.instance.get<ReadingProgress>();
-    if (book != progress.book) {
-      progress.book = book;
-      progress.chapterNumber = 0;
-      progress.pageNumber = 0;
-    }
-    _worker.setFontSize(progress.fontSize);
-
-    PageSize size = GetIt.instance.get<PageSize>();
-    _worker.setPageSize(size);
-
-    if (size.canvasHeight != 0 && size.canvasWidth != 0) {
-      getBookDetails(progress.chapterNumber);
-    } else {
-      //size.stream.listen((pageSize) {
-      //  getBookDetails(progress.chapterNumber);
-      //});
-    }
   }
 
   /*
    * When parsing the book, parse the current chapter (the first on initial reading) and then one on either side to allow
    * the reader to continue reading while we complete the book parsing.
    */
-  void getBookDetails(int chapterIndex) {
-      _initialChapter = chapterIndex;
-      _worker.getBookDetails();
-  }
-
   void parseChapters(int chapterIndex) {
     Set<int> completedChapters = { chapterIndex };
 
@@ -115,7 +117,15 @@ class Epub extends _$Epub {
     }
   }
 
+  void setInitialChapter(int chapter) {
+    _initialChapter = chapter;
+  }
+
   void setError(String description, StackTrace stackTrace) {
     state = state.copyWith(errorDescription: description, error: stackTrace);
+  }
+
+  void setFontSize(int fontSize) {
+    _worker.setFontSize(fontSize);
   }
 }

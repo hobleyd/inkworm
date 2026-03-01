@@ -19,7 +19,6 @@ class PageRenderer extends CustomPainter {
   }
 
   void paintLine(Canvas canvas, Line line) {
-    //debugPrint('$line');
     double xPos = line.leftIndent + line.textIndent + line.dropCapsIndent;
     for (LineElement el in line.elements) {
       el.paint(canvas, line.maxHeight, xPos, line.yPosOnPage);
@@ -32,7 +31,7 @@ class PageRenderer extends CustomPainter {
     // This is a little icky and should not be down in here; but I need the Canvas size and this is the only
     // way I can find to get it accurately!
     PageSize pageSize = GetIt.instance.get<PageSize>();
-    pageSize.update(canvasWidth: size.width, canvasHeight: size.height);
+    pageSize.update(canvasWidth: size.width, canvasHeight: size.height,);
 
     canvas.clipRect(Offset(0, 0) & size);
 

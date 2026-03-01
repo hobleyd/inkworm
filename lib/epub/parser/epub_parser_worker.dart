@@ -29,18 +29,19 @@ const String _bookDetails = 'details';
 const String _defaultCss  = 'css';
 const String _chapter     = 'chapter';
 const String _exception   = 'error';
-const String _fontSize    = 'fontsize';
+const String _fontSize    = 'fontSize';
 const String _imagePaint  = 'image';
 const String _openBook    = 'open';
-const String _pageSize    = 'size';
+const String _pageSize    = 'pageSize';
 const String _textPaint   = 'paint';
 
 class EpubParserWorker {
   final void Function(String author, String title, int spineLength) onBookDetails;
-  final void Function() onComplete;
-  final void Function(String error, String stackTrace) onError;
-  final void Function(bool initialised) onInitialised;
-  final void Function(int index, EpubChapter chapter) onParsedChapter;
+  final void Function()                                             onComplete;
+  final void Function(String error, String stackTrace)              onError;
+  final void Function(bool initialised)                             onInitialised;
+  final void Function(int index, EpubChapter chapter)               onParsedChapter;
+  final void Function()                                             onSizeReceived;
 
   late SendPort _sendPort;
   static SendPort? isolateSendPort;
@@ -52,7 +53,8 @@ class EpubParserWorker {
     required this.onComplete,
     required this.onError,
     required this.onInitialised,
-    required this.onParsedChapter}) {
+    required this.onParsedChapter,
+    required this.onSizeReceived,}) {
     spawn();
   }
 
@@ -149,6 +151,8 @@ class EpubParserWorker {
         case _imagePaint:
           _measureImage(message['name'], message['bytes'], message['replyPort']);
           break;
+        case _pageSize:
+          onSizeReceived();
         case _textPaint:
           TextStyle style = TextStyle(
               fontSize: message['fontSize'],
@@ -223,6 +227,7 @@ class EpubParserWorker {
             leftIndent: message.leftIndent,
             rightIndent: message.rightIndent,
         );
+        port.send({'type': _pageSize});
       } else if (message is int) {
         EpubParser parser = GetIt.instance.get<EpubParser>();
         XmlDocument opf = parser.getOPF();
