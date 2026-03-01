@@ -34,7 +34,12 @@ class EpubParser {
 }
 
   XmlDocument? getXmlDocument(String path) {
-    return XmlDocument.parse(bookArchive!.getContentAsString(path));
+    try {
+      return XmlDocument.parse(bookArchive!.getContentAsString(path));
+    } catch (e, s) {
+      // Normally references to online Web pages from what I can see. Why would you do that?
+      return null;
+    }
   }
 
   String? getOPFPath() {
