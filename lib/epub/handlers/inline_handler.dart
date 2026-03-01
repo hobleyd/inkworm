@@ -15,6 +15,7 @@ class InlineHandler extends HtmlHandler {
   InlineHandler() {
     HtmlHandler.registerHandler('b', this);
     HtmlHandler.registerHandler('i', this);
+    HtmlHandler.registerHandler('em', this);
     HtmlHandler.registerHandler('span', this);
   }
 
