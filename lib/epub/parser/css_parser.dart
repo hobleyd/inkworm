@@ -285,6 +285,11 @@ class CssParser {
   }
 
   CssDeclarations parseDeclarations(String properties) {
+    // TODO: Do I really need to support css3?
+    if (properties.startsWith('@supports')) {
+      return {};
+    }
+
     final CssDeclarations declarations = {};
 
     // Split properties by semicolon and parse each one
@@ -299,7 +304,7 @@ class CssParser {
           declarations[key] = value;
         }
         else {
-          throw FormatException("CSS declarations not splitting into 2!");
+          throw FormatException("CSS declarations not splitting into 2!\n$properties");
         }
       }
     }
