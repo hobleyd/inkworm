@@ -29,6 +29,11 @@ class LinkHandler extends HtmlHandler {
     BlockStyle blockStyle = BlockStyle(elementStyle: elementStyle);
     blockStyle.parseElement(element: element, parentStyle: parentBlockStyle);
 
+    // Override the block alignment as a Link is an inline element, not a block element. This was a problem with Terry Pratchett: A life in footnotes
+    if (blockStyle.alignment == LineAlignment.left) {
+      blockStyle.alignment = LineAlignment.justify;
+    }
+
     if (node.children.isNotEmpty) {
       LinkCache cache = GetIt.instance.get<LinkCache>();
       List<HtmlContent>? childElements = await node.firstChild!.handler?.processElement(node: node.firstChild!, parentBlockStyle: blockStyle, parentElementStyle: elementStyle);
@@ -49,7 +54,6 @@ class LinkHandler extends HtmlHandler {
               EpubParser parser = GetIt.instance.get<EpubParser>();
               XmlNode? footnote = parser.getFootnote(fnFile, fnRef);
               if (footnote != null) {
-                // TODO: fix infinite loop in Lords & Ladies
                 List<HtmlContent>? fnElements = await footnote.handler?.processElement(node: footnote,);
                 if (fnElements != null) {
                   lc.footnotes = fnElements;
