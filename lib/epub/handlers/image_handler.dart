@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:typed_data';
-import 'dart:ui' as ui;
 
 import 'package:get_it/get_it.dart';
 import 'package:injectable/injectable.dart';

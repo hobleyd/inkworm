@@ -1,7 +1,3 @@
-import 'dart:async';
-import 'dart:typed_data';
-import 'dart:ui' as ui;
-
 import '../elements/image_element.dart';
 import '../elements/line_element.dart';
 import 'html_content.dart';

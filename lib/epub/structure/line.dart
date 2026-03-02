@@ -1,7 +1,6 @@
 import 'dart:math';
 
 import 'package:get_it/get_it.dart';
-import 'package:json_annotation/json_annotation.dart';
 
 import '../../models/page_size.dart';
 import '../styles/block_style.dart';

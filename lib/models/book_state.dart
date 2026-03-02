@@ -11,10 +11,10 @@ class BookState {
   static const int details     = 1 << 5; // 0010 0000 - Book details retrieved.
   static const int complete    = 1 << 6; // 0100 0000 - All chapter's parsed.
 
-  final int state;
+  int state;
 
   @override
-  const BookState({required this.state});
+  BookState({required this.state});
 
   // ── Core operations ──────────────────────────────────────────
 

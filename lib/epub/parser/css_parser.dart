@@ -1,7 +1,4 @@
-import 'dart:isolate';
-
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get_it/get_it.dart';
 import 'package:injectable/injectable.dart';
 import 'package:ordered_set/ordered_set.dart';
@@ -282,6 +279,11 @@ class CssParser {
   }
 
   CssDeclarations parseDeclarations(String properties) {
+    // TODO: Do I really need to support css3?
+    if (properties.startsWith('@supports')) {
+      return {};
+    }
+
     final CssDeclarations declarations = {};
 
     // Split properties by semicolon and parse each one
@@ -296,7 +298,7 @@ class CssParser {
           declarations[key] = value;
         }
         else {
-          throw FormatException("CSS declarations not splitting into 2!");
+          throw FormatException("CSS declarations not splitting into 2!\n$properties");
         }
       }
     }

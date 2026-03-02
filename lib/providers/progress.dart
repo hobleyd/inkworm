@@ -1,10 +1,11 @@
 import 'package:get_it/get_it.dart';
-import 'package:inkworm/models/book_state.dart';
-import 'package:inkworm/providers/epub.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../database/reading_db.dart';
 import '../../models/reading_progress.dart';
+import '../../models/book_state.dart';
+import '../../providers/epub.dart';
+import 'book_state_management.dart';
 
 part 'progress.g.dart';
 
@@ -23,7 +24,7 @@ class Progress extends _$Progress  {
 
     ref.read(epubProvider.notifier).setFontSize(saved.fontSize);
     ref.read(epubProvider.notifier).setInitialChapter(saved.chapterNumber);
-    ref.read(bookStateManagementProvider.notifier).set(BookStateManagement.progress);
+    ref.read(bookStateManagementProvider.notifier).set(BookState.progress);
     return progress;
   }
 

@@ -21,11 +21,7 @@ class EpubParser {
     return bookArchive!.getContentAsBytes(path);
   }
 
-  XmlElement? getFootnote(String href) {
-    List<String> hrefDetails = href.split('#');
-    String path = hrefDetails.first;
-    String id = hrefDetails.last;
-    
+  XmlElement? getFootnote(String path, String id) {
     final document = getXmlDocument(path);
     if (document != null) {
       return document.findAllElements('*').firstWhereOrNull((element) => element.getAttribute('id') == id,);
@@ -35,7 +31,12 @@ class EpubParser {
 }
 
   XmlDocument? getXmlDocument(String path) {
-    return XmlDocument.parse(bookArchive!.getContentAsString(path));
+    try {
+      return XmlDocument.parse(bookArchive!.getContentAsString(path));
+    } catch (e) {
+      // Normally references to online Web pages from what I can see. Why would you do that?
+      return null;
+    }
   }
 
   String? getOPFPath() {

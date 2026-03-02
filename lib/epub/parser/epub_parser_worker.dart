@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:isolate';
-import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart' hide ImageCache;
 import 'package:flutter/services.dart';
@@ -19,7 +18,7 @@ import '../handlers/text_handler.dart';
 import '../structure/build_line.dart';
 import '../structure/build_page.dart';
 import '../structure/epub_chapter.dart';
-import '../structure/image_cache.dart';
+import '../cache/image_cache.dart';
 import '../styles/element_style.dart';
 import 'css_parser.dart';
 import 'epub_parser.dart';

@@ -1,12 +1,12 @@
 import 'package:get_it/get_it.dart';
-import 'package:inkworm/models/book_state.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../models/book_state.dart';
 import '../models/epub_book.dart';
 import '../epub/parser/epub_parser_worker.dart';
 import '../epub/structure/epub_chapter.dart';
 import '../models/page_size.dart';
-import '../models/reading_progress.dart';
+import 'book_state_management.dart';
 
 part 'epub.g.dart';
 
@@ -27,7 +27,7 @@ class Epub extends _$Epub {
         onParsedChapter: onParsedChapter,
         onSizeReceived: onSizeReceived,
     );
-    ref.read(bookStateManagementProvider.notifier).set(BookStateManagement.created);
+    Future(() => ref.read(bookStateManagementProvider.notifier).set(BookState.created));
     PageSize size = GetIt.instance.get<PageSize>();
     size.setOnSizeChanged(onSizeChanged);
     return EpubBook(uri: "", author: "", title: "", chapters: []);
@@ -48,13 +48,13 @@ class Epub extends _$Epub {
 
     _chapters = List.generate(_spineLength, (int index) => EpubChapter(chapterNumber: index), growable: false);
 
-    ref.read(bookStateManagementProvider.notifier).set(BookStateManagement.details);
+    ref.read(bookStateManagementProvider.notifier).set(BookState.details);
     parseChapters(_initialChapter);
   }
 
   void onComplete() {
     if (_chapters.where((chapter) => chapter.pages.isEmpty).isEmpty) {
-      ref.read(bookStateManagementProvider.notifier).set(BookStateManagement.complete);
+      ref.read(bookStateManagementProvider.notifier).set(BookState.complete);
     }
   }
 
@@ -64,7 +64,7 @@ class Epub extends _$Epub {
 
   void onInitialised(bool workerState) {
     if (workerState) {
-      ref.read(bookStateManagementProvider.notifier).set(BookStateManagement.initialised);
+      ref.read(bookStateManagementProvider.notifier).set(BookState.initialised);
     }
   }
 

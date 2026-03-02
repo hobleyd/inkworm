@@ -154,7 +154,21 @@ extension StringFootnotes on String {
     if (allAsterisks) return true;
 
     final allDigits = !RegExp(r'[^0-9]').hasMatch(this);
-    return allDigits;
+    if (allDigits) return allDigits;
+
+    final fnIndicator = !RegExp(r'fn[^0-9]').hasMatch(this);
+    return fnIndicator;
+  }
+}
+
+extension SplitReference on String {
+  (String, String) get splitReference {
+    if (contains("#")) {
+      List<String> splitRef = split('#');
+      return (splitRef.first, splitRef.last);
+    }
+
+    return ("", "");
   }
 }
 

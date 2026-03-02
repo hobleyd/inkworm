@@ -3,7 +3,7 @@ import 'package:get_it/get_it.dart';
 
 import '../../models/page_size.dart';
 import '../content/image_content.dart';
-import '../structure/image_cache.dart';
+import '../cache/image_cache.dart';
 import 'line_element.dart';
 
 class ImageElement extends LineElement {

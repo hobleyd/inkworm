@@ -1,7 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../epub/structure/epub_chapter.dart';
-import 'book_state.dart';
 
 part 'epub_book.freezed.dart';
 

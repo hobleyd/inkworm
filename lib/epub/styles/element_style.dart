@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:xml/xml.dart';
 
-import '../../models/reading_progress.dart';
 import '../parser/css_parser.dart';
 import 'style.dart';
 
@@ -92,6 +91,10 @@ class ElementStyle extends Style {
     getDropCaps(element);
 
     return this;
+  }
+
+  void setBold() {
+    textStyle = textStyle.copyWith(fontWeight: FontWeight.w700);
   }
 
   @override

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:inkworm/models/book_state.dart';
 import 'package:inkworm/providers/progress.dart';
 
+import '../providers/book_state_management.dart';
 import '../providers/epub.dart';
 import '../models/epub_book.dart';
 import '../models/reading_progress.dart';
@@ -14,13 +15,13 @@ class ProgressBar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // While we don't do anything with bookState, it is used to trigger the rebuild on change so that we can drive the
     // UI updates off the notifier, below.
-    int bookState = ref.watch(bookStateManagementProvider);
+    BookState bookState = ref.watch(bookStateManagementProvider);
 
     String chapterProgress = 'reading the eBook now; please be patient';
     String title = '';
     String author = '';
 
-    if (ref.read(bookStateManagementProvider.notifier).hasAll(BookStateManagement.parsing)) {
+    if (bookState.hasAll(BookState.complete)) {
       var progressAsync = ref.watch(progressProvider);
       EpubBook book = ref.watch(epubProvider);
 
@@ -31,7 +32,7 @@ class ProgressBar extends ConsumerWidget {
           : '';
       }
     }
-    if (ref.read(bookStateManagementProvider.notifier).hasAll(BookStateManagement.details)) {
+    if (bookState.hasAll(BookState.details)) {
       EpubBook book = ref.watch(epubProvider);
       // TODO: this should be dynamic based on screen width.
       title = book.title.length > 30 ? '${book.title.substring(0, 27)}...' : book.title;
