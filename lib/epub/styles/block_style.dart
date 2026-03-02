@@ -169,10 +169,24 @@ class BlockStyle extends Style {
       }
     }
 
-    if (leftMarginString != null) leftMargin = _parser.getFloatFromString(elementStyle.textStyle, leftMarginString, true);
-    if (rightMarginString != null) rightMargin = _parser.getFloatFromString(elementStyle.textStyle, rightMarginString, true);
-    if (topMarginString != null) topMargin = _parser.getFloatFromString(elementStyle.textStyle, topMarginString, false);
+    if (leftMarginString != null)   leftMargin   = _parser.getFloatFromString(elementStyle.textStyle, leftMarginString, true);
+    if (rightMarginString != null)  rightMargin  = _parser.getFloatFromString(elementStyle.textStyle, rightMarginString, true);
+    if (topMarginString != null)    topMargin    = _parser.getFloatFromString(elementStyle.textStyle, topMarginString, false);
     if (bottomMarginString != null) bottomMargin = _parser.getFloatFromString(elementStyle.textStyle, bottomMarginString, false);
+
+    // Now check for the other kind of margin. Thanks CSS committee.
+    String blockMarginEnd   = _parser.getStringAttribute(element, this, "margin-block-end") ?? "";
+    String blockMarginStart = _parser.getStringAttribute(element, this, "margin-block-start") ?? "";
+
+    if (blockMarginEnd.isNotEmpty) {
+      bottomMargin ??= 0;
+      bottomMargin = bottomMargin! + (_parser.getFloatFromString(elementStyle.textStyle, blockMarginEnd, false) ?? 0);
+    }
+
+    if (blockMarginStart.isNotEmpty) {
+      topMargin ??= 0;
+      topMargin = bottomMargin! + (_parser.getFloatFromString(elementStyle.textStyle, blockMarginStart, false) ?? 0);
+    }
   }
 
   void getMax(XmlNode element) {
