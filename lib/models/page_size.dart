@@ -1,8 +1,12 @@
+import 'package:get_it/get_it.dart';
 import 'package:injectable/injectable.dart';
+
+import '../epub/interfaces/isolate_listener.dart';
+import 'page_size_isolate_listener.dart';
 
 @lazySingleton
 class PageSize {
-  void Function(PageSize size)? onSizeChanged;
+  IsolateListener? isolateListener;
 
   double canvasWidth;
   double canvasHeight;
@@ -12,24 +16,21 @@ class PageSize {
 
   PageSize() : canvasWidth = 0, canvasHeight = 0, pixelDensity = 1, leftIndent = 12, rightIndent = 12;
 
-  void setOnSizeChanged(Function(PageSize size) onSizeChanged) {
-    this.onSizeChanged = onSizeChanged;
-  }
-
   void update({double? canvasWidth, double? canvasHeight, double? pixelDensity, double? leftIndent, double? rightIndent}) {
     bool sizeChanged = false;
     if ((canvasWidth != null && canvasWidth != this.canvasWidth) || (canvasHeight != null && canvasHeight != this.canvasHeight)) {
       sizeChanged = true;
     }
 
-    this.canvasWidth = canvasWidth ?? this.canvasWidth;
+    this.canvasWidth  = canvasWidth  ?? this.canvasWidth;
     this.canvasHeight = canvasHeight ?? this.canvasHeight;
     this.pixelDensity = pixelDensity ?? this.pixelDensity;
-    this.leftIndent = leftIndent ?? this.leftIndent;
-    this.rightIndent = rightIndent ?? this.rightIndent;
+    this.leftIndent   = leftIndent   ?? this.leftIndent;
+    this.rightIndent  = rightIndent  ?? this.rightIndent;
 
-    if (sizeChanged && onSizeChanged != null) {
-      onSizeChanged!(this);
+    if (sizeChanged) {
+      PageSizeIsolateListener sizeListener = GetIt.instance.get<PageSizeIsolateListener>();
+      sizeListener.isolateListener?.onSizeChanged(this);
     }
   }
 

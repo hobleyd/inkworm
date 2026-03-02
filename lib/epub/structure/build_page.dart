@@ -8,9 +8,9 @@ import '../content/paragraph_break.dart';
 import '../elements/line_element.dart';
 import 'build_line.dart';
 import 'line.dart';
-import 'line_listener.dart';
+import '../interfaces/line_listener.dart';
 import 'page.dart';
-import 'page_listener.dart';
+import '../interfaces/page_listener.dart';
 
 @LazySingleton()
 class BuildPage implements LineListener {

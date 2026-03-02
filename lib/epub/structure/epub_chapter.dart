@@ -4,7 +4,7 @@ import '../content/html_content.dart';
 
 import 'build_page.dart';
 import 'page.dart';
-import 'page_listener.dart';
+import '../interfaces/page_listener.dart';
 
 
 /*

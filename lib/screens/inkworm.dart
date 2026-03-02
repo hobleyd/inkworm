@@ -35,9 +35,8 @@ class _Inkworm extends ConsumerState<Inkworm> {
     var asyncDb = ref.watch(readingDBProvider);
 
     BookState bookState = ref.watch(bookStateManagementProvider);
-
-    if (bookState.hasAll(BookState.initialised|BookState.progress)) {
-      Future(() => ref.read(epubProvider.notifier).openBook(bookPath));
+    if (bookPath.isNotEmpty && bookState.hasAll(BookState.initialised|BookState.progress)) {
+      Future(() => ref.read(epubProvider.notifier).openBook(book.uri));
     }
 
     MediaQueryData data = MediaQueryData.fromView(View.maybeOf(context)!);

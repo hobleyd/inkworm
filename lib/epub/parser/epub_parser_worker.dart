@@ -7,6 +7,8 @@ import 'package:get_it/get_it.dart';
 import 'package:xml/xml.dart';
 
 import '../../models/page_size.dart';
+import '../../models/page_size_isolate_listener.dart';
+import '../cache/link_cache.dart';
 import '../handlers/block_handler.dart';
 import '../handlers/css_handler.dart';
 import '../handlers/image_handler.dart';
@@ -15,6 +17,7 @@ import '../handlers/line_break_handler.dart';
 import '../handlers/link_handler.dart';
 import '../handlers/superscript_handler.dart';
 import '../handlers/text_handler.dart';
+import '../interfaces/isolate_listener.dart';
 import '../structure/build_line.dart';
 import '../structure/build_page.dart';
 import '../structure/epub_chapter.dart';
@@ -35,25 +38,14 @@ const String _pageSize    = 'pageSize';
 const String _textPaint   = 'paint';
 
 class EpubParserWorker {
-  final void Function(String author, String title, int spineLength) onBookDetails;
-  final void Function()                                             onComplete;
-  final void Function(String error, String stackTrace)              onError;
-  final void Function(bool initialised)                             onInitialised;
-  final void Function(int index, EpubChapter chapter)               onParsedChapter;
-  final void Function()                                             onSizeReceived;
+  final IsolateListener isolateListener;
 
   late SendPort _sendPort;
   static SendPort? isolateSendPort;
 
   final Completer<void> _isolateReady = Completer.sync();
 
-  EpubParserWorker({
-    required this.onBookDetails,
-    required this.onComplete,
-    required this.onError,
-    required this.onInitialised,
-    required this.onParsedChapter,
-    required this.onSizeReceived,}) {
+  EpubParserWorker({ required this.isolateListener }) {
     spawn();
   }
 
@@ -130,28 +122,27 @@ class EpubParserWorker {
   }
 
   void _handleChapter(dynamic message) {
-    debugPrint('message: $message');
     if (message is SendPort) {
       _sendPort = message;
-      onInitialised(true);
+      isolateListener.onInitialised(true);
     }
     if (message is Map) {
       switch (message['type']) {
         case _bookDetails:
-          onBookDetails(message['author'], message['title'], message['length']);
+          isolateListener.onBookDetails(message['author'], message['title'], message['length']);
           break;
         case _chapter:
-          onParsedChapter(message['index'], message['chapter']);
-          onComplete();
+          isolateListener.onParsedChapter(message['index'], message['chapter']);
+          isolateListener.onComplete();
           break;
         case _exception:
-          onError(message['error'], message['trace']);
+          isolateListener.onError(message['error'], message['trace']);
           break;
         case _imagePaint:
           _measureImage(message['name'], message['bytes'], message['replyPort']);
           break;
         case _pageSize:
-          onSizeReceived();
+          isolateListener.onSizeReceived();
         case _textPaint:
           TextStyle style = TextStyle(
               fontSize: message['fontSize'],
@@ -189,6 +180,8 @@ class EpubParserWorker {
     GetIt.instance.registerSingleton<CssHandler>(CssHandler());
     GetIt.instance.registerSingleton<BuildLine>(BuildLine());
     GetIt.instance.registerSingleton<BuildPage>(BuildPage());
+    GetIt.instance.registerSingleton<LinkCache>(LinkCache());
+    GetIt.instance.registerSingleton<PageSizeIsolateListener>(PageSizeIsolateListener());
 
     final ReceivePort receivePort = ReceivePort();
     port.send(receivePort.sendPort);

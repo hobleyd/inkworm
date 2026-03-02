@@ -1,4 +1,4 @@
-import 'page.dart';
+import '../structure/page.dart';
 
 abstract class PageListener {
   void addPage(Page page);
