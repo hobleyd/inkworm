@@ -95,6 +95,10 @@ class ElementStyle extends Style {
     return this;
   }
 
+  void setBold() {
+    textStyle = textStyle.copyWith(fontWeight: FontWeight.w700);
+  }
+
   @override
   String toString() {
     String result = '{ ';

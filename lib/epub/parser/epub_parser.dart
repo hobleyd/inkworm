@@ -20,11 +20,7 @@ class EpubParser {
     return bookArchive!.getContentAsBytes(path);
   }
 
-  XmlElement? getFootnote(String href) {
-    List<String> hrefDetails = href.split('#');
-    String path = hrefDetails.first;
-    String id = hrefDetails.last;
-    
+  XmlElement? getFootnote(String path, String id) {
     final document = getXmlDocument(path);
     if (document != null) {
       return document.findAllElements('*').firstWhereOrNull((element) => element.getAttribute('id') == id,);

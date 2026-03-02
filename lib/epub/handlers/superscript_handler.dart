@@ -39,8 +39,9 @@ class SuperscriptHandler extends HtmlHandler {
         for (var child in childElements) {
           if (child is LinkContent) {
             // If we have a Link in a Superscript, this will be a footnote. Find the footnote, so we can display it on the page.
+            var (fnFile, fnRef) = child.href.splitReference;
             EpubParser parser = GetIt.instance.get<EpubParser>();
-            XmlNode? footnote = parser.getFootnote(child.href);
+            XmlNode? footnote = parser.getFootnote(fnFile, fnRef);
             if (footnote != null) {
               footnote = footnote.parent!;
               List<HtmlContent>? fnElements = await footnote.handler?.processElement(node: footnote, parentBlockStyle: blockStyle, parentElementStyle: elementStyle);

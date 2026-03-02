@@ -161,6 +161,17 @@ extension StringFootnotes on String {
   }
 }
 
+extension splitReferenceExtension on String {
+  (String, String) get splitReference {
+    if (contains("#")) {
+      List<String> splitRef = split('#');
+      return (splitRef.first, splitRef.last);
+    }
+
+    return ("", "");
+  }
+}
+
 
 
 
