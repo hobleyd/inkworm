@@ -1,4 +1,9 @@
+import 'package:injectable/injectable.dart';
+
 import '../content/html_content.dart';
+import '../content/image_content.dart';
+import '../content/link_content.dart';
+import '../content/text_content.dart';
 
 class ElementSize {
   double height;
@@ -7,32 +12,39 @@ class ElementSize {
   ElementSize({required this.height, required this.width});
 }
 
+@lazySingleton
 class MeasureCache {
-  final Map<HtmlContent, ElementSize> _cache = {};
+  final Map<String, ElementSize> _cache = {};
 
-  void addCacheElement(HtmlContent key, {required double width, required double height}) {
-    if (_cache.containsKey(key)) {
+  ElementSize? operator[](HtmlContent content) => _cache[getKey(content: content)];
+
+  void addCacheElement(HtmlContent content, {required double width, required double height}) {
+    final String key = getKey(content: content);
+    if (!_cache.containsKey(key)) {
       _cache[key] = ElementSize(height: height, width: width);
-      return;
     }
   }
 
-  String _measureCacheKey({
-  required String text,
-  required double? fontSize,
-  required String? fontFamily,
-  required int? fontWeightIndex,
-  required int? fontStyleIndex,
-  required bool isHorizontal,
-}) {
-  return [
-    text,
-    fontSize?.toStringAsFixed(3) ?? 'null',
-    fontFamily ?? 'null',
-    fontWeightIndex?.toString() ?? 'null',
-    fontStyleIndex?.toString() ?? 'null',
-    isHorizontal ? 'h' : 'v',
-  ].join('|');
-}
+  bool contains(HtmlContent content) {
+    return _cache.containsKey(getKey(content: content));
+  }
 
+  String createKey({required HtmlContent content}) {
+    return [
+      getKey(content: content),
+      content.elementStyle.textStyle.fontSize?.toStringAsFixed(3) ?? 'null',
+      content.elementStyle.textStyle.fontFamily ?? 'null',
+      content.elementStyle.textStyle.fontWeight?.index.toString() ?? 'null',
+      content.elementStyle.textStyle.fontStyle?.index.toString() ?? 'null',
+    ].join('|');
+  }
+
+  String getKey({required HtmlContent content}) {
+    return switch (content) {
+      TextContent tc => tc.text,
+      ImageContent ic => ic.image,
+      LinkContent lc => (lc.src as TextContent).text,
+      HtmlContent hc => throw FormatException,
+    };
+  }
 }

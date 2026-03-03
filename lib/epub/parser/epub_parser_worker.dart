@@ -9,6 +9,7 @@ import 'package:xml/xml.dart';
 import '../../models/page_size.dart';
 import '../../models/page_size_isolate_listener.dart';
 import '../cache/link_cache.dart';
+import '../cache/measure_cache.dart';
 import '../handlers/block_handler.dart';
 import '../handlers/css_handler.dart';
 import '../handlers/image_handler.dart';
@@ -182,6 +183,7 @@ class EpubParserWorker {
     GetIt.instance.registerSingleton<BuildPage>(BuildPage());
     GetIt.instance.registerSingleton<LinkCache>(LinkCache());
     GetIt.instance.registerSingleton<PageSizeIsolateListener>(PageSizeIsolateListener());
+    GetIt.instance.registerSingleton<MeasureCache>(MeasureCache());
 
     final ReceivePort receivePort = ReceivePort();
     port.send(receivePort.sendPort);

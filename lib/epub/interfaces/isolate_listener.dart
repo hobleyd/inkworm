@@ -9,4 +9,4 @@ abstract class IsolateListener {
   void onParsedChapter(int index, EpubChapter chapter);
   void onSizeChanged(PageSize size);
   void onSizeReceived();
-  }
+}
