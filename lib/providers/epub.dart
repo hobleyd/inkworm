@@ -2,10 +2,10 @@ import 'package:get_it/get_it.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../epub/interfaces/isolate_listener.dart';
-import '../models/book_state.dart';
-import '../models/epub_book.dart';
 import '../epub/parser/epub_parser_worker.dart';
 import '../epub/structure/epub_chapter.dart';
+import '../models/book_state.dart';
+import '../models/epub_book.dart';
 import '../models/page_size.dart';
 import '../models/page_size_isolate_listener.dart';
 import 'book_state_management.dart';
