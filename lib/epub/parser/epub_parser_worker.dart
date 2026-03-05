@@ -39,6 +39,7 @@ const String _fontSize    = 'fontSize';
 const String _imagePaint  = 'image';
 const String _openBook    = 'open';
 const String _pageSize    = 'pageSize';
+const String _port        = 'port';
 const String _textPaint   = 'paint';
 
 class EpubParserWorker {
@@ -132,7 +133,10 @@ class EpubParserWorker {
   }
 
   void setPageSize(PageSize size) {
-    _sendPort.send(size);
+    _sendPort.send({
+      'type': _pageSize,
+      'size': size
+    });
   }
 
   Future<void> spawn() async {
@@ -143,14 +147,14 @@ class EpubParserWorker {
   }
 
   void _handleChapter(dynamic message) {
-    if (message is SendPort) {
-      _sendPort = message;
-      isolateListener.onInitialised(true);
-    }
     if (message is Map) {
       switch (message['type']) {
         case _bookDetails:
           isolateListener.onBookDetails(message['author'], message['title'], message['length']);
+          break;
+        case _chapter:
+          isolateListener.onParsedChapter(message['chapter']);
+          isolateListener.onComplete();
           break;
         case _exception:
           isolateListener.onError(message['error'], message['trace']);
@@ -160,6 +164,10 @@ class EpubParserWorker {
           break;
         case _pageSize:
           isolateListener.onSizeReceived();
+        case _port:
+          _sendPort = message['port'];
+          isolateListener.onInitialised(true);
+          break;
         case _textPaint:
           TextStyle style = TextStyle(
               fontSize: message['fontSize'],
@@ -175,9 +183,6 @@ class EpubParserWorker {
           paint.dispose();
           break;
       }
-    } else if (message is EpubChapter) {
-      isolateListener.onParsedChapter(message);
-      isolateListener.onComplete();
     }
   }
 
@@ -202,7 +207,7 @@ class EpubParserWorker {
     GetIt.instance.registerSingleton<TextCache>(TextCache());
 
     final ReceivePort receivePort = ReceivePort();
-    port.send(receivePort.sendPort);
+    port.send({'type': _port, 'port': receivePort.sendPort});
 
     receivePort.listen((dynamic message) async {
       if (message is Map) {
@@ -232,17 +237,19 @@ class EpubParserWorker {
           case _openBook:
             parser.openBook(message['book']);
             break;
+          case _pageSize:
+            PageSize size = GetIt.instance.get<PageSize>();
+            PageSize received = message['size'];
+            size.update(
+              pixelDensity: received.pixelDensity,
+              canvasHeight: received.canvasHeight,
+              canvasWidth:  received.canvasWidth,
+              leftIndent:   received.leftIndent,
+              rightIndent:  received.rightIndent,
+            );
+            port.send({'type': _pageSize});
+            break;
         }
-      } else if (message is PageSize) {
-        PageSize size = GetIt.instance.get<PageSize>();
-        size.update(
-          pixelDensity: message.pixelDensity,
-          canvasHeight: message.canvasHeight,
-          canvasWidth: message.canvasWidth,
-          leftIndent: message.leftIndent,
-          rightIndent: message.rightIndent,
-        );
-        port.send({'type': _pageSize});
       }
     });
   }
@@ -260,7 +267,10 @@ class EpubParserWorker {
     EpubParser parser = GetIt.instance.get<EpubParser>();
     try {
       EpubChapter chapter = await parser.parseChapter(chapterIndex, href);
-      port.send(chapter);
+      port.send({
+        'type':    _chapter,
+        'chapter': chapter
+      });
     } catch (e, s) {
       port.send({
         'type': _exception,
