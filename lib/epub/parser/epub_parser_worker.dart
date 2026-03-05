@@ -203,7 +203,7 @@ class EpubParserWorker {
     GetIt.instance.registerSingleton<BuildPage>(BuildPage());
     GetIt.instance.registerSingleton<LinkCache>(LinkCache());
     GetIt.instance.registerSingleton<TextCache>(TextCache());
-    // This isn't actually used in the parsing isolate per se, but it is references in PageSize
+    // This isn't actually used in the parsing isolate per se, but it is referenced in PageSize
     // which is used in both isolates. However, because we don't register a listener in the parsing
     // isolate, it won't affect anything.
     GetIt.instance.registerSingleton<PageSizeIsolateListener>(PageSizeIsolateListener());
