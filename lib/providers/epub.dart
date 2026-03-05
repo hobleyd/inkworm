@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -25,6 +24,8 @@ class Epub extends _$Epub implements IsolateListener {
     _worker = EpubParserWorker(isolateListener: this);
     Future(() => ref.read(bookStateManagementProvider.notifier).set(BookState.created));
 
+    // Required because we can't pass callbacks into an isolate; hence separating from the
+    // PageSize object which is passed through.
     PageSizeIsolateListener sizeListener = GetIt.instance.get<PageSizeIsolateListener>();
     sizeListener.setListener(this);
 

@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 @immutable
+// ignore: must_be_immutable - we treat it as immutable, but the setters below munge the state as part of creation of the new state.
 class BookState {
   // State flags as bit masks
   static const int created     = 1 << 0; // 0000 0001 - epubProvider created

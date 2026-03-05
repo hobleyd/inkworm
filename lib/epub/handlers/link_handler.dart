@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 import 'package:injectable/injectable.dart';
 import 'package:inkworm/epub/parser/epub_parser_worker.dart';
@@ -69,7 +68,7 @@ class LinkHandler extends HtmlHandler {
                 if (footnote != null) {
                   List<HtmlContent>? fnElements = await footnote.handler?.processElement(node: footnote,);
                   if (fnElements != null) {
-                    lc.footnotes = fnElements;
+                    lc.addFootnotes(fnElements);
                   }
                 }
               }

@@ -48,7 +48,7 @@ class SuperscriptHandler extends HtmlHandler {
               footnote = footnote.parent!;
               List<HtmlContent>? fnElements = await footnote.handler?.processElement(node: footnote, parentBlockStyle: blockStyle, parentElementStyle: elementStyle);
               if (fnElements != null) {
-                child.footnotes = fnElements;
+                child.addFootnotes(fnElements);
               }
             }
           }

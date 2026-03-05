@@ -6,13 +6,13 @@ import '../elements/line_element.dart';
 import 'html_content.dart';
 
 class ImageContent extends HtmlContent {
-  String image;
-  Uint8List bytes;
+  final String image;
+  final Uint8List bytes;
 
   @override
   Iterable<LineElement> get elements => [ImageElement(image: this, height: height, width: width)];
 
-  ImageContent({
+  const ImageContent({
     required super.blockStyle,
     required super.elementStyle,
     required super.width,

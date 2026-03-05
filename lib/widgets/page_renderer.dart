@@ -5,8 +5,6 @@ import 'package:get_it/get_it.dart';
 import '../models/page_size.dart';
 import '../epub/structure/line.dart';
 import '../epub/elements/line_element.dart';
-import '../providers/epub.dart';
-import '../models/epub_book.dart';
 
 class PageRenderer extends CustomPainter {
   List<Line> lines = [];

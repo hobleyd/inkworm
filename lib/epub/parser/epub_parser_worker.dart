@@ -11,7 +11,6 @@ import '../../models/page_size.dart';
 import '../../models/page_size_isolate_listener.dart';
 import '../cache/link_cache.dart';
 import '../cache/text_cache.dart';
-import '../content/text_content.dart';
 import '../handlers/block_handler.dart';
 import '../handlers/css_handler.dart';
 import '../handlers/image_handler.dart';
@@ -203,8 +202,11 @@ class EpubParserWorker {
     GetIt.instance.registerSingleton<BuildLine>(BuildLine());
     GetIt.instance.registerSingleton<BuildPage>(BuildPage());
     GetIt.instance.registerSingleton<LinkCache>(LinkCache());
-    GetIt.instance.registerSingleton<PageSizeIsolateListener>(PageSizeIsolateListener());
     GetIt.instance.registerSingleton<TextCache>(TextCache());
+    // This isn't actually used in the parsing isolate per se, but it is references in PageSize
+    // which is used in both isolates. However, because we don't register a listener in the parsing
+    // isolate, it won't affect anything.
+    GetIt.instance.registerSingleton<PageSizeIsolateListener>(PageSizeIsolateListener());
 
     final ReceivePort receivePort = ReceivePort();
     port.send({'type': _port, 'port': receivePort.sendPort});
