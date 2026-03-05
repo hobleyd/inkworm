@@ -7,7 +7,7 @@ class ParagraphBreak extends HtmlContent {
 
   double get margin => blockStyle.marginTop > 0 ? blockStyle.marginTop: blockStyle.marginBottom;
 
-  const ParagraphBreak({required super.blockStyle, required super.elementStyle,});
+  const ParagraphBreak({required super.blockStyle, required super.elementStyle, required super.height, required super.width});
 
   @override
   bool operator ==(Object other) {

@@ -17,7 +17,7 @@ class ProgressBar extends ConsumerWidget {
     // UI updates off the notifier, below.
     BookState bookState = ref.watch(bookStateManagementProvider);
 
-    String chapterProgress = 'reading the eBook now; please be patient';
+    String chapterProgress = 'Analysing the eBook; please be patient...';
     String title = '';
     String author = '';
 

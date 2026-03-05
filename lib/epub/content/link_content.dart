@@ -9,7 +9,7 @@ class LinkContent extends HtmlContent {
   @override
   Iterable<LineElement> get elements => src.elements;
 
-  LinkContent({required super.blockStyle, required super.elementStyle, required this.src, required this.href});
+  LinkContent({required super.blockStyle, required super.elementStyle, required super.width, required super.height, required this.src, required this.href});
 
   @override
   String toString() {

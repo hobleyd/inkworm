@@ -220,7 +220,7 @@ class BlockStyle extends Style {
   }
 
   @override
-  Style parseElement({required XmlNode element, Style? parentStyle}) {
+  Future <Style> parseElement({required XmlNode element, Style? parentStyle}) async {
     // TODO: Hideous hack. Fix, please. Should ElementStyle and BlockStyle inherit off the same base object?
     selectors = elementStyle.selectors;
     declarations = elementStyle.declarations;
@@ -229,11 +229,11 @@ class BlockStyle extends Style {
       copyFrom(parentStyle as BlockStyle);
     }
 
-    getLineIndent(element);
+    await getLineIndent(element);
     getAlignment(element); // Ensure this happens after getting the LineIndent.
     getDisplay(element);
     getLineHeightMultiplier(element);
-    getMargins(element);
+    await getMargins(element);
     getMax(element);
     getTableStyles(element);
 

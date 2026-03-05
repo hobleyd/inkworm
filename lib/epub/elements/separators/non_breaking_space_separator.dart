@@ -3,14 +3,15 @@ import 'package:flutter/material.dart';
 import 'separator.dart';
 
 class NonBreakingSpaceSeparator extends Separator {
-  NonBreakingSpaceSeparator({required super.blockStyle, required super.elementStyle}) : super(separator: " ") {
-    getConstraints();
-  }
+  NonBreakingSpaceSeparator({required super.blockStyle, required super.elementStyle, required super.width, required super.height}) : super(separator: " ");
 
   @override
   void paint(Canvas c, double height, double xPos, double yPos) {
-    // No need to do anything for a Space character!
-    // TODO: this is not true is we are underlining a sentence.
+    // final TextPainter textPainter = TextPainter(text: TextSpan(text: " ", style: elementStyle.textStyle), textDirection: TextDirection.ltr,);
+    // textPainter.layout(maxWidth: width);
+    // textPainter.paint(c, Offset(xPos, yPos));
+    //
+    // textPainter.dispose();
   }
 
   @override

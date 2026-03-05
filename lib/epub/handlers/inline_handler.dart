@@ -24,7 +24,7 @@ class InlineHandler extends HtmlHandler {
     XmlElement element = node as XmlElement;
 
     ElementStyle elementStyle = ElementStyle();
-    elementStyle.parseElement(element: element, parentStyle: parentElementStyle);
+    await elementStyle.parseElement(element: element, parentStyle: parentElementStyle);
 
     List<HtmlContent> elements = [];
     for (var child in node.children) {

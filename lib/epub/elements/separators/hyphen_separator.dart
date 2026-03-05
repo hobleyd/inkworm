@@ -3,17 +3,9 @@ import 'package:flutter/material.dart';
 import 'separator.dart';
 
 class HyphenSeparator extends Separator {
-  HyphenSeparator({required super.blockStyle, required super.elementStyle}) : super(separator: "-") {
-    getConstraints();
-  }
-
-  @override
-  Future<bool> getConstraints() async {
+  HyphenSeparator({required super.blockStyle, required super.elementStyle, required super.width, required super.height}) : super(separator: "-") {
     // I want to ensure Hyphens are a little more visible when displaying them.
-    await super.getConstraints();
     width = width * 1.5;
-
-    return true;
   }
 
   @override

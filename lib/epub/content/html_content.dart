@@ -9,6 +9,8 @@ import '../styles/element_style.dart';
 abstract class HtmlContent {
   final BlockStyle blockStyle;
   final ElementStyle elementStyle;
+  final double height;
+  final double width;
 
   Iterable<LineElement> get elements;
 
@@ -16,5 +18,5 @@ abstract class HtmlContent {
   double?        get leftIndent => blockStyle.leftIndent;
   bool           get isDropCaps => elementStyle.isDropCaps ?? false;
 
-  const HtmlContent({required this.blockStyle, required this.elementStyle});
+  const HtmlContent({required this.blockStyle, required this.elementStyle, required this.height, required this.width});
 }

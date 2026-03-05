@@ -6,7 +6,7 @@ abstract class IsolateListener {
   void onComplete();
   void onError(String error, String stackTrace);
   void onInitialised(bool workerState);
-  void onParsedChapter(int index, EpubChapter chapter);
+  void onParsedChapter(EpubChapter chapter);
   void onSizeChanged(PageSize size);
   void onSizeReceived();
 }

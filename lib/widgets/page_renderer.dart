@@ -11,12 +11,9 @@ import '../models/epub_book.dart';
 class PageRenderer extends CustomPainter {
   List<Line> lines = [];
   List<Line> footnotes = [];
+  bool needsRepaint = true;
 
-  PageRenderer(WidgetRef ref, int chapterNumber, int pageNumber) {
-    EpubBook book = ref.read(epubProvider);
-    lines = book.chapters.elementAtOrNull(chapterNumber)?[pageNumber]?.lines ?? [];
-    footnotes = book.chapters.elementAtOrNull(chapterNumber)?[pageNumber]?.footnotes ?? [];
-  }
+  PageRenderer(WidgetRef ref, {required this.lines, required this.footnotes});
 
   void paintLine(Canvas canvas, Line line) {
     double xPos = line.leftIndent + line.textIndent + line.dropCapsIndent;
@@ -49,6 +46,10 @@ class PageRenderer extends CustomPainter {
     // Because a Book is immutable, there is no need for any complex repainting logic
     // as the only time a repaint will be required is if the page changes and this will
     // trigger a repaint through the Riverpod state management.
+    if (needsRepaint) {
+      needsRepaint = false;
+      return true;
+    }
     return false;
   }
 }

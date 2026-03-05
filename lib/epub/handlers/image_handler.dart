@@ -6,6 +6,7 @@ import 'package:injectable/injectable.dart';
 import 'package:inkworm/epub/parser/epub_parser_worker.dart';
 import 'package:xml/xml.dart';
 
+import '../../models/element_size.dart';
 import '../content/html_content.dart';
 import '../content/image_content.dart';
 import '../parser/epub_parser.dart';
@@ -27,10 +28,10 @@ class ImageHandler extends HtmlHandler {
     List<HtmlContent> elements = [];
 
     ElementStyle elementStyle = ElementStyle();
-    elementStyle.parseElement(element: element, parentStyle: parentElementStyle);
+    await elementStyle.parseElement(element: element, parentStyle: parentElementStyle);
 
     BlockStyle blockStyle = BlockStyle(elementStyle: elementStyle);
-    blockStyle.parseElement(element: element, parentStyle: parentBlockStyle);
+    await blockStyle.parseElement(element: element, parentStyle: parentBlockStyle);
 
     final String src = element.getAttribute('src')!;
     final Uint8List bytes = GetIt.instance
@@ -38,8 +39,8 @@ class ImageHandler extends HtmlHandler {
         .bookArchive!
         .getContentAsBytes(src);
 
-    Map<String, double> result = await EpubParserWorker.measureImageInMainThread(src, bytes);
-    elements.add(ImageContent(blockStyle: blockStyle, elementStyle: elementStyle, image: src, width: result['width']!, height: result['height']!));
+    final ElementSize result = await EpubParserWorker.measureImageInMainThread(src, bytes);
+    elements.add(ImageContent(blockStyle: blockStyle, elementStyle: elementStyle, image: src, bytes: bytes, width: result.width, height: result.height));
 
     return elements;
   }

@@ -12,8 +12,8 @@ class ImageElement extends LineElement {
   @override
   get element => image;
 
-  ImageElement({required this.image}) {
-    getConstraints();
+  ImageElement({required this.image, required super.height, required super.width}) {
+    resizeImageIfRequired();
   }
 
   double calculateAspectRatio(double desiredWidth, double desiredHeight) {
@@ -27,8 +27,7 @@ class ImageElement extends LineElement {
     return 1;
   }
 
-  @override
-  Future<bool> getConstraints() async {
+  void resizeImageIfRequired() {
     // Resize the image to fit the screen.
     PageSize size = GetIt.instance.get<PageSize>();
     double scale = calculateAspectRatio(size.canvasWidth, size.canvasHeight);
@@ -52,8 +51,6 @@ class ImageElement extends LineElement {
       width = width * 0.9;
       height = height * 0.9;
     }
-
-    return true;
   }
 
   @override

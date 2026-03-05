@@ -27,7 +27,7 @@ class SuperscriptHandler extends HtmlHandler {
     List<HtmlContent> elements = [];
 
     ElementStyle elementStyle = ElementStyle();
-    elementStyle.parseElement(element: element, parentStyle: parentElementStyle);
+    await elementStyle.parseElement(element: element, parentStyle: parentElementStyle);
     elementStyle.textStyle = elementStyle.textStyle.copyWith(fontSize: elementStyle.textStyle.fontSize!, fontWeight: FontWeight.w500);
 
     BlockStyle blockStyle = BlockStyle(elementStyle: elementStyle);

@@ -4,6 +4,7 @@ import 'package:injectable/injectable.dart';
 import 'package:ordered_set/ordered_set.dart';
 import 'package:xml/xml.dart';
 
+import '../../models/element_size.dart';
 import '../../models/page_size.dart';
 import '../styles/element_style.dart';
 import '../styles/style.dart';
@@ -87,8 +88,8 @@ class CssParser {
     if (value == "0") {
       return 0;
     }
-    Map<String, double> result = await EpubParserWorker.measureTextInMainThread("s", s);
-    double preferredSize = result[isHorizontal ? 'width' : 'height']!;
+    ElementSize result = await EpubParserWorker.measureTextInMainThread("s", s);
+    double preferredSize = isHorizontal ? result.width : result.height;
 
     return value.isEmpty ? null : parseFloatCssValue(value, preferredSize);
   }

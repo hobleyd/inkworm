@@ -9,18 +9,7 @@ class LinkElement extends LineElement {
   @override
   get element => src.element;
 
-  LinkElement({required this.src, required this.href}) {
-    getConstraints();
-  }
-
-  @override
-  Future<bool> getConstraints() async {
-    await src.getConstraints();
-    height = src.height;
-    width = src.width;
-
-    return true;
-  }
+  LinkElement({required super.height, required super.width, required this.src, required this.href,});
 
   @override
   void paint(Canvas c, double height, double xPos, double yPos) {

@@ -85,7 +85,7 @@ class EpubParser {
   Future<EpubChapter> parseChapter(int index, String href) async {
     EpubChapter chapter = EpubChapter(chapterNumber: index);
 
-    return parseChapterFromString(chapter, bookArchive!.getContentAsString(href));
+    return await parseChapterFromString(chapter, bookArchive!.getContentAsString(href));
   }
 
   Future<EpubChapter> parseChapterFromString(EpubChapter chapter, String chapterText) async {

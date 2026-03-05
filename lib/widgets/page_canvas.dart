@@ -41,6 +41,14 @@ class PageCanvas extends ConsumerWidget {
             Future(() => ref.read(epubProvider.notifier).openBook(progress.book));
           }
 
+          // This is required to work around Flutter's desire not to repaint if nothing has changed; even though it has (from
+          // an isolate).
+          PageRenderer renderer =
+          PageRenderer(ref,
+                       lines: book.chapters.elementAtOrNull(progress.chapterNumber)?[progress.pageNumber]?.lines ?? [],
+                       footnotes: book.chapters.elementAtOrNull(progress.chapterNumber)?[progress.pageNumber]?.footnotes ?? []);
+          renderer.needsRepaint = true;
+
           return Container(
             padding: const EdgeInsets.only(top: 6, bottom: 6),
             child: GestureDetector(
@@ -70,7 +78,7 @@ class PageCanvas extends ConsumerWidget {
                   Navigator.push(context, MaterialPageRoute(builder: (context) => Settings())).then((onValue) {});
                 }
               },
-              child: CustomPaint(painter: PageRenderer(ref, progress.chapterNumber, progress.pageNumber),),
+              child: CustomPaint(painter: renderer,),
             ),
           );
         });

@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:injectable/injectable.dart';
 import 'package:xml/xml.dart';
 
@@ -41,10 +42,10 @@ class BlockHandler extends HtmlHandler {
     List<HtmlContent> elements = [];
 
     ElementStyle elementStyle = ElementStyle();
-    elementStyle.parseElement(element: element, parentStyle: parentElementStyle);
+    await elementStyle.parseElement(element: element, parentStyle: parentElementStyle);
 
     BlockStyle blockStyle = BlockStyle(elementStyle: elementStyle);
-    blockStyle.parseElement(element: element, parentStyle: parentBlockStyle);
+    await blockStyle.parseElement(element: element, parentStyle: parentBlockStyle);
 
     if (blockStyle.display != null && blockStyle.display == "none") {
       return [];
@@ -52,7 +53,7 @@ class BlockHandler extends HtmlHandler {
 
     // We want to add a new line for every block, obviously. But remove the bottom margin from this break and
     // keep it in for the break at the end of the block.
-    elements.add(ParagraphBreak(blockStyle: blockStyle.copyWith(bottomMargin: 0), elementStyle: elementStyle));
+    elements.add(ParagraphBreak(blockStyle: blockStyle.copyWith(bottomMargin: 0), elementStyle: elementStyle, width: 0, height: 0));
 
     for (var child in node.children) {
       if (child.shouldProcess && !_isParagraphEmpty(child)) {
@@ -75,7 +76,7 @@ class BlockHandler extends HtmlHandler {
     // We always need a Paragraph Break after the content, as long as we are not in the HEAD of the page. Remove
     // the topMargin to match the break before the text.
     if (element.localName != 'head' && element.localName != 'html') {
-      elements.add(ParagraphBreak(blockStyle: blockStyle.copyWith(topMargin: 0), elementStyle: elementStyle));
+      elements.add(ParagraphBreak(blockStyle: blockStyle.copyWith(topMargin: 0), elementStyle: elementStyle, width: 0, height: 0));
     }
 
     return elements;

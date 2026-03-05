@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -23,8 +24,10 @@ class Epub extends _$Epub implements IsolateListener {
   EpubBook build() {
     _worker = EpubParserWorker(isolateListener: this);
     Future(() => ref.read(bookStateManagementProvider.notifier).set(BookState.created));
+
     PageSizeIsolateListener sizeListener = GetIt.instance.get<PageSizeIsolateListener>();
     sizeListener.setListener(this);
+
     return EpubBook(uri: "", author: "", title: "", chapters: []);
   }
 
@@ -45,13 +48,15 @@ class Epub extends _$Epub implements IsolateListener {
     _chapters = List.generate(_spineLength, (int index) => EpubChapter(chapterNumber: index), growable: false);
 
     ref.read(bookStateManagementProvider.notifier).set(BookState.details);
-    parseChapters(_initialChapter);
+    _worker.parseChapters(_initialChapter, _spineLength);
   }
 
   @override
   void onComplete() {
     if (_chapters.where((chapter) => chapter.pages.isEmpty).isEmpty) {
       ref.read(bookStateManagementProvider.notifier).set(BookState.complete);
+      // TODO: By doing this, I can't resize the window on a desktop. Not my biggest concern immediately, but something to consider.
+      _worker.close();
     }
   }
 
@@ -68,14 +73,14 @@ class Epub extends _$Epub implements IsolateListener {
   }
 
   @override
-  void onParsedChapter(int index, EpubChapter chapter) {
-    _chapters[index] = chapter;
+  void onParsedChapter(EpubChapter chapter) {
+    _chapters[chapter.chapterNumber] = chapter;
     state = state.copyWith(chapters: _chapters);
   }
 
   // Called when the size changes and is passed to the parsing isolate.
   @override
-  void onSizeChanged(PageSize size) {
+  void onSizeChanged(PageSize size) async {
     _worker.setPageSize(size);
   }
 
@@ -89,34 +94,6 @@ class Epub extends _$Epub implements IsolateListener {
     state = state.copyWith(uri: book);
     _worker.openBook(book);
     _worker.parseDefaultCss();
-  }
-
-  /*
-   * When parsing the book, parse the current chapter (the first on initial reading) and then one on either side to allow
-   * the reader to continue reading while we complete the book parsing.
-   */
-  void parseChapters(int chapterIndex) {
-    Set<int> completedChapters = { chapterIndex };
-
-    _worker.parseChapter(_initialChapter);
-    completedChapters.add(chapterIndex);
-
-    if (chapterIndex+1 < _chapters.length) {
-      //_worker.parseChapter(chapterIndex+1);
-      completedChapters.add(chapterIndex+1);
-    }
-
-    if (chapterIndex > 0) {
-      //_worker.parseChapter(chapterIndex-1);
-      completedChapters.add(chapterIndex-1);
-    }
-
-    for (int chapterIndex = 0; chapterIndex < _spineLength; chapterIndex++) {
-      if (completedChapters.contains(chapterIndex)) {
-        continue;
-      }
-      //_worker.parseChapter(chapterIndex);
-    }
   }
 
   void setInitialChapter(int chapter) {

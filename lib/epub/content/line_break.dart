@@ -7,7 +7,7 @@ class LineBreak extends HtmlContent {
 
   double get margin => blockStyle.marginTop > 0 ? blockStyle.marginTop: blockStyle.marginBottom;
 
-  const LineBreak({required super.blockStyle, required super.elementStyle,});
+  const LineBreak({required super.blockStyle, required super.elementStyle, required super.height, required super.width});
 
   @override
   String toString() {

@@ -15,6 +15,7 @@ class LinkCache {
       return _linkCache.contains(link);
     }
 
-    return false;
+    // Return true if null as we don't want to process it.
+    return true;
   }
 }

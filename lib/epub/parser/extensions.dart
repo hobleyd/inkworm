@@ -154,9 +154,9 @@ extension StringFootnotes on String {
     if (allAsterisks) return true;
 
     final allDigits = !RegExp(r'[^0-9]').hasMatch(this);
-    if (allDigits) return allDigits;
+    if (allDigits) return true;
 
-    final fnIndicator = !RegExp(r'fn[^0-9]').hasMatch(this);
+    final fnIndicator = RegExp(r'fn[0-9]+').hasMatch(this);
     return fnIndicator;
   }
 }

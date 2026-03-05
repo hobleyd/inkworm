@@ -19,7 +19,7 @@ class LineBreakHandler extends HtmlHandler {
   Future<List<HtmlContent>> processElement({required XmlNode node, BlockStyle? parentBlockStyle, ElementStyle? parentElementStyle}) async {
     List<HtmlContent> elements = [];
 
-    elements.add(LineBreak(blockStyle: parentBlockStyle!, elementStyle: parentElementStyle!));
+    elements.add(LineBreak(blockStyle: parentBlockStyle!, elementStyle: parentElementStyle!, width: 0, height: 0));
 
     return elements;
   }

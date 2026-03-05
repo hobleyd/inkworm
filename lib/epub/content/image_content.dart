@@ -1,22 +1,24 @@
+
+import 'dart:typed_data';
+
 import '../elements/image_element.dart';
 import '../elements/line_element.dart';
 import 'html_content.dart';
 
 class ImageContent extends HtmlContent {
   String image;
-
-  double height;
-  double width;
+  Uint8List bytes;
 
   @override
-  Iterable<LineElement> get elements => [ImageElement(image: this)];
+  Iterable<LineElement> get elements => [ImageElement(image: this, height: height, width: width)];
 
   ImageContent({
     required super.blockStyle,
     required super.elementStyle,
+    required super.width,
+    required super.height,
     required this.image,
-    required this.width,
-    required this.height,
+    required this.bytes,
   });
 
   @override
