@@ -172,7 +172,7 @@ class EpubParserWorker {
               fontSize: message['fontSize'],
               fontFamily: message['fontFamily'],
               fontWeight: message['fontWeight'] != null ? FontWeight.values[message['fontWeight']] : FontWeight.w400,
-              fontStyle: message['fontStyle']
+              fontStyle: message['fontStyle'] != null ? FontStyle.values[message['fontStyle']] : FontStyle.normal,
           );
 
           TextPainter paint = TextPainter(textDirection: TextDirection.ltr, text: TextSpan(text: message['text'], style: style));
@@ -188,6 +188,9 @@ class EpubParserWorker {
   static void _startIsolate(SendPort port) {
     isolateSendPort = port;
 
+    // While we use annotations on the main thread, we need to register the classes used in the isolates
+    // thread directly for obvious reasons.
+    // TODO: should I remove the annotations from the classes given they aren't actually used?
     GetIt.instance.registerSingleton<PageSize>(PageSize());
     GetIt.instance.registerSingleton<CssParser>(CssParser());
     GetIt.instance.registerSingleton<EpubParser>(EpubParser());
