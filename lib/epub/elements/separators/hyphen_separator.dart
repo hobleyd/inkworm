@@ -10,10 +10,11 @@ class HyphenSeparator extends Separator {
 
   @override
   void paint(Canvas c, double height, double xPos, double yPos) {
+    final double y = (yPos + height / 2 + 1).roundToDouble();
     c.drawLine(
-        Offset(xPos+1, yPos+(height/2)+1),
-        Offset(xPos+width-1, yPos+(height/2)+1),
-        Paint()..color = Colors.black..strokeWidth=1.4,
+        Offset(xPos+1, y),
+        Offset(xPos+width-1, y),
+        Paint()..color = Colors.black..strokeWidth=1.0..isAntiAlias=false,
     );
   }
 
