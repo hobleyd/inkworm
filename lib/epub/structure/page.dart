@@ -2,6 +2,7 @@ import 'package:get_it/get_it.dart';
 
 import '../../models/page_size.dart';
 import '../styles/block_style.dart';
+import 'build_page.dart';
 import 'line.dart';
 
 
@@ -24,10 +25,9 @@ class Page {
   void addFootnote(Line line) {
     footnotes.add(line);
     PageSize size = GetIt.instance.get<PageSize>();
-    pageHeight = size.canvasHeight - footnotes.totalHeight - 3;
+    pageHeight = size.canvasHeight - footnotes.totalHeight - BuildPage.footnoteMargin;
 
-    double footnotesYPos = pageHeight + 3;
-
+    double footnotesYPos = pageHeight + BuildPage.footnoteMargin;
     for (Line l in footnotes) {
       l.yPosOnPage = footnotesYPos;
       footnotesYPos += l.maxHeight;

@@ -14,6 +14,8 @@ import '../interfaces/page_listener.dart';
 
 @LazySingleton()
 class BuildPage implements LineListener {
+  static const footnoteMargin = 3;
+
   PageListener? _pageListener;
   Page currentPage = Page();
   Line? line;
@@ -79,8 +81,8 @@ class BuildPage implements LineListener {
     footnotesLine.lineListener = footnotesPage;
     footnotesPage.addContents(content.footnotes, footnotesLine);
 
-    // At this point, we have the footnote and the current Line and we need to check they both fit on the page.
-    if (currentPage.currentBottomYPos + buildLine.maxHeight + footnotesPage.totalHeight > currentPage.pageHeight) {
+    // At this point, we have the footnote(s) and the current Line and we need to check they both fit on the page.
+    if (currentPage.currentBottomYPos + buildLine.maxHeight + footnotesPage.totalHeight + footnoteMargin > currentPage.pageHeight) {
       addPage();
     }
 
