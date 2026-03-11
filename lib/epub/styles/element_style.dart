@@ -93,8 +93,8 @@ class ElementStyle extends Style {
     return this;
   }
 
-  void setBold() {
-    textStyle = textStyle.copyWith(fontWeight: FontWeight.w700);
+  void setWeight({FontWeight weight = FontWeight.w700}) {
+    textStyle = textStyle.copyWith(fontWeight: weight);
   }
 
   @override

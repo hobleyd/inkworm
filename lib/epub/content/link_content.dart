@@ -12,12 +12,12 @@ class LinkContent extends HtmlContent {
   LinkContent({required super.blockStyle, required super.elementStyle, required super.width, required super.height, required this.src, required this.href});
 
   void addFootnotes(List<HtmlContent> notes) {
-    footnotes.clear();
+    //footnotes.clear();
     footnotes.addAll(notes);
   }
 
   @override
   String toString() {
-    return '$src[$href]: $blockStyle, $elementStyle';
+    return '$src[$href] -> $footnotes: $blockStyle, $elementStyle';
   }
 }

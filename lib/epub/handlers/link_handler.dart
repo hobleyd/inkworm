@@ -1,3 +1,6 @@
+import 'dart:ui';
+
+import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 import 'package:injectable/injectable.dart';
 import 'package:inkworm/epub/parser/epub_parser_worker.dart';
@@ -30,6 +33,9 @@ class LinkHandler extends HtmlHandler {
 
     ElementStyle elementStyle = ElementStyle();
     await elementStyle.parseElement(element: element, parentStyle: parentElementStyle);
+    // TODO: I want to highlight footnotes, this will also highlight standard links, but see how it looks before making a decision. Given
+    // this will normally relate to chapter headings, I don't think it will make a difference.
+    elementStyle.setWeight(weight: FontWeight.w700);
 
     BlockStyle blockStyle = BlockStyle(elementStyle: elementStyle);
     await blockStyle.parseElement(element: element, parentStyle: parentBlockStyle);
@@ -50,7 +56,7 @@ class LinkHandler extends HtmlHandler {
           ElementSize size = switch (child) {
             ImageContent ic => await EpubParserWorker.measureImageInMainThread(ic.image, ic.bytes),
             TextContent  tc => await EpubParserWorker.measureTextInMainThread(tc.text, tc.elementStyle.textStyle),
-                          _ => ElementSize(width: 0, height: 0) // Just to stop analysis warnings; should never be hit!
+                          _ => ElementSize(width: 50, height: 50) // Just to stop analysis warnings; should never be hit!
           };
 
           LinkContent lc = LinkContent(blockStyle: blockStyle, elementStyle: elementStyle, src: child, href: href!, width: size.width, height: size.height);
@@ -58,7 +64,6 @@ class LinkHandler extends HtmlHandler {
           // Process Footnotes, if required.
           if (child is TextContent) {
             if (!cache.contains(id) && child.text.isFootnote || element.getAttribute('vertical-align') == "super") {
-              lc.elementStyle.setBold();
               cache.add(id);
 
               var (fnFile, fnRef) = href.splitReference;
@@ -67,8 +72,8 @@ class LinkHandler extends HtmlHandler {
                 XmlNode? footnote = parser.getFootnote(fnFile, fnRef);
                 if (footnote != null) {
                   List<HtmlContent>? fnElements = await footnote.handler?.processElement(node: footnote,);
-                  if (fnElements != null) {
-                    lc.addFootnotes(fnElements);
+                  if (fnElements?.isNotEmpty ?? false) {
+                    lc.addFootnotes(fnElements!);
                   }
                 }
               }

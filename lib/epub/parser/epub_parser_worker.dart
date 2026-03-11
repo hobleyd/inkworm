@@ -140,12 +140,12 @@ class EpubParserWorker {
 
   Future<void> spawn() async {
     final ReceivePort receivePort = ReceivePort();
-    receivePort.listen(_handleChapter);
+    receivePort.listen(_handleMessage);
 
     await Isolate.spawn(_startIsolate, receivePort.sendPort);
   }
 
-  void _handleChapter(dynamic message) {
+  void _handleMessage(dynamic message) {
     if (message is Map) {
       switch (message['type']) {
         case _bookDetails:

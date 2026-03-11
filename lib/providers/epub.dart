@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -82,7 +83,12 @@ class Epub extends _$Epub implements IsolateListener {
   // Called when the size changes and is passed to the parsing isolate.
   @override
   void onSizeChanged(PageSize size) async {
-    _worker.setPageSize(size);
+    if (!ref.read(bookStateManagementProvider).hasAll(BookState.details)) {
+      // TODO: Bodgy hack. This gets called twice, which we don't want. Once before and once after we set the BookDetail in the
+      // ProgressBar. It only differs by a single pixel, but we should alter to work only after we have received the BookDetails
+      // instead of the opposite which is happening now.
+      _worker.setPageSize(size);
+    }
   }
 
   // Called by the parsing isolate once the Size change has been sent.

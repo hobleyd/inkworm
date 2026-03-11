@@ -22,7 +22,7 @@ class ParagraphBreak extends HtmlContent {
 
   @override
   String toString() {
-    return blockStyle.toString();
+    return 'PB: $blockStyle';
   }
 
   @override

@@ -44,8 +44,7 @@ class PageCanvas extends ConsumerWidget {
           // This is required to work around Flutter's desire not to repaint if nothing has changed; even though it has (from
           // an isolate).
           PageRenderer renderer =
-          PageRenderer(ref,
-                       lines: book.chapters.elementAtOrNull(progress.chapterNumber)?[progress.pageNumber]?.lines ?? [],
+          PageRenderer(    lines: book.chapters.elementAtOrNull(progress.chapterNumber)?[progress.pageNumber]?.lines ?? [],
                        footnotes: book.chapters.elementAtOrNull(progress.chapterNumber)?[progress.pageNumber]?.footnotes ?? []);
           renderer.needsRepaint = true;
 

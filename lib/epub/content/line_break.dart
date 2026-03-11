@@ -11,6 +11,6 @@ class LineBreak extends HtmlContent {
 
   @override
   String toString() {
-    return blockStyle.toString();
+    return 'LB: $blockStyle';
   }
 }

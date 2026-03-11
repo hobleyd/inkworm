@@ -28,7 +28,7 @@ class SuperscriptHandler extends HtmlHandler {
 
     ElementStyle elementStyle = ElementStyle();
     await elementStyle.parseElement(element: element, parentStyle: parentElementStyle);
-    elementStyle.textStyle = elementStyle.textStyle.copyWith(fontSize: elementStyle.textStyle.fontSize!, fontWeight: FontWeight.w500);
+    elementStyle.setWeight(weight: FontWeight.w500);
 
     BlockStyle blockStyle = BlockStyle(elementStyle: elementStyle);
     blockStyle.parseElement(element: element, parentStyle: parentBlockStyle);
@@ -38,8 +38,6 @@ class SuperscriptHandler extends HtmlHandler {
       if (childElements != null) {
         for (var child in childElements) {
           if (child is LinkContent) {
-            child.elementStyle.setBold();
-
             // If we have a Link in a Superscript, this will be a footnote. Find the footnote, so we can display it on the page.
             var (fnFile, fnRef) = child.href.splitReference;
             EpubParser parser = GetIt.instance.get<EpubParser>();
@@ -47,8 +45,8 @@ class SuperscriptHandler extends HtmlHandler {
             if (footnote != null) {
               footnote = footnote.parent!;
               List<HtmlContent>? fnElements = await footnote.handler?.processElement(node: footnote, parentBlockStyle: blockStyle, parentElementStyle: elementStyle);
-              if (fnElements != null) {
-                child.addFootnotes(fnElements);
+              if (fnElements?.isNotEmpty ?? false) {
+                child.addFootnotes(fnElements!);
               }
             }
           }

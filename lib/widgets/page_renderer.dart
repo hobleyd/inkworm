@@ -11,7 +11,7 @@ class PageRenderer extends CustomPainter {
   List<Line> footnotes = [];
   bool needsRepaint = true;
 
-  PageRenderer(WidgetRef ref, {required this.lines, required this.footnotes});
+  PageRenderer({required this.lines, required this.footnotes});
 
   void paintLine(Canvas canvas, Line line) {
     double xPos = line.leftIndent + line.textIndent + line.dropCapsIndent;

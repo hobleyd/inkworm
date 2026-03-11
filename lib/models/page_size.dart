@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 import 'package:injectable/injectable.dart';
 
@@ -18,7 +19,7 @@ class PageSize {
 
   void update({double? canvasWidth, double? canvasHeight, double? pixelDensity, double? leftIndent, double? rightIndent}) {
     bool sizeChanged = false;
-    if ((canvasWidth != null && canvasWidth != this.canvasWidth) || (canvasHeight != null && canvasHeight != this.canvasHeight)) {
+    if ((canvasWidth != null && canvasHeight != null) && (this.canvasHeight != canvasHeight || this.canvasWidth != canvasWidth)) {
       sizeChanged = true;
     }
 
