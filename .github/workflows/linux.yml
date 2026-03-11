@@ -63,7 +63,7 @@ jobs:
                   path: assets/inkworm.png
           EOF
           
-          cat > com.example.untitled.desktop <<'EOF'
+          cat > au.com.sharpblue.inkworm.desktop <<'EOF'
           [Desktop Entry]
           Name=Inkworm
           Exec=inkworm
