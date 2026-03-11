@@ -1,0 +1,40 @@
+name: inkworm-windows-ci
+
+on:
+  push:
+    branches:
+      - main
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          architecture: x64
+      - run: choco install yq
+      - run: echo "VERSION=$(yq .version pubspec.yaml)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      - name: "Push version tag from pubspec.yaml"
+        uses: EndBug/latest-tag@latest
+        with:
+          tag-name: ${{ env.VERSION }}
+      - run: flutter config --enable-windows-desktop
+      - run: flutter create --platforms=windows .
+      - run: dart run build_runner build --delete-conflicting-outputs
+      - run: dart run flutter_launcher_icons
+      - run: flutter build windows --release --no-tree-shake-icons
+      - uses: suisei-cn/actions-download-file@v1.3.0
+        with:
+          url: "https://github.com/tekartik/sqflite/raw/master/sqflite_common_ffi/lib/src/windows/sqlite3.dll"
+          target: build/windows/x64/runner/Release
+      - run: dart run windows.dart
+      - name: Create Release
+        uses: softprops/action-gh-release@v0.1.15
+        with:
+          name: 'inkworm-${{ env.VERSION }}'
+          files: 'build/windows/inkworm-${{ env.VERSION }}.exe'
+          tag_name: ${{ env.VERSION }}
