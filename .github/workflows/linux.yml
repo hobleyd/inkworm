@@ -21,6 +21,8 @@ jobs:
           channel: 'stable'
           architecture: x64
           cache: false
+      - run: flutter config --enable-linux-desktop
+      - run: flutter create --platforms=linux .
       - run: dart run build_runner build --delete-conflicting-outputs
       - run: flutter build linux --release
       - name: Install Flatpak tooling
