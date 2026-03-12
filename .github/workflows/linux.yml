@@ -66,8 +66,6 @@ jobs:
                   path: build/linux/x64/release/bundle
                 - type: file
                   path: au.com.sharpblue.inkworm.desktop
-                - type: file
-                  path: assets/inkworm.png
           EOF
           
           cat > au.com.sharpblue.inkworm.desktop <<'EOF'
