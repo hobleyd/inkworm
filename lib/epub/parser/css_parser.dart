@@ -239,10 +239,12 @@ class CssParser {
     }
   }
 
-  Map<String, CssDeclarations> parseCss(String cssContent) {
+  void parseCss(String cssContent) {
     Map<String, CssDeclarations> result = {};
 
+    // Remove comments
     var cleaned = cssContent.replaceAll(RegExp(r'/\*[\s\S]*?\*/'), '');
+    cleaned = cleaned.replaceAll(RegExp(r'@namespace url\(.*\);'), '');
 
     // Regular expression to match selector { properties }
     final regExp = RegExp(r'([^{]+)\{\s*([^}]*)\s*\}');
@@ -250,7 +252,7 @@ class CssParser {
     final matches = regExp.allMatches(cleaned);
     for (final match in matches) {
       String selector = match.group(1)?.trim() ?? '';
-      final String properties = match.group(2) ?? '';
+      final String properties = match.group(2)?.trim() ?? '';
 
       if (selector.isNotEmpty) {
         CssDeclarations declarations = parseDeclarations(properties);
@@ -276,7 +278,7 @@ class CssParser {
       }
     }
 
-    return result;
+    css.addAll(result);
   }
 
   CssDeclarations parseDeclarations(String properties) {
@@ -309,8 +311,7 @@ class CssParser {
 
   void parseFile(String href) {
     if (!css.containsKey(href)) {
-      Map<String, CssDeclarations> declarations = parseCss(GetIt.instance.get<EpubParser>().bookArchive!.getContentAsString(href));
-      css.addAll(declarations);
+      parseCss(GetIt.instance.get<EpubParser>().bookArchive!.getContentAsString(href));
     }
   }
 
