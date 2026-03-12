@@ -45,7 +45,7 @@ jobs:
           runtime: org.freedesktop.Platform
           runtime-version: '24.08'
           sdk: org.freedesktop.Sdk
-          command: untitled
+          command: inkworm
           finish-args:
             - --share=ipc
             - --socket=fallback-x11
