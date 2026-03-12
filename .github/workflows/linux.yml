@@ -29,7 +29,7 @@ jobs:
       - run: flutter build linux --release
       - name: Prepare bundle assets
         run:
-          cp assets/inkworm.png build/linux/x64/release/bundle/inkworm.png
+          cp assets/inkworm-512x512.png build/linux/x64/release/bundle/inkworm.png
       - name: Install Flatpak tooling
         run: |
           sudo apt-get update
