@@ -27,6 +27,9 @@ jobs:
       - run: flutter create --platforms=linux .
       - run: dart run build_runner build --delete-conflicting-outputs
       - run: flutter build linux --release
+      - name: Prepare bundle assets
+        run:
+          cp assets/inkworm.png build/linux/x64/release/bundle/inkworm.png
       - name: Install Flatpak tooling
         run: |
           sudo apt-get update
@@ -57,7 +60,7 @@ jobs:
                 - cp -r lib /app/lib
                 - cp -r data /app/data
                 - install -Dm644 au.com.sharpblue.inkworm.desktop /app/share/applications/au.com.sharpblue.inkworm.desktop
-                - install -Dm644 assets/inkworm.png /app/share/icons/hicolor/512x512/apps/au.com.sharpblue.inkworm.png
+                - install -Dm644 inkworm.png /app/share/icons/hicolor/512x512/apps/au.com.sharpblue.inkworm.png
               sources:
                 - type: dir
                   path: build/linux/x64/release/bundle
