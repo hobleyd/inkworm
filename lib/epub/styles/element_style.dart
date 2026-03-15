@@ -59,7 +59,7 @@ class ElementStyle extends Style {
 
   void getTextStyle(XmlNode element) {
     final String? fontFamily = _parser.getFontAttribute(element, this, "font-family")?.replaceAll('"', '');
-    final double? fontSize   = _parser.getFontSize(element, this, "font-size", defaultFontSize.toDouble());
+    final double? fontSize   = defaultFontSize.toDouble();
     final String? fontStyle  = _parser.getStringAttribute(element, this, "font-style");
     final String? fontWeight = _parser.getStringAttribute(element, this, "font-weight");
     final String? fontDecoration  = _parser.getStringAttribute(element, this, "text-decoration");
