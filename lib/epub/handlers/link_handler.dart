@@ -1,9 +1,7 @@
 import 'dart:ui';
 
-import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 import 'package:injectable/injectable.dart';
-import 'package:inkworm/epub/parser/epub_parser_worker.dart';
 import 'package:xml/xml.dart';
 
 import '../../models/element_size.dart';
@@ -13,6 +11,7 @@ import '../content/image_content.dart';
 import '../content/link_content.dart';
 import '../content/text_content.dart';
 import '../parser/epub_parser.dart';
+import '../parser/epub_parser_worker.dart';
 import '../parser/extensions.dart';
 import '../styles/block_style.dart';
 import '../styles/element_style.dart';
