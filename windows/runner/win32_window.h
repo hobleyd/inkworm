@@ -3,9 +3,18 @@
 
 #include <windows.h>
 
+#include "win32_window.h"
+
+#include <dwmapi.h>
+#include <flutter_windows.h>
+
+#include "resource.h"
+#include "file_channel.h"
+
 #include <functional>
 #include <memory>
 #include <string>
+
 
 // A class abstraction for a high DPI-aware Win32 Window. Intended to be
 // inherited from by classes that wish to specialize with custom

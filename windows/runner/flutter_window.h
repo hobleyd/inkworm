@@ -3,8 +3,12 @@
 
 #include <flutter/dart_project.h>
 #include <flutter/flutter_view_controller.h>
+#include <flutter/method_channel.h>
+#include <flutter/encodable_value.h>
 
 #include <memory>
+#include <thread>
+#include <atomic>
 
 #include "win32_window.h"
 
@@ -28,6 +32,13 @@ class FlutterWindow : public Win32Window {
 
   // The Flutter instance hosted by this window.
   std::unique_ptr<flutter::FlutterViewController> flutter_controller_;
+
+  // File-open channel — must outlive the engine.
+  std::unique_ptr<flutter::MethodChannel<flutter::EncodableValue>> file_channel_;
+
+  // Pipe listener thread lifecycle.
+  std::atomic<bool> pipe_running_{false};
+  std::thread pipe_thread_;
 };
 
 #endif  // RUNNER_FLUTTER_WINDOW_H_

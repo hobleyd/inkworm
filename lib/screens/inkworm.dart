@@ -29,6 +29,9 @@ class _Inkworm extends ConsumerState<Inkworm> {
   late StreamSubscription _intentSub;
   String bookPath = "";
 
+  // Shared channel name — must match the C++ side.
+  static const _fileChannel = MethodChannel('au.com.sharpblue.inkworm/file');
+
   @override
   Widget build(BuildContext context) {
     EpubBook book = ref.watch(epubProvider);
@@ -77,17 +80,25 @@ class _Inkworm extends ConsumerState<Inkworm> {
   void initState() {
     super.initState();
 
-    if (Platform.isAndroid) {
-      _handleAndroidIntent();
-    } else if (Platform.isMacOS) {
-      _handleMacOSIntent();
-    } /*else if (Platform.isLinux) {
-      _handleLinuxIntent();
-    }*/ else {
-      // TODO: Support other platforms for debugging.
-      setState(() {
-        bookPath = Platform.environment['EBOOK']!;
-      });
+
+    switch (Platform.operatingSystem) {
+      case "android":
+        _handleAndroidIntent();
+        break;
+      case "macos":
+        _handleMacOSIntent();
+        break;
+      case "windows":
+        _handleWindowsIntent();
+        break;
+      case "linux":
+        _handleLinuxIntent();
+        break;
+      default:
+        setState(() {
+          bookPath = Platform.environment['EBOOK']!;
+        });
+        break;
     }
   }
 
@@ -135,6 +146,36 @@ class _Inkworm extends ConsumerState<Inkworm> {
       setState(() {
         bookPath = uris.first.toFilePath();
       });
+    });
+  }
+
+  Future<void> _handleWindowsIntent() async {
+    // 1. Get the file path passed on the command line at launch (the common
+    //    case: user double-clicks an .epub or uses "Open with…").
+    try {
+      final String? filePath = await _fileChannel.invokeMethod('getOpenedFile');
+      if (filePath != null && filePath.isNotEmpty) {
+        debugPrint('Windows - Received EPUB: $filePath');
+        setState(() {
+          bookPath = filePath;
+        });
+      }
+    } catch (e, s) {
+      ref.read(epubProvider.notifier).setError(e.toString(), s);
+    }
+
+    // 2. Listen for files opened while the app is already running.
+    //    The C++ side posts these via setMethodCallHandler.
+    _fileChannel.setMethodCallHandler((call) async {
+      if (call.method == 'fileOpened') {
+        final path = call.arguments as String?;
+        if (path != null && path.isNotEmpty) {
+          debugPrint('Windows - Received EPUB (while running): $path');
+          setState(() {
+            bookPath = path;
+          });
+        }
+      }
     });
   }
 }
