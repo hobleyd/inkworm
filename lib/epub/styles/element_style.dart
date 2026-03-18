@@ -50,6 +50,7 @@ class ElementStyle extends Style {
   }
 
   void getAlignment(XmlNode element) {
+    // Tested on Babel.
     String? alignment = _parser.getStringAttribute(element, this, "vertical-align");
     if (alignment == "baseline") {
       alignToBaseline = true;
