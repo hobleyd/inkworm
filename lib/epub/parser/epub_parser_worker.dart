@@ -178,7 +178,8 @@ class EpubParserWorker {
           TextPainter paint = TextPainter(textDirection: TextDirection.ltr, text: TextSpan(text: message['text'], style: style));
           PageSize size = GetIt.instance.get<PageSize>();
           paint.layout(maxWidth: size.canvasWidth - size.leftIndent - size.rightIndent);
-          message['replyPort'].send(ElementSize(height: paint.height, width: paint.width));
+          LineMetrics lm = paint.computeLineMetrics().first;
+          message['replyPort'].send(ElementSize(ascent: lm.ascent, descent: lm.descent, height: paint.height, width: paint.width));
           paint.dispose();
           break;
       }
@@ -265,7 +266,7 @@ class EpubParserWorker {
     if (!cache.isCached(name)) {
       await cache.addImage(name, bytes);
     }
-    port.send(ElementSize(width: cache[name].width.toDouble(), height: cache[name].height.toDouble()));
+    port.send(ElementSize(ascent: 0, descent: 0, width: cache[name].width.toDouble(), height: cache[name].height.toDouble()));
   }
 
   static Future<void> _parseChapter(SendPort port, int chapterIndex, String href) async {

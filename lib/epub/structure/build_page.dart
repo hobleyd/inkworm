@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 import 'package:injectable/injectable.dart';
 
@@ -7,11 +6,11 @@ import '../content/line_break.dart';
 import '../content/link_content.dart';
 import '../content/paragraph_break.dart';
 import '../elements/line_element.dart';
+import '../interfaces/line_listener.dart';
+import '../interfaces/page_listener.dart';
 import 'build_line.dart';
 import 'line.dart';
-import '../interfaces/line_listener.dart';
 import 'page.dart';
-import '../interfaces/page_listener.dart';
 
 @LazySingleton()
 class BuildPage implements LineListener {

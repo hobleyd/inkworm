@@ -24,7 +24,7 @@ class TextHandler extends HtmlHandler {
 
     for (String word in _splitString(element.value)) {
       ElementSize size = await EpubParserWorker.measureTextInMainThread(word, parentElementStyle!.textStyle);
-      elements.add(TextContent(blockStyle: parentBlockStyle!, elementStyle: parentElementStyle, text: word, height: size.height, width: size.width));
+      elements.add(TextContent(blockStyle: parentBlockStyle!, elementStyle: parentElementStyle, text: word, ascent: size.ascent, descent: size.descent, height: size.height, width: size.width));
     }
 
     return elements;

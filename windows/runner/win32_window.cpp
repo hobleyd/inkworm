@@ -4,6 +4,9 @@
 #include <flutter_windows.h>
 
 #include "resource.h"
+#include <windows.h>
+
+#include <string>
 
 namespace {
 

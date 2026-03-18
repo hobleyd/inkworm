@@ -12,7 +12,8 @@ class WordElement extends LineElement {
   WordElement({required this.word, required super.height, required super.width}) {
     // TODO: this is completely fucked. Flutter literally doesn't return the correct width and everything else I have
     // tried: getBoxesForSelection, computeLineMetrics, getOffsetForCaret and even PictureRecorder don't work.
-    // So, I have special cased this for now and will have to investigate further.
+    // So, I have special cased this for now.
+    // https://github.com/flutter/flutter/issues/179820
     if (element.elementStyle.textStyle.fontFamily == 'Great Vibes') {
       width = width * 1.5;
     }

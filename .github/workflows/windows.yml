@@ -16,7 +16,7 @@ jobs:
         with:
           channel: 'stable'
           architecture: x64
-      - run: choco install yq
+      - run: choco install yq innosetup --no-progress -y
       - run: echo "VERSION=$(yq .version pubspec.yaml)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
       - name: "Push version tag from pubspec.yaml"
         uses: EndBug/latest-tag@latest
