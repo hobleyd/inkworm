@@ -80,7 +80,6 @@ class _Inkworm extends ConsumerState<Inkworm> {
   void initState() {
     super.initState();
 
-
     switch (Platform.operatingSystem) {
       case "android":
         _handleAndroidIntent();
