@@ -9,7 +9,9 @@ class ElementStyle extends Style {
   late CssParser _parser;
   late TextStyle textStyle;
 
+  bool? alignToBaseline;
   bool? isDropCaps;
+
   static int defaultFontSize = 12;
 
   // Character: (superscript subscript)
@@ -45,6 +47,13 @@ class ElementStyle extends Style {
     isDropCaps = parentStyle.isDropCaps;
 
     return this;
+  }
+
+  void getAlignment(XmlNode element) {
+    String? alignment = _parser.getStringAttribute(element, this, "vertical-align");
+    if (alignment == "baseline") {
+      alignToBaseline = true;
+    }
   }
 
   void getDropCaps(XmlNode element) {
@@ -88,6 +97,7 @@ class ElementStyle extends Style {
     }
 
     getTextStyle(element);
+    getAlignment(element);
     getDropCaps(element);
 
     return this;

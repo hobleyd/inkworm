@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get_it/get_it.dart';
 
+import '../epub/content/text_content.dart';
 import '../models/page_size.dart';
 import '../epub/structure/line.dart';
 import '../epub/elements/line_element.dart';
@@ -16,7 +17,12 @@ class PageRenderer extends CustomPainter {
   void paintLine(Canvas canvas, Line line) {
     double xPos = line.leftIndent + line.textIndent + line.dropCapsIndent;
     for (LineElement el in line.elements) {
-      el.paint(canvas, line.maxHeight, xPos, line.yPosOnPage);
+      double yPos = line.yPosOnPage;
+      if (el.alignToBaseline) {
+        yPos -= line.baselineAdjust;
+        yPos += (el.element as TextContent).descent;
+      }
+      el.paint(canvas, el.alignToBaseline ? line.maxHeight : line.maxHeight - line.baselineAdjust, xPos, yPos);
       xPos += el.width;
     }
   }

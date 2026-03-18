@@ -1,4 +1,5 @@
 import 'package:injectable/injectable.dart';
+import 'package:inkworm/epub/content/text_content.dart';
 
 import '../elements/line_element.dart';
 import '../elements/separators/space_separator.dart';
@@ -10,6 +11,8 @@ import '../interfaces/line_listener.dart';
 class BuildLine {
   LineListener? _lineListener;
   Line currentLine = Line();
+
+  bool alignmentToBaselineRequired = false;
 
   bool   get isEmpty    =>  currentLine.isEmpty;
   bool   get isNotEmpty => !currentLine.isEmpty;
@@ -29,6 +32,17 @@ class BuildLine {
       if (currentLine.isEmpty) {
         return;
       }
+    }
+
+    // The first time through, we hit the else clause as we don't know yet, what we need.
+    // But if we do need an adjustment, then we calculate it the second time through when
+    // we know the actual height.
+    if (alignmentToBaselineRequired) {
+      currentLine.baselineAdjust = currentLine.maxHeight - e.height;
+      alignmentToBaselineRequired = false;
+    } else if (e.alignToBaseline) {
+      // We need to adjust the yPos of both the element and the line if we are aligning to the baseline.
+      alignmentToBaselineRequired = true;
     }
 
     if (!e.isDropCaps) {

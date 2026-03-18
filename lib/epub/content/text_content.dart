@@ -9,13 +9,15 @@ import 'html_content.dart';
 
 class TextContent extends HtmlContent {
   final String text;
+  final double ascent;
+  final double descent;
 
   @override
   final List<LineElement> elements = [];
 
   TextSpan get span => TextSpan(text: text, style: elementStyle.textStyle);
 
-  TextContent({required super.blockStyle, required super.elementStyle, required super.height, required super.width, required this.text}) {
+  TextContent({required super.blockStyle, required super.elementStyle, required super.height, required super.width, required this.ascent, required this.descent, required this.text}) {
     elements.add(switch (text) {
       '-' || '\u{2014}' => HyphenSeparator(blockStyle: blockStyle, elementStyle: elementStyle, height: height, width: width),
       ' '               => SpaceSeparator(blockStyle: blockStyle, elementStyle: elementStyle, height: height, width: width),

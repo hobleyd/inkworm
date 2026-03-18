@@ -29,14 +29,14 @@ class Page {
 
     double footnotesYPos = pageHeight + BuildPage.footnoteMargin;
     for (Line l in footnotes) {
-      l.yPosOnPage = footnotesYPos;
+      l.yPos = footnotesYPos;
       footnotesYPos += l.maxHeight;
     }
   }
 
   void addLine(Line line) {
     lines.add(line);
-    currentBottomYPos += line.maxHeight;
+    currentBottomYPos += line.maxHeight - line.baselineAdjust;
   }
 
   bool willFitHeight(Line line) {

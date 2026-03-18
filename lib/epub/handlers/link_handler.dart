@@ -55,7 +55,7 @@ class LinkHandler extends HtmlHandler {
           ElementSize size = switch (child) {
             ImageContent ic => await EpubParserWorker.measureImageInMainThread(ic.image, ic.bytes),
             TextContent  tc => await EpubParserWorker.measureTextInMainThread(tc.text, tc.elementStyle.textStyle),
-                          _ => ElementSize(width: 50, height: 50) // Just to stop analysis warnings; should never be hit!
+                          _ => ElementSize(ascent: 0, descent: 0, width: 50, height: 50) // Just to stop analysis warnings; should never be hit!
           };
 
           LinkContent lc = LinkContent(blockStyle: blockStyle, elementStyle: elementStyle, src: child, href: href!, width: size.width, height: size.height);

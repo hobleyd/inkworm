@@ -12,12 +12,13 @@ import '../elements/line_element.dart';
 class Line {
   LineAlignment alignment = LineAlignment.justify;
 
+  double baselineAdjust = 0;
   double dropCapsIndent = 0;
-  double maxHeight = 0;
-  double leftIndent = 0;
-  double rightIndent = 0;
-  double textIndent = 0;
-  double yPosOnPage = 0; // Should only be used when rendering the line. Otherwise, the calculations should be off the Page.
+  double maxHeight      = 0;
+  double leftIndent     = 0;
+  double rightIndent    = 0;
+  double textIndent     = 0;
+  double yPosOnPage     = 0; // Should only be used when rendering the line. Otherwise, the calculations should be off the Page.
 
   List<LineElement> elements = [];
 
