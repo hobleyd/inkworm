@@ -28,6 +28,7 @@ class EpubParser {
 
       if (note != null) {
         // TODO: more testing required for different types of Footnotes. This works for Babel!
+        // It will retrieve siblings of footnotes for where there are mutiple blocks of text.
         if (note.hasParent && note.parentElement!.name.local == 'p') {
           XmlElement parent = note.parentElement!;
           if (parent.hasParent && parent.parentElement!.name.local == 'section') {
