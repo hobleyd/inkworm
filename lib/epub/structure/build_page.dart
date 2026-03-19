@@ -1,6 +1,7 @@
 import 'package:get_it/get_it.dart';
 import 'package:injectable/injectable.dart';
 
+import '../../models/page_size.dart';
 import '../content/html_content.dart';
 import '../content/line_break.dart';
 import '../content/link_content.dart';
@@ -129,9 +130,12 @@ class BuildPage implements LineListener {
   void addPage() {
     _pageListener?.addPage(currentPage);
 
+    PageSize size = GetIt.instance.get<PageSize>();
+
     Page newPage = Page();
     newPage.dropCapsXPosition = currentPage.dropCapsXPosition;
     newPage.dropCapsYPosition = currentPage.dropCapsYPosition;
+    newPage.pageHeight        = size.canvasHeight;
 
     currentPage = newPage;
     line = null;

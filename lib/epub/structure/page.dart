@@ -40,11 +40,6 @@ class Page {
   }
 
   bool willFitHeight(Line line) {
-    if (pageHeight == 0) {
-      PageSize size = GetIt.instance.get<PageSize>();
-      pageHeight = size.canvasHeight;
-    }
-
     return (currentBottomYPos + line.maxHeight) <= pageHeight;
   }
 }
