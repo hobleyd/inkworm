@@ -24,7 +24,21 @@ class EpubParser {
   XmlElement? getFootnote(String path, String id) {
     final document = getXmlDocument(path);
     if (document != null) {
-      return document.findAllElements('*').firstWhereOrNull((element) => element.getAttribute('id') == id,);
+      XmlElement? note = document.findAllElements('*').firstWhereOrNull((element) => element.getAttribute('id') == id,);
+
+      if (note != null) {
+        // TODO: more testing required for different types of Footnotes. This works for Babel!
+        if (note.hasParent && note.parentElement!.name.local == 'p') {
+          XmlElement parent = note.parentElement!;
+          if (parent.hasParent && parent.parentElement!.name.local == 'section') {
+            return parent.parentElement;
+          }
+
+          return parent;
+        }
+        return note;
+      }
+
     }
 
     return null;
