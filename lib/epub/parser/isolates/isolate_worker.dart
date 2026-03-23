@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:io' show Platform;
 import 'dart:isolate';
 
@@ -20,61 +21,132 @@ import 'isolate_parse_response.dart';
 /// await pool.dispose();
 /// ```
 class IsolateWorker {
-  IsolateWorker({int? concurrency}) : _concurrency = concurrency ?? Platform.numberOfProcessors;
+  IsolateWorker({int? concurrency})
+    : _concurrency = concurrency ?? Platform.numberOfProcessors;
 
   final int _concurrency;
   final List<_WorkerSlot> _slots = [];
+  final Queue<_WorkerSlot> _idleSlots = Queue<_WorkerSlot>();
+  final Queue<_QueuedRequest> _requestQueue = Queue<_QueuedRequest>();
+  final Set<Future<void>> _inFlightRequests = <Future<void>>{};
 
-  // ---------------------------------------------------------------------------
-  // Public API
-  // ---------------------------------------------------------------------------
-
-  /// Parse every item in [requests], returning one [EpubParseResult] per item.
-  ///
-  /// At most [_concurrency] isolates run simultaneously. Each isolate is
-  /// reused for multiple items so spawn overhead is paid only once per core.
-  Future<List<IsolateParseResponse>> parseAll(List<IsolateParseRequest> requests,) async {
-    if (requests.isEmpty) return const [];
-
-    final int workerCount = _concurrency.clamp(1, requests.length);
-
-    // Boot isolates (or reuse already-running ones).
-    if (_slots.isEmpty) {
-      for (var i = 0; i < workerCount; i++) {
-        final slot = _WorkerSlot();
-        await slot.start();
-        _slots.add(slot);
-      }
-    }
-
-    // Result buffer — indexed to preserve input order.
-    List<IsolateParseResponse?> results = List<IsolateParseResponse?>.filled(requests.length, null);
-
-    // Shared queue index, advanced atomically inside the single-threaded event loop.
-    int nextJob = 0;
-
-    // Each slot runs a loop: grab the next available job until the queue is empty.
-    Future<void> runSlot(_WorkerSlot slot) async {
-      while (true) {
-        final jobIndex = nextJob;
-        if (jobIndex >= requests.length) return; // nothing left
-        nextJob++; // claim this job
-
-        results[jobIndex] = await slot.process(requests[jobIndex]);
-      }
-    }
-
-    // Start all slots concurrently and wait for every job to finish.
-    await Future.wait(_slots.map(runSlot));
-
-    return results.cast<IsolateParseResponse>();
-  }
+  Future<void>? _startFuture;
+  bool _isDisposed = false;
 
   /// Shut down all isolates. Call when the pool is no longer needed.
   Future<void> dispose() async {
+    if (_isDisposed) {
+      return;
+    }
+    _isDisposed = true;
+
+    final error = StateError('IsolateWorker was disposed before queued requests could be processed.',);
+
+    while (_requestQueue.isNotEmpty) {
+      final queuedRequest = _requestQueue.removeFirst();
+      if (!queuedRequest.completer.isCompleted) {
+        queuedRequest.completer.completeError(error);
+      }
+    }
+
+    if (_inFlightRequests.isNotEmpty) {
+      await Future.wait(_inFlightRequests);
+    }
+
     await Future.wait(_slots.map((s) => s.stop()));
+    _idleSlots.clear();
     _slots.clear();
   }
+
+  /// Enqueues one [IsolateParseRequest] and resolves when a worker completes it.
+  Future<IsolateParseResponse> process(IsolateParseRequest request) async {
+    if (_isDisposed) {
+      throw StateError('Cannot enqueue work after IsolateWorker.dispose().');
+    }
+
+    await _ensureWorkersStarted();
+
+    final completer = Completer<IsolateParseResponse>();
+    _requestQueue.addLast(
+      _QueuedRequest(request: request, completer: completer),
+    );
+    _drainQueue();
+    return completer.future;
+  }
+
+  Future<void> _ensureWorkersStarted() async {
+    if (_slots.length >= _concurrency) {
+      return;
+    }
+
+    final startFuture = _startFuture;
+    if (startFuture != null) {
+      await startFuture;
+      return;
+    }
+
+    final newStartFuture = _startWorkers();
+    _startFuture = newStartFuture;
+
+    try {
+      await newStartFuture;
+    } finally {
+      if (identical(_startFuture, newStartFuture)) {
+        _startFuture = null;
+      }
+    }
+  }
+
+  Future<void> _startWorkers() async {
+    for (var i = _slots.length; i < _concurrency; i++) {
+      final slot = _WorkerSlot();
+      await slot.start();
+      _slots.add(slot);
+      _idleSlots.addLast(slot);
+    }
+  }
+
+  void _drainQueue() {
+    if (_isDisposed) {
+      return;
+    }
+
+    while (_requestQueue.isNotEmpty && _idleSlots.isNotEmpty) {
+      final queuedRequest = _requestQueue.removeFirst();
+      final slot = _idleSlots.removeFirst();
+      final future = _runQueuedRequest(slot, queuedRequest);
+      _inFlightRequests.add(future);
+      future.whenComplete(() => _inFlightRequests.remove(future));
+    }
+  }
+
+  Future<void> _runQueuedRequest(
+    _WorkerSlot slot,
+    _QueuedRequest queuedRequest,
+  ) async {
+    try {
+      final response = await slot.process(queuedRequest.request);
+      if (!queuedRequest.completer.isCompleted) {
+        queuedRequest.completer.complete(response);
+      }
+    } catch (error, stackTrace) {
+      if (!queuedRequest.completer.isCompleted) {
+        queuedRequest.completer.completeError(error, stackTrace);
+      }
+    } finally {
+      if (!_isDisposed) {
+        _idleSlots.addLast(slot);
+        _drainQueue();
+      }
+    }
+  }
+}
+
+class _QueuedRequest {
+  const _QueuedRequest({required this.request, required this.completer});
+
+  final IsolateParseRequest request;
+  final Completer<IsolateParseResponse> completer;
 }
 
 class _WorkerSlot {
@@ -132,40 +204,11 @@ void _isolateEntryPoint(SendPort parentPort) {
   });
 }
 
-// ---------------------------------------------------------------------------
-// Parsing logic — replace with your real implementation
-// ---------------------------------------------------------------------------
-
-/// Runs inside the worker isolate. Must be a top-level (or static) function.
-/// Replace the body with your actual EPUB parsing code.
+// Runs inside the worker isolate. Must be a top-level (or static) function.
 Future<IsolateParseResponse> _process(IsolateParseRequest req) async {
   try {
-    EpubParser parser = GetIt.instance.get<EpubParser>();
-    EpubChapter chapter = await parser.parseChapter(req.id, req.href);
-    return IsolateParseResponse(id: req.id, chapter: chapter);
+    return req.process();
   } catch (e, st) {
     return IsolateParseResponse(id: req.id, error: '$e\n$st');
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Example usage (remove in production)
-// ---------------------------------------------------------------------------
-
-Future<void> main() async {
-  final requests = List.generate(
-    20,
-        (i) => IsolateParseRequest(id: i, href: '/epub/book_$i.epub'),
-  );
-
-  final pool = IsolateWorker();
-  print('Parsing \${requests.length} EPUBs across '
-      '\${Platform.numberOfProcessors} cores...');
-
-  final results = await pool.parseAll(requests);
-  await pool.dispose();
-
-  for (final r in results) {
-    print(r);
   }
 }
