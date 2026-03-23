@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get_it/get_it.dart';
 
 import '../epub/content/text_content.dart';
@@ -18,7 +17,7 @@ class PageRenderer extends CustomPainter {
     double xPos = line.leftIndent + line.textIndent + line.dropCapsIndent;
     for (LineElement el in line.elements) {
       double yPos = line.yPosOnPage;
-      if (el.alignToBaseline) {
+      if (el.alignToBaseline && line.baselineAdjust > 0) {
         yPos -= line.baselineAdjust;
         yPos += (el.element as TextContent).descent;
       }

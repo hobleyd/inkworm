@@ -54,7 +54,7 @@ class _FontSize extends ConsumerState<FontSize> {
                 }
               });
             },
-            title: Text('Make this font the new default', style: Theme.of(context).textTheme.labelMedium),
+            title: Text('Make this font the new default (for new books)', style: Theme.of(context).textTheme.labelMedium),
           ),
         ),
       ],

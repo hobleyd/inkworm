@@ -130,7 +130,6 @@ class _Inkworm extends ConsumerState<Inkworm> {
     try {
       final String? filePath = await platform.invokeMethod('getOpenedFile');
       if (filePath != null && filePath.isNotEmpty) {
-        debugPrint('Linux - Received EPUB: $filePath');
         setState(() {
           bookPath = filePath;
         });
@@ -154,7 +153,6 @@ class _Inkworm extends ConsumerState<Inkworm> {
     try {
       final String? filePath = await _fileChannel.invokeMethod('getOpenedFile');
       if (filePath != null && filePath.isNotEmpty) {
-        debugPrint('Windows - Received EPUB: $filePath');
         setState(() {
           bookPath = filePath;
         });
@@ -169,7 +167,6 @@ class _Inkworm extends ConsumerState<Inkworm> {
       if (call.method == 'fileOpened') {
         final path = call.arguments as String?;
         if (path != null && path.isNotEmpty) {
-          debugPrint('Windows - Received EPUB (while running): $path');
           setState(() {
             bookPath = path;
           });

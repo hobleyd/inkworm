@@ -59,6 +59,10 @@ dd {
 
 blockquote {
   display: block;
+  margin-block-start: 1em;
+  margin-block-end: 1em;
+  margin-inline-start: 40px;
+  margin-inline-end: 40px;
 }
 
 address {
@@ -75,13 +79,14 @@ a {
   text-decoration: underline;
 }
 
+/*
 blockquote[type=cite] {
   display: block;
   margin: 1em 0px;
   border-color: blue;
   border-width: thin;
 }
-
+*/
 h1 {
   display: block;
   font-size: 2em;

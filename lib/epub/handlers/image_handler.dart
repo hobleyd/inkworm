@@ -27,11 +27,11 @@ class ImageHandler extends HtmlHandler {
     XmlElement element = node as XmlElement;
     List<HtmlContent> elements = [];
 
-    ElementStyle elementStyle = ElementStyle();
-    await elementStyle.parseElement(element: element, parentStyle: parentElementStyle);
+    ElementStyle elementStyle = ElementStyle(parentStyle: parentElementStyle);
+    await elementStyle.parseElement(element: element, );
 
-    BlockStyle blockStyle = BlockStyle(elementStyle: elementStyle);
-    await blockStyle.parseElement(element: element, parentStyle: parentBlockStyle);
+    BlockStyle blockStyle = BlockStyle(elementStyle: elementStyle, parentStyle: parentBlockStyle);
+    await blockStyle.parseElement(element: element, );
 
     final String src = element.getAttribute('src')!;
     final Uint8List bytes = GetIt.instance

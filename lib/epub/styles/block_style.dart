@@ -1,6 +1,7 @@
 import 'package:get_it/get_it.dart';
 import 'package:xml/xml.dart';
 
+import '../../models/page_size.dart';
 import '../parser/css_parser.dart';
 import 'element_style.dart';
 import 'style.dart';
@@ -10,6 +11,7 @@ enum LineAlignment { left, right, centre, justify, none }
 class BlockStyle extends Style {
   late CssParser _parser;
   ElementStyle elementStyle;
+  Style? parentStyle;
 
   String? display;
 
@@ -18,6 +20,11 @@ class BlockStyle extends Style {
   double? rightMargin;
   double? topMargin;
   double? bottomMargin;
+
+  double? blockMarginEnd;
+  double? blockMarginStart;
+  double? inlineMarginEnd;
+  double? inlineMarginStart;
 
   // Line related
   double? width;
@@ -36,17 +43,22 @@ class BlockStyle extends Style {
 
   bool ignoreVerticalMargins = false;
 
-  double get marginBottom => (bottomMargin ?? 0);
-  double get marginTop => (topMargin ?? 0);
+  double get marginBottom => (bottomMargin ?? 0) + (blockMarginEnd ?? 0);
+  double get marginTop => (topMargin ?? 0) + (blockMarginStart ?? 0);
 
-  BlockStyle({required this.elementStyle}) {
+  double get marginLeft => (leftMargin ?? 0) + (inlineMarginStart ?? 0);
+  double get marginRight => (rightMargin ?? 0) + (inlineMarginEnd ?? 0);
+
+  BlockStyle({required this.elementStyle, this.parentStyle}) {
     _parser = GetIt.instance.get<CssParser>();
   }
 
   BlockStyle copyFrom(BlockStyle parent) {
-    leftIndent = parent.leftIndent;
-    alignment = parent.alignment;
+    alignment             = parent.alignment;
+    leftIndent            = parent.leftIndent;
     ignoreVerticalMargins = parent.ignoreVerticalMargins;
+    inlineMarginStart     = parent.inlineMarginStart;
+    inlineMarginEnd       = parent.inlineMarginEnd;
 
     return this;
   }
@@ -58,6 +70,11 @@ class BlockStyle extends Style {
     style.rightMargin  = rightMargin;
     style.topMargin    = topMargin ?? this.topMargin;
     style.bottomMargin = bottomMargin ?? this.bottomMargin;
+
+    style.blockMarginEnd    = blockMarginEnd;
+    style.blockMarginStart  = blockMarginStart;
+    style.inlineMarginEnd   = inlineMarginEnd;
+    style.inlineMarginStart = inlineMarginStart;
 
     style.width = width;
     style.leftIndent = leftIndent;
@@ -138,12 +155,7 @@ class BlockStyle extends Style {
     String? bottomMarginString;
 
     String? margins = _parser.getStringAttribute(element, this, "margin");
-    if (margins == null) {
-      leftMarginString   = _parser.getStringAttribute(element, this, "margin-left") ?? leftMarginString;
-      rightMarginString  = _parser.getStringAttribute(element, this, "margin-right") ?? rightMarginString;
-      topMarginString    = _parser.getStringAttribute(element, this, "margin-top") ?? topMarginString;
-      bottomMarginString = _parser.getStringAttribute(element, this, "margin-bottom") ?? bottomMarginString;
-    } else {
+    if (margins != null) {
       List<String> parts = margins.split(RegExp(r'\s'));
 
       if (parts.length == 1) {
@@ -169,25 +181,58 @@ class BlockStyle extends Style {
       }
     }
 
-    if (leftMarginString != null)    leftMargin  = await _parser.getFloatFromString(elementStyle.textStyle, leftMarginString, true);
-    if (rightMarginString != null)   rightMargin = await _parser.getFloatFromString(elementStyle.textStyle, rightMarginString, true);
-    if (topMarginString != null)       topMargin = await _parser.getFloatFromString(elementStyle.textStyle, topMarginString, false);
-    if (bottomMarginString != null) bottomMargin = await _parser.getFloatFromString(elementStyle.textStyle, bottomMarginString, false);
+    // The more specific options here take precedence!
+    leftMarginString   = _parser.getStringAttribute(element, this, "margin-left")   ?? leftMarginString;
+    rightMarginString  = _parser.getStringAttribute(element, this, "margin-right")  ?? rightMarginString;
+    topMarginString    = _parser.getStringAttribute(element, this, "margin-top")    ?? topMarginString;
+    bottomMarginString = _parser.getStringAttribute(element, this, "margin-bottom") ?? bottomMarginString;
 
+    if (leftMarginString != null) {
+      if (leftMarginString.endsWith('%')) {
+        PageSize size = GetIt.instance.get<PageSize>();
+        leftMargin = _parser.parseFloatCssValue(leftMarginString, size.canvasWidth);
+      } else {
+        leftMargin = await _parser.getFloatFromString(elementStyle.textStyle, leftMarginString, true);
+      }
+    }
+
+    if (rightMarginString != null) {
+      if (rightMarginString.endsWith('%')) {
+        PageSize size = GetIt.instance.get<PageSize>();
+        rightMargin = _parser.parseFloatCssValue(rightMarginString, size.canvasWidth);
+      } else {
+        rightMargin = await _parser.getFloatFromString(elementStyle.textStyle, rightMarginString, true);
+      }
+    }
+
+    if (topMarginString != null) {
+      if (topMarginString.endsWith('%')) {
+        PageSize size = GetIt.instance.get<PageSize>();
+        topMargin = _parser.parseFloatCssValue(topMarginString, size.canvasHeight);
+      } else {
+        topMargin = await _parser.getFloatFromString(elementStyle.textStyle, topMarginString, true);
+      }
+    }
+
+    if (bottomMarginString != null) {
+      if (bottomMarginString.endsWith('%')) {
+        PageSize size = GetIt.instance.get<PageSize>();
+        bottomMargin = _parser.parseFloatCssValue(bottomMarginString, size.canvasHeight);
+      } else {
+        bottomMargin = await _parser.getFloatFromString(elementStyle.textStyle, bottomMarginString, true);
+      }
+    }
 
     // Now check for the other kind of margin. Thanks CSS committee.
-    String blockMarginEnd   = _parser.getStringAttribute(element, this, "margin-block-end") ?? "";
-    String blockMarginStart = _parser.getStringAttribute(element, this, "margin-block-start") ?? "";
+    String blockMarginEndString = _parser.getStringAttribute(element, this, "margin-block-end") ?? "";
+    String blockMarginStartString = _parser.getStringAttribute(element, this, "margin-block-start") ?? "";
+    String inlineMarginEndString = _parser.getStringAttribute(element, this, "margin-inline-end") ?? "";
+    String inlineMarginStartString = _parser.getStringAttribute(element, this, "margin-inline-start") ?? "";
 
-    if (blockMarginEnd.isNotEmpty) {
-      bottomMargin ??= 0;
-      bottomMargin = bottomMargin! + (await _parser.getFloatFromString(elementStyle.textStyle, blockMarginEnd, false) ?? 0);
-    }
-
-    if (blockMarginStart.isNotEmpty) {
-      topMargin ??= 0;
-      topMargin = bottomMargin! + (await _parser.getFloatFromString(elementStyle.textStyle, blockMarginStart, false) ?? 0);
-    }
+    if (blockMarginEndString.isNotEmpty)    blockMarginEnd    = await _parser.getFloatFromString(elementStyle.textStyle, blockMarginEndString, false);
+    if (blockMarginStartString.isNotEmpty)  blockMarginStart  = await _parser.getFloatFromString(elementStyle.textStyle, blockMarginStartString, false);
+    if (inlineMarginEndString.isNotEmpty)   inlineMarginEnd   = await _parser.getFloatFromString(elementStyle.textStyle, inlineMarginEndString, false);
+    if (inlineMarginStartString.isNotEmpty) inlineMarginStart = await _parser.getFloatFromString(elementStyle.textStyle, inlineMarginStartString, false);
   }
 
   void getMax(XmlNode element) {
@@ -205,22 +250,8 @@ class BlockStyle extends Style {
     width           = _parser.getPercentAttribute(element, this, "width") ?? width;
   }
 
-  BlockStyle getBottomMarginStyle() {
-    BlockStyle style = BlockStyle(elementStyle: elementStyle);
-    style.bottomMargin = bottomMargin;
-
-    return style;
-  }
-
-  BlockStyle getTopMarginStyle() {
-    BlockStyle style = BlockStyle(elementStyle: elementStyle);
-    style.topMargin = topMargin;
-
-    return style;
-  }
-
   @override
-  Future <Style> parseElement({required XmlNode element, Style? parentStyle}) async {
+  Future <Style> parseElement({required XmlNode element}) async {
     // TODO: Hideous hack. Fix, please. Should ElementStyle and BlockStyle inherit off the same base object?
     selectors = elementStyle.selectors;
     declarations = elementStyle.declarations;
@@ -258,6 +289,22 @@ class BlockStyle extends Style {
 
     if (bottomMargin != null) {
       result += 'margin-bottom: $bottomMargin, ';
+    }
+
+    if (blockMarginStart != null) {
+      result += 'block-margin-start: $blockMarginStart, ';
+    }
+
+    if (blockMarginEnd != null) {
+      result += 'block-margin-end: $blockMarginEnd, ';
+    }
+
+    if (inlineMarginStart != null) {
+      result += 'inline-margin-start: $inlineMarginStart, ';
+    }
+
+    if (inlineMarginEnd != null) {
+      result += 'inline-margin-end: $inlineMarginEnd, ';
     }
 
     if (leftIndent != null) {
