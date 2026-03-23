@@ -8,6 +8,7 @@ import 'style.dart';
 class ElementStyle extends Style {
   late CssParser _parser;
   late TextStyle textStyle;
+  ElementStyle? parentStyle;
 
   bool? alignToBaseline;
   bool? isDropCaps;
@@ -29,7 +30,7 @@ class ElementStyle extends Style {
     'x': (sup: '\u02e3', sub: '\u2093'),
   };
 
-  ElementStyle() {
+  ElementStyle({ this.parentStyle }) {
     _parser = GetIt.instance.get<CssParser>();
     textStyle = TextStyle();
 

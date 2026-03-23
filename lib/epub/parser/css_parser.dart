@@ -73,20 +73,36 @@ class CssParser {
 
   String? getCSSAttributeValue(XmlNode node, Style style, String attribute) {
     if (node is XmlElement) {
+      // First preference inline styles
       CssDeclarations? local = getInlineStyle(node);
       if (local != null && local.containsKey(attribute)) {
-        return local[attribute];
+        if (local[attribute] != 'inherit') {
+          return local[attribute];
+        }
+      }
+
+      // Then preference direct styles if, we haven't specified inherit in the inline style
+      if (local == null || local[attribute] != 'inherit') {
+        if (style.declarations.containsKey(attribute)) {
+          if (style.declarations[attribute] != 'inherit') {
+            return style.declarations[attribute];
+          }
+        }
       }
     }
-
+    
     // Now look for style inheritance
     if (!nonInheritableProperties.contains(attribute)) {
       if ((!style.declarations.containsKey(attribute) || style.declarations[attribute] == 'inherit') && node.parentElement != null) {
-        return getCSSAttributeValue(node.parentElement!, style, attribute);
+        Style parentStyle = style;
+        if (style is ElementStyle && style.parentStyle != null) {
+          parentStyle = style.parentStyle!;
+        }
+        return getCSSAttributeValue(node.parentElement!, parentStyle, attribute);
       }
     }
 
-    return style.declarations[attribute];
+    return null;
   }
 
   Future<double?> getFloatFromString(TextStyle s, String value, bool isHorizontal) async {

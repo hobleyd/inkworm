@@ -67,7 +67,7 @@ extension SelectorSetExtension on XmlElement {
 
     final String? elementClasses = getAttribute("class");
     if (elementClasses != null) {
-      if (previousElementSibling != null) {
+      if (hasParent && previousElementSibling != null) {
         for (var elementClass in previousElementSibling!.getAttribute("class")?.split(" ") ?? []) {
           selectors.add('$elementClass + $localName');
         }
