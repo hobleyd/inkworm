@@ -238,7 +238,7 @@ class EpubParserWorker {
             cssParser.parseCss(message['css']);
             break;
           case _fontSize:
-            ElementStyle.defaultFontSize = message['fontSize'];
+            ElementStyle.defaultFontSize = message['fontSize'].toDouble();
             break;
           case _openBook:
             parser.openBook(message['book']);

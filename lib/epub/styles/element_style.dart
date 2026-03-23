@@ -8,11 +8,12 @@ import 'style.dart';
 class ElementStyle extends Style {
   late CssParser _parser;
   late TextStyle textStyle;
+  ElementStyle? parentStyle;
 
   bool? alignToBaseline;
   bool? isDropCaps;
 
-  static int defaultFontSize = 12;
+  static double defaultFontSize = 12;
 
   // Character: (superscript subscript)
   static const Map<String, ({String sup, String sub})> unicodeMap = {
@@ -29,7 +30,7 @@ class ElementStyle extends Style {
     'x': (sup: '\u02e3', sub: '\u2093'),
   };
 
-  ElementStyle() {
+  ElementStyle({ this.parentStyle }) {
     _parser = GetIt.instance.get<CssParser>();
     textStyle = TextStyle();
 
@@ -89,7 +90,7 @@ class ElementStyle extends Style {
   }
 
   @override
-  Future <Style> parseElement({required XmlNode element, Style? parentStyle}) async {
+  Future <Style> parseElement({required XmlNode element}) async {
     addSelectors(element);
     addDeclarations(_parser, element);
 

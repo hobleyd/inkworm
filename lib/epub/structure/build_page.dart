@@ -19,7 +19,6 @@ class BuildPage implements LineListener {
 
   PageListener? _pageListener;
   Page currentPage = Page();
-  Line? line;
 
   List<Line> get   footnotes => currentPage.footnotes;
   List<Line> get       lines => currentPage.lines;
@@ -31,6 +30,11 @@ class BuildPage implements LineListener {
     if (buildLine == null) {
       buildLine = GetIt.instance.get<BuildLine>();
       buildLine.lineListener = this;
+    }
+
+    if (currentPage.pageHeight == 0) {
+      PageSize size = GetIt.instance.get<PageSize>();
+      currentPage.pageHeight = size.canvasHeight;
     }
 
     addContents(contents, buildLine);
@@ -138,7 +142,6 @@ class BuildPage implements LineListener {
     newPage.pageHeight        = size.canvasHeight;
 
     currentPage = newPage;
-    line = null;
   }
 
   void addParagraphBreak(ParagraphBreak content, BuildLine buildLine) {

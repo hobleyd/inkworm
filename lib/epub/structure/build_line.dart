@@ -3,9 +3,9 @@ import 'package:inkworm/epub/content/text_content.dart';
 
 import '../elements/line_element.dart';
 import '../elements/separators/space_separator.dart';
+import '../interfaces/line_listener.dart';
 import '../styles/block_style.dart';
 import 'line.dart';
-import '../interfaces/line_listener.dart';
 
 @LazySingleton()
 class BuildLine {
@@ -53,6 +53,8 @@ class BuildLine {
 
     if (!currentLine.willFitWidth(e) && e is! SpaceSeparator) {
       completeLine();
+
+      currentLine.leftIndent += e.element.blockStyle.marginLeft;
 
       // If we create a new line, this will not have the height from the previous assignment (obviously). Also,
       // it can't be a dropcaps as that would fit on the line given they are always at the start of a sentence.

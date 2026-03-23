@@ -30,7 +30,12 @@ class CssParser {
 
   Future <double?> getFloatAttribute(XmlNode element, String attribute, Style style, bool isHorizontal) async {
     String? textIndent = getStringAttribute(element, style, "text-indent");
+
     if (textIndent != null) {
+      if (textIndent.endsWith(' !important')) {
+        textIndent = textIndent.replaceAll(' !important', '');
+      }
+
       return getFloatFromString((style as ElementStyle).textStyle, textIndent, true);
     }
 
@@ -68,20 +73,36 @@ class CssParser {
 
   String? getCSSAttributeValue(XmlNode node, Style style, String attribute) {
     if (node is XmlElement) {
+      // First preference inline styles
       CssDeclarations? local = getInlineStyle(node);
       if (local != null && local.containsKey(attribute)) {
-        return local[attribute];
+        if (local[attribute] != 'inherit') {
+          return local[attribute];
+        }
+      }
+
+      // Then preference direct styles if, we haven't specified inherit in the inline style
+      if (local == null || local[attribute] != 'inherit') {
+        if (style.declarations.containsKey(attribute)) {
+          if (style.declarations[attribute] != 'inherit') {
+            return style.declarations[attribute];
+          }
+        }
       }
     }
 
     // Now look for style inheritance
     if (!nonInheritableProperties.contains(attribute)) {
-      if ((style.declarations.isEmpty || style.declarations[attribute] == 'inherit') && node.parentElement != null) {
-        return getCSSAttributeValue(node.parentElement!, style, attribute);
+      if ((!style.declarations.containsKey(attribute) || style.declarations[attribute] == 'inherit') && node.parentElement != null) {
+        Style parentStyle = style;
+        if (style is ElementStyle && style.parentStyle != null) {
+          parentStyle = style.parentStyle!;
+        }
+        return getCSSAttributeValue(node.parentElement!, parentStyle, attribute);
       }
     }
 
-    return style.declarations[attribute];
+    return null;
   }
 
   Future<double?> getFloatFromString(TextStyle s, String value, bool isHorizontal) async {
@@ -239,10 +260,12 @@ class CssParser {
     }
   }
 
-  Map<String, CssDeclarations> parseCss(String cssContent) {
+  void parseCss(String cssContent) {
     Map<String, CssDeclarations> result = {};
 
+    // Remove comments
     var cleaned = cssContent.replaceAll(RegExp(r'/\*[\s\S]*?\*/'), '');
+    cleaned = cleaned.replaceAll(RegExp(r'@namespace url\(.*\);'), '');
 
     // Regular expression to match selector { properties }
     final regExp = RegExp(r'([^{]+)\{\s*([^}]*)\s*\}');
@@ -250,7 +273,7 @@ class CssParser {
     final matches = regExp.allMatches(cleaned);
     for (final match in matches) {
       String selector = match.group(1)?.trim() ?? '';
-      final String properties = match.group(2) ?? '';
+      final String properties = match.group(2)?.trim() ?? '';
 
       if (selector.isNotEmpty) {
         CssDeclarations declarations = parseDeclarations(properties);
@@ -270,13 +293,15 @@ class CssParser {
               }
             }
 
-            result = result.combine(individual, declarations);
+            result.combine(individual, declarations);
           }
         }
       }
     }
 
-    return result;
+    for (String selector in result.keys) {
+      css.combine(selector, result[selector]!);
+    }
   }
 
   CssDeclarations parseDeclarations(String properties) {
@@ -309,8 +334,7 @@ class CssParser {
 
   void parseFile(String href) {
     if (!css.containsKey(href)) {
-      Map<String, CssDeclarations> declarations = parseCss(GetIt.instance.get<EpubParser>().bookArchive!.getContentAsString(href));
-      css.addAll(declarations);
+      parseCss(GetIt.instance.get<EpubParser>().bookArchive!.getContentAsString(href));
     }
   }
 
@@ -323,8 +347,8 @@ class CssParser {
       if (match != null) {
         return switch (match.group(2)){
           "px" || "pt" => size.pixelDensity * double.parse(match.group(1)!),
-          "em" => preferredSize * double.parse(match.group(1)!), // TODO: am I sure this is correct?
-          "%" => preferredSize * (double.parse(match.group(1)!) / 100),
+          "em"         => preferredSize * double.parse(match.group(1)!),
+          "%"          => preferredSize * (double.parse(match.group(1)!) / 100),
           _ => double.parse(match.group(1)!),
         };
       }

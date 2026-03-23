@@ -8,8 +8,9 @@ abstract class LineElement {
 
   HtmlContent get element;
 
-  bool get alignToBaseline  => element.elementStyle.alignToBaseline ?? false;
-  bool get isDropCaps       => element.elementStyle.isDropCaps ?? false;
+  bool    get alignToBaseline => element.elementStyle.alignToBaseline ?? false;
+  bool    get isDropCaps      => element.elementStyle.isDropCaps ?? false;
+  double  get marginRight     => element.blockStyle.marginRight;
 
   LineElement({required this.width, required this.height});
 

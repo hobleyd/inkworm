@@ -1,10 +1,13 @@
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
+import 'package:get_it/get_it.dart';
 import 'package:injectable/injectable.dart';
 import 'package:xml/xml.dart';
 
 import '../content/html_content.dart';
 import '../content/paragraph_break.dart';
+import '../parser/css_parser.dart';
 import '../parser/extensions.dart';
 import '../styles/block_style.dart';
 import '../styles/element_style.dart';
@@ -37,14 +40,14 @@ class BlockHandler extends HtmlHandler {
   @override
   Future<List<HtmlContent>> processElement({required XmlNode node, BlockStyle? parentBlockStyle, ElementStyle? parentElementStyle}) async {
     XmlElement element = node as XmlElement;
-
+    
     List<HtmlContent> elements = [];
 
-    ElementStyle elementStyle = ElementStyle();
-    await elementStyle.parseElement(element: element, parentStyle: parentElementStyle);
+    ElementStyle elementStyle = ElementStyle(parentStyle: parentElementStyle);
+    await elementStyle.parseElement(element: element);
 
-    BlockStyle blockStyle = BlockStyle(elementStyle: elementStyle);
-    await blockStyle.parseElement(element: element, parentStyle: parentBlockStyle);
+    BlockStyle blockStyle = BlockStyle(elementStyle: elementStyle, parentStyle: parentBlockStyle);
+    await blockStyle.parseElement(element: element,);
 
     if (blockStyle.display != null && blockStyle.display == "none") {
       return [];
@@ -61,8 +64,8 @@ class BlockHandler extends HtmlHandler {
           for (var el in childElements!) {
             if (el is ParagraphBreak && elements.last is ParagraphBreak) {
               // support margin collapsing if required.
-              if (el.blockStyle.marginTop > 0 && elements.last.blockStyle.marginBottom > 0) {
-                elements.last.blockStyle.bottomMargin = max(elements.last.blockStyle.marginBottom, el.blockStyle.marginTop);
+              if (el.marginTop > 0 && elements.last.marginBottom > 0) {
+                elements.last.blockStyle.bottomMargin = max(elements.last.marginBottom, el.marginTop);
                 continue;
               }
             }

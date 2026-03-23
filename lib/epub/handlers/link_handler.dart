@@ -30,14 +30,14 @@ class LinkHandler extends HtmlHandler {
 
     List<HtmlContent> elements = [];
 
-    ElementStyle elementStyle = ElementStyle();
-    await elementStyle.parseElement(element: element, parentStyle: parentElementStyle);
+    ElementStyle elementStyle = ElementStyle(parentStyle: parentElementStyle);
+    await elementStyle.parseElement(element: element,);
     // TODO: I want to highlight footnotes, this will also highlight standard links, but see how it looks before making a decision. Given
     // this will normally relate to chapter headings, I don't think it will make a difference.
     elementStyle.setWeight(weight: FontWeight.w700);
 
-    BlockStyle blockStyle = BlockStyle(elementStyle: elementStyle);
-    await blockStyle.parseElement(element: element, parentStyle: parentBlockStyle);
+    BlockStyle blockStyle = BlockStyle(elementStyle: elementStyle, parentStyle: parentBlockStyle);
+    await blockStyle.parseElement(element: element,);
 
     // Override the block alignment as a Link is an inline element, not a block element. This was a problem with Terry Pratchett: A life in footnotes
     if (blockStyle.alignment == LineAlignment.left) {
