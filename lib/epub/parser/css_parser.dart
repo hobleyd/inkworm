@@ -90,7 +90,7 @@ class CssParser {
         }
       }
     }
-    
+
     // Now look for style inheritance
     if (!nonInheritableProperties.contains(attribute)) {
       if ((!style.declarations.containsKey(attribute) || style.declarations[attribute] == 'inherit') && node.parentElement != null) {

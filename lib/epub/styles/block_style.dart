@@ -11,6 +11,7 @@ enum LineAlignment { left, right, centre, justify, none }
 class BlockStyle extends Style {
   late CssParser _parser;
   ElementStyle elementStyle;
+  Style? parentStyle;
 
   String? display;
 
@@ -48,7 +49,7 @@ class BlockStyle extends Style {
   double get marginLeft => (leftMargin ?? 0) + (inlineMarginStart ?? 0);
   double get marginRight => (rightMargin ?? 0) + (inlineMarginEnd ?? 0);
 
-  BlockStyle({required this.elementStyle}) {
+  BlockStyle({required this.elementStyle, this.parentStyle}) {
     _parser = GetIt.instance.get<CssParser>();
   }
 
@@ -250,7 +251,7 @@ class BlockStyle extends Style {
   }
 
   @override
-  Future <Style> parseElement({required XmlNode element, Style? parentStyle}) async {
+  Future <Style> parseElement({required XmlNode element}) async {
     // TODO: Hideous hack. Fix, please. Should ElementStyle and BlockStyle inherit off the same base object?
     selectors = elementStyle.selectors;
     declarations = elementStyle.declarations;
