@@ -30,7 +30,12 @@ class CssParser {
 
   Future <double?> getFloatAttribute(XmlNode element, String attribute, Style style, bool isHorizontal) async {
     String? textIndent = getStringAttribute(element, style, "text-indent");
+
     if (textIndent != null) {
+      if (textIndent.endsWith(' !important')) {
+        textIndent = textIndent.replaceAll(' !important', '');
+      }
+
       return getFloatFromString((style as ElementStyle).textStyle, textIndent, true);
     }
 
@@ -76,7 +81,7 @@ class CssParser {
 
     // Now look for style inheritance
     if (!nonInheritableProperties.contains(attribute)) {
-      if ((style.declarations.isEmpty || style.declarations[attribute] == 'inherit') && node.parentElement != null) {
+      if ((!style.declarations.containsKey(attribute) || style.declarations[attribute] == 'inherit') && node.parentElement != null) {
         return getCSSAttributeValue(node.parentElement!, style, attribute);
       }
     }
@@ -272,13 +277,15 @@ class CssParser {
               }
             }
 
-            result = result.combine(individual, declarations);
+            result.combine(individual, declarations);
           }
         }
       }
     }
 
-    css.addAll(result);
+    for (String selector in result.keys) {
+      css.combine(selector, result[selector]!);
+    }
   }
 
   CssDeclarations parseDeclarations(String properties) {
@@ -324,8 +331,8 @@ class CssParser {
       if (match != null) {
         return switch (match.group(2)){
           "px" || "pt" => size.pixelDensity * double.parse(match.group(1)!),
-          "em" => preferredSize * double.parse(match.group(1)!), // TODO: am I sure this is correct?
-          "%" => preferredSize * (double.parse(match.group(1)!) / 100),
+          "em"         => preferredSize * double.parse(match.group(1)!),
+          "%"          => preferredSize * (double.parse(match.group(1)!) / 100),
           _ => double.parse(match.group(1)!),
         };
       }

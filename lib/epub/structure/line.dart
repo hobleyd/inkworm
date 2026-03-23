@@ -43,7 +43,7 @@ class Line {
   void calculateSeparatorWidth() {
     PageSize size = GetIt.instance.get<PageSize>();
     if (alignment == LineAlignment.justify) {
-      double additionalSpaceWidth = (size.canvasWidth - rightIndent - width) / separators;
+      double additionalSpaceWidth = (size.canvasWidth - rightIndent - elements.first.marginRight - width) / separators;
 
       bool printedSpaces = false;
       for (LineElement e in elements) {
@@ -56,7 +56,7 @@ class Line {
       }
     } else if (alignment == LineAlignment.centre) {
       // Adjust left margin now we know the width of the words in the line.
-      double margin = (size.canvasWidth - width) / 2;
+      double margin = (size.canvasWidth - width - elements.first.marginRight) / 2;
       leftIndent = margin;
       rightIndent = size.canvasWidth - margin;
     } else {
@@ -86,7 +86,7 @@ class Line {
 
   void setTextIndent(double? indent) {
     PageSize size = GetIt.instance.get<PageSize>();
-    textIndent = indent ?? size.leftIndent * 1.5;
+    textIndent = indent ?? size.leftIndent * 3;
   }
 
   @override
@@ -101,7 +101,7 @@ class Line {
 
   bool willFitWidth(LineElement e) {
     PageSize size = GetIt.instance.get<PageSize>();
-    return (width + e.width) <= (size.canvasWidth - rightIndent);
+    return (width + e.width) <= (size.canvasWidth - rightIndent - e.marginRight);
   }
 }
 

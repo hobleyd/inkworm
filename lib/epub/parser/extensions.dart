@@ -67,6 +67,12 @@ extension SelectorSetExtension on XmlElement {
 
     final String? elementClasses = getAttribute("class");
     if (elementClasses != null) {
+      if (previousElementSibling != null) {
+        for (var elementClass in previousElementSibling!.getAttribute("class")?.split(" ") ?? []) {
+          selectors.add('$elementClass + $localName');
+        }
+      }
+
       for (var elementClass in elementClasses.split(" ")) {
         selectors.add(elementClass);
       }
@@ -76,18 +82,11 @@ extension SelectorSetExtension on XmlElement {
   }
 }
 extension SelectorMapExtension on Map<String, CssDeclarations> {
-  Map<String, CssDeclarations> combine(String selector, CssDeclarations declarations,) {
-    final existingMap = this[selector];
-
-    if (existingMap != null) {
-      return {
-        ...this,
-        selector: {...existingMap, ...declarations}, };
+  void combine(String selector, CssDeclarations declarations,) {
+    if (containsKey(selector)) {
+      this[selector] = { ...this[selector]!, ...declarations };
     } else {
-      return {
-        ...this,
-        selector: declarations,
-      };
+      this[selector] = { ...declarations };
     }
   }
 }

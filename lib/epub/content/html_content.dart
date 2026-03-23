@@ -14,9 +14,13 @@ abstract class HtmlContent {
 
   Iterable<LineElement> get elements;
 
-  LineAlignment? get alignment  => blockStyle.alignment;
-  double?        get leftIndent => blockStyle.leftIndent;
-  bool           get isDropCaps => elementStyle.isDropCaps ?? false;
+  LineAlignment? get alignment    => blockStyle.alignment;
+  double?        get leftIndent   => (blockStyle.leftIndent ?? 0) + blockStyle.marginLeft;
+  bool           get isDropCaps   => elementStyle.isDropCaps ?? false;
+  double         get marginLeft   => blockStyle.marginLeft;
+  double         get marginRight  => blockStyle.marginRight;
+  double         get marginTop    => blockStyle.marginTop;
+  double         get marginBottom => blockStyle.marginBottom;
 
   const HtmlContent({required this.blockStyle, required this.elementStyle, required this.height, required this.width});
 }
