@@ -1,8 +1,11 @@
+import 'package:flutter/services.dart';
 import 'package:get_it/get_it.dart';
+import 'package:inkworm/epub/parser/isolates/requests/open_epub_request.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../epub/interfaces/isolate_listener.dart';
 import '../epub/parser/epub_parser_worker.dart';
+import '../epub/parser/isolates/isolate_worker.dart';
 import '../epub/structure/epub_chapter.dart';
 import '../models/book_state.dart';
 import '../models/epub_book.dart';
@@ -15,13 +18,13 @@ part 'epub.g.dart';
 @Riverpod(keepAlive: true)
 class Epub extends _$Epub implements IsolateListener {
   late List<EpubChapter> _chapters;
-  late EpubParserWorker _worker;
+  late IsolateWorker _worker;
   late int _spineLength;
   late int _initialChapter;
 
   @override
   EpubBook build() {
-    _worker = EpubParserWorker(isolateListener: this);
+    _worker = IsolateWorker(listener: this);
     Future(() => ref.read(bookStateManagementProvider.notifier).set(BookState.created));
 
     // Required because we can't pass callbacks into an isolate; hence separating from the
@@ -96,10 +99,13 @@ class Epub extends _$Epub implements IsolateListener {
     getBookDetails(_initialChapter);
   }
 
-  void openBook(String book) {
+  void openBook(String book) async {
     state = state.copyWith(uri: book);
-    _worker.openBook(book);
-    _worker.parseDefaultCss();
+
+    String css = await rootBundle.loadString('assets/default.css');
+    OpenEpubRequest req = OpenEpubRequest(id: -1, href: book, css: css);
+
+    _worker.openBook(req);
   }
 
   void setInitialChapter(int chapter) {

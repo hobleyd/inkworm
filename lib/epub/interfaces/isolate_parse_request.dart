@@ -1,4 +1,6 @@
 // One unit of work handed to a worker isolate.
+import 'dart:isolate';
+
 import 'isolate_parse_response.dart';
 
 abstract class IsolateParseRequest {
@@ -7,5 +9,7 @@ abstract class IsolateParseRequest {
   final int    id;
   final String href;
 
-  Future<IsolateParseResponse> process();
+  void init();
+
+  Future<void> process(SendPort uiPort);
 }
