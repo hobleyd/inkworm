@@ -1,10 +1,12 @@
 import 'dart:isolate';
 
 import 'package:get_it/get_it.dart';
+import 'package:inkworm/epub/parser/isolates/responses/opened_response.dart';
 import 'package:xml/xml.dart';
 
 import '../../../../models/page_size.dart';
 import '../../../interfaces/isolate_parse_request.dart';
+import '../../../interfaces/isolate_parse_response.dart';
 import '../../css_parser.dart';
 import '../../epub_parser.dart';
 import '../../extensions.dart';
@@ -14,10 +16,11 @@ class OpenEpubRequest extends IsolateParseRequest {
   final String   css;
   final double   fontSize;
   final PageSize pageSize;
+  final int      initialChapter;
 
   bool initComplete = false;
 
-  OpenEpubRequest({super.id=1, required super.href, required this.css, required this.fontSize, required this.pageSize});
+  OpenEpubRequest({super.id=1, required super.href, required this.css, required this.fontSize, required this.pageSize, required this.initialChapter});
 
   @override
   void init() {
@@ -27,7 +30,7 @@ class OpenEpubRequest extends IsolateParseRequest {
   }
 
   @override
-  Future<void> process(SendPort uiPort) async {
+  Future<IsolateParseResponse> process(SendPort uiPort) async {
     if (!initComplete) {
       init();
     }
@@ -48,5 +51,7 @@ class OpenEpubRequest extends IsolateParseRequest {
 
     CssParser cssParser = GetIt.instance.get<CssParser>();
     cssParser.parseCss(css);
+
+    return OpenedResponse();
   }
 }

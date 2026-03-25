@@ -47,18 +47,21 @@ class ParseChapterRequest extends IsolateParseRequest {
   }
 
   @override
-  Future<void> process(SendPort uiPort) async {
+  Future<IsolateParseResponse> process(SendPort uiPort) async {
     if (!initComplete) {
       init();
       initComplete = true;
     }
     EpubParser parser = GetIt.instance.get<EpubParser>();
     try {
-      EpubChapter chapter = await parser.parseChapter(id, href);
-      uiPort.send(ChapterResponse(chapter: chapter));
+      final EpubChapter chapter = await parser.parseChapter(id, href);
+      final ChapterResponse response = ChapterResponse(chapter: chapter);
+      //uiPort.send(response);
+      return response;
     } catch (e, s) {
-      uiPort.send(IsolateParseResponse(error: e.toString(), stacktrace: s.toString()));
+      IsolateParseResponse response = IsolateParseResponse(error: e.toString(), stacktrace: s.toString());
+      //uiPort.send(response);
+      return response;
     }
   }
-
 }

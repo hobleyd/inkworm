@@ -22,9 +22,10 @@ class Epub extends _$Epub implements IsolateListener {
   late int _spineLength;
   late int _initialChapter;
 
+  OpenEpubRequest? _epubRequest;
+
   @override
   EpubBook build() {
-    _worker = IsolateWorker(listener: this);
     Future(() => ref.read(bookStateManagementProvider.notifier).set(BookState.created));
 
     // Required because we can't pass callbacks into an isolate; hence separating from the
@@ -57,11 +58,7 @@ class Epub extends _$Epub implements IsolateListener {
 
   @override
   void onComplete() {
-    if (_chapters.where((chapter) => chapter.pages.isEmpty).isEmpty) {
-      ref.read(bookStateManagementProvider.notifier).set(BookState.complete);
-      // TODO: By doing this, I can't resize the window on a desktop. Not my biggest concern immediately, but something to consider.
-      _worker.close();
-    }
+
   }
 
   @override
@@ -80,6 +77,10 @@ class Epub extends _$Epub implements IsolateListener {
   void onParsedChapter(EpubChapter chapter) {
     _chapters[chapter.chapterNumber] = chapter;
     state = state.copyWith(chapters: _chapters);
+
+    if (_chapters.where((chapter) => chapter.pages.isEmpty).isEmpty) {
+      _worker.close();
+    }
   }
 
   // Called when the size changes and is passed to the parsing isolate.
@@ -100,6 +101,7 @@ class Epub extends _$Epub implements IsolateListener {
   }
 
   void openBook(String book) async {
+    _worker = IsolateWorker(listener: this);
     state = state.copyWith(uri: book);
 
     String css = await rootBundle.loadString('assets/default.css');

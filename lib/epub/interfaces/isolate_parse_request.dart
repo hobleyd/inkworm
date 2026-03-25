@@ -11,5 +11,5 @@ abstract class IsolateParseRequest {
 
   void init();
 
-  Future<void> process(SendPort uiPort);
+  Future<IsolateParseResponse> process(SendPort uiPort);
 }
