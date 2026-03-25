@@ -78,7 +78,7 @@ class Epub extends _$Epub implements IsolateListener {
     String css = await rootBundle.loadString('assets/default.css');
     _epubRequest.update(href: book, css: css);
 
-    _worker.openBook(req);
+    _worker.openBook(_epubRequest);
   }
 
   void setError(String description, StackTrace stackTrace) {
