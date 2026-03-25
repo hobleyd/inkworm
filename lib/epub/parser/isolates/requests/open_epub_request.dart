@@ -13,14 +13,24 @@ import '../../extensions.dart';
 import '../responses/book_details_response.dart';
 
 class OpenEpubRequest extends IsolateParseRequest {
-  final String   css;
-  final double   fontSize;
-  final PageSize pageSize;
-  final int      initialChapter;
+  String?   css;
+  int?      fontSize;
+  int?      initialChapter;
+  PageSize? pageSize;
 
   bool initComplete = false;
 
-  OpenEpubRequest({super.id=1, required super.href, required this.css, required this.fontSize, required this.pageSize, required this.initialChapter});
+  OpenEpubRequest({super.id=1, required super.href, this.css, this.fontSize, this.pageSize, this.initialChapter});
+
+  bool update({String? href, String? css, int? fontSize, int? initialChapter, PageSize? pageSize}) {
+    this.css            = css            ?? this.css;
+    this.fontSize       = fontSize       ?? this.fontSize;
+    super.href          = href           ?? this.href;
+    this.initialChapter = initialChapter ?? this.initialChapter;
+    this.pageSize       = pageSize       ?? this.pageSize;
+
+    return css != null && fontSize != null && initialChapter != null && pageSize != null;
+  }
 
   @override
   void init() {
@@ -37,11 +47,11 @@ class OpenEpubRequest extends IsolateParseRequest {
 
     PageSize size = GetIt.instance.get<PageSize>();
     size.update(
-        canvasWidth:  pageSize.canvasWidth,
-        canvasHeight: pageSize.canvasHeight,
-        pixelDensity: pageSize.pixelDensity,
-        leftIndent:   pageSize.leftIndent,
-        rightIndent:  pageSize.rightIndent);
+        canvasWidth:  pageSize!.canvasWidth,
+        canvasHeight: pageSize!.canvasHeight,
+        pixelDensity: pageSize!.pixelDensity,
+        leftIndent:   pageSize!.leftIndent,
+        rightIndent:  pageSize!.rightIndent);
 
     EpubParser parser = GetIt.instance.get<EpubParser>();
     parser.openBook(href);
@@ -50,7 +60,7 @@ class OpenEpubRequest extends IsolateParseRequest {
     uiPort.send(BookDetailsResponse(author: opf.author, title: opf.title, length: opf.spine.length));
 
     CssParser cssParser = GetIt.instance.get<CssParser>();
-    cssParser.parseCss(css);
+    cssParser.parseCss(css!);
 
     return OpenedResponse();
   }

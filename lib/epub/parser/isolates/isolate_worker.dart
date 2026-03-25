@@ -4,6 +4,7 @@ import 'dart:isolate';
 
 import 'package:get_it/get_it.dart';
 import 'package:inkworm/epub/interfaces/isolate_parse_response.dart';
+import 'package:inkworm/epub/parser/isolates/requests/exit_request.dart';
 import 'package:inkworm/epub/parser/isolates/requests/parse_chapter_request.dart';
 import 'package:xml/xml.dart';
 
@@ -24,6 +25,10 @@ class IsolateWorker {
 
   IsolateWorker({required this.listener,})  {
     spawn();
+  }
+
+  void close() {
+    sendToIsolatePort.send(ExitRequest(id: -1, href: ""));
   }
 
   void openBook(OpenEpubRequest request) {
@@ -117,7 +122,12 @@ class IsolateWorker {
       if (msg is OpenEpubRequest) {
         await msg.process(port);
 
-        _parseChapters(port, msg.initialChapter);
+        _parseChapters(port, msg.initialChapter!);
+      } else if (msg is ExitRequest) {
+        for (var core in isolateCores) {
+          core.process(msg);
+        }
+        msg.process(port);
       }
     });
   }

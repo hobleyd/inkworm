@@ -1,28 +1,29 @@
 import 'package:flutter/services.dart';
 import 'package:get_it/get_it.dart';
-import 'package:inkworm/epub/parser/isolates/requests/open_epub_request.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../epub/interfaces/isolate_listener.dart';
 import '../epub/parser/epub_parser_worker.dart';
 import '../epub/parser/isolates/isolate_worker.dart';
+import '../epub/parser/isolates/requests/open_epub_request.dart';
 import '../epub/structure/epub_chapter.dart';
 import '../models/book_state.dart';
 import '../models/epub_book.dart';
 import '../models/page_size.dart';
 import '../models/page_size_isolate_listener.dart';
+import '../models/reading_progress.dart';
 import 'book_state_management.dart';
 
 part 'epub.g.dart';
 
 @Riverpod(keepAlive: true)
 class Epub extends _$Epub implements IsolateListener {
+  final OpenEpubRequest _epubRequest = OpenEpubRequest(href: "");
+
   late List<EpubChapter> _chapters;
   late IsolateWorker _worker;
   late int _spineLength;
-  late int _initialChapter;
 
-  OpenEpubRequest? _epubRequest;
 
   @override
   EpubBook build() {
@@ -36,41 +37,17 @@ class Epub extends _$Epub implements IsolateListener {
     return EpubBook(uri: "", author: "", title: "", chapters: []);
   }
 
-  /*
-   * When parsing the book, parse the current chapter (the first on initial reading) and then one on either side to allow
-   * the reader to continue reading while we complete the book parsing.
-   */
-  void getBookDetails(int chapterIndex) {
-    _initialChapter = chapterIndex;
-    _worker.getBookDetails();
-  }
-
   @override
   void onBookDetails(String author, String title, int spineLength) {
     state = state.copyWith(author: author, title: title);
     _spineLength = spineLength;
 
     _chapters = List.generate(_spineLength, (int index) => EpubChapter(chapterNumber: index), growable: false);
-
-    ref.read(bookStateManagementProvider.notifier).set(BookState.details);
-    _worker.parseChapters(_initialChapter, _spineLength);
-  }
-
-  @override
-  void onComplete() {
-
   }
 
   @override
   void onError(String error, String stackTrace) {
       state = state.copyWith(errorDescription: error, error: StackTrace.fromString(stackTrace));
-  }
-
-  @override
-  void onInitialised(bool workerState) {
-    if (workerState) {
-      ref.read(bookStateManagementProvider.notifier).set(BookState.initialised);
-    }
   }
 
   @override
@@ -90,14 +67,8 @@ class Epub extends _$Epub implements IsolateListener {
       // TODO: Bodgy hack. This gets called twice, which we don't want. Once before and once after we set the BookDetail in the
       // ProgressBar. It only differs by a single pixel, but we should alter to work only after we have received the BookDetails
       // instead of the opposite which is happening now.
-      _worker.setPageSize(size);
+      _epubRequest.update(pageSize: size);
     }
-  }
-
-  // Called by the parsing isolate once the Size change has been sent.
-  @override
-  void onSizeReceived() {
-    getBookDetails(_initialChapter);
   }
 
   void openBook(String book) async {
@@ -105,20 +76,17 @@ class Epub extends _$Epub implements IsolateListener {
     state = state.copyWith(uri: book);
 
     String css = await rootBundle.loadString('assets/default.css');
-    OpenEpubRequest req = OpenEpubRequest(id: -1, href: book, css: css);
+    _epubRequest.update(href: book, css: css);
 
     _worker.openBook(req);
-  }
-
-  void setInitialChapter(int chapter) {
-    _initialChapter = chapter;
   }
 
   void setError(String description, StackTrace stackTrace) {
     state = state.copyWith(errorDescription: description, error: stackTrace);
   }
 
-  void setFontSize(int fontSize) {
-    _worker.setFontSize(fontSize);
+  void setProgress(ReadingProgress progress) {
+    ref.read(bookStateManagementProvider.notifier).set(BookState.progress);
+    _epubRequest.update(fontSize: progress.fontSize, initialChapter: progress.chapterNumber,);
   }
 }
