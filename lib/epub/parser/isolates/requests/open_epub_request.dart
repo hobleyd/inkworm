@@ -5,6 +5,7 @@ import 'package:inkworm/epub/parser/isolates/responses/opened_response.dart';
 import 'package:xml/xml.dart';
 
 import '../../../../models/page_size.dart';
+import '../../../../models/page_size_isolate_listener.dart';
 import '../../../interfaces/isolate_parse_request.dart';
 import '../../../interfaces/isolate_parse_response.dart';
 import '../../css_parser.dart';
@@ -17,8 +18,9 @@ class OpenEpubRequest extends IsolateParseRequest {
   int?      fontSize;
   int?      initialChapter;
   PageSize? pageSize;
+  bool      isolatesReady = false;
 
-  bool initComplete = false;
+  bool get requestComplete => css != null && fontSize != null && initialChapter != null && pageSize != null && isolatesReady;
 
   OpenEpubRequest({super.id=1, required super.href, this.css, this.fontSize, this.pageSize, this.initialChapter});
 
@@ -29,21 +31,23 @@ class OpenEpubRequest extends IsolateParseRequest {
     this.initialChapter = initialChapter ?? this.initialChapter;
     this.pageSize       = pageSize       ?? this.pageSize;
 
-    return css != null && fontSize != null && initialChapter != null && pageSize != null;
+    return requestComplete;
   }
 
   @override
   void init() {
-    GetIt.instance.registerSingleton<PageSize>(PageSize());
-    GetIt.instance.registerSingleton<CssParser>(CssParser());
-    GetIt.instance.registerSingleton<EpubParser>(EpubParser());
+    // TODO: why is this being called more than once?
+    if (!GetIt.instance.isRegistered<PageSize>()) {
+      GetIt.instance.registerSingleton<PageSize>(PageSize());
+      GetIt.instance.registerSingleton<CssParser>(CssParser());
+      GetIt.instance.registerSingleton<EpubParser>(EpubParser());
+      GetIt.instance.registerSingleton<PageSizeIsolateListener>(PageSizeIsolateListener());
+    }
   }
 
   @override
   Future<IsolateParseResponse> process(SendPort uiPort) async {
-    if (!initComplete) {
-      init();
-    }
+    init();
 
     PageSize size = GetIt.instance.get<PageSize>();
     size.update(

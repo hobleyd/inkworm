@@ -4,7 +4,7 @@ import 'package:xml/xml.dart';
 import '../../models/element_size.dart';
 import '../content/html_content.dart';
 import '../content/text_content.dart';
-import '../parser/epub_parser_worker.dart';
+import '../parser/isolates/worker_slot.dart';
 import '../styles/block_style.dart';
 import '../styles/element_style.dart';
 import 'html_handler.dart';
@@ -23,7 +23,7 @@ class TextHandler extends HtmlHandler {
     List<HtmlContent> elements = [];
 
     for (String word in _splitString(element.value)) {
-      ElementSize size = await EpubParserWorker.measureTextInMainThread(word, parentElementStyle!.textStyle);
+      ElementSize size = await WorkerSlot.measureTextInMainThread(word, parentElementStyle!.textStyle);
       elements.add(TextContent(blockStyle: parentBlockStyle!, elementStyle: parentElementStyle, text: word, ascent: size.ascent, descent: size.descent, height: size.height, width: size.width));
     }
 

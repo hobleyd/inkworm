@@ -9,9 +9,9 @@ import '../../models/page_size.dart';
 import '../styles/element_style.dart';
 import '../styles/style.dart';
 import 'epub_parser.dart';
-import 'epub_parser_worker.dart';
 import 'font_management.dart';
 import 'extensions.dart';
+import 'isolates/worker_slot.dart';
 
 @Singleton()
 class CssParser {
@@ -109,7 +109,7 @@ class CssParser {
     if (value == "0") {
       return 0;
     }
-    ElementSize result = await EpubParserWorker.measureTextInMainThread("s", s);
+    ElementSize result = await WorkerSlot.measureTextInMainThread("s", s);
     double preferredSize = isHorizontal ? result.width : result.height;
 
     return value.isEmpty ? null : parseFloatCssValue(value, preferredSize);

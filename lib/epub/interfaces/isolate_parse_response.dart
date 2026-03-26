@@ -1,4 +1,3 @@
-import 'package:inkworm/epub/structure/epub_chapter.dart';
 
 /// The result produced by a worker isolate for one [IsolateParseRequest].
 class IsolateParseResponse {

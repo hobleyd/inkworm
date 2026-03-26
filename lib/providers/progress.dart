@@ -1,12 +1,9 @@
-import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../database/reading_db.dart';
 import '../../models/reading_progress.dart';
-import '../../models/book_state.dart';
 import '../../providers/epub.dart';
-import 'book_state_management.dart';
 
 part 'progress.g.dart';
 
@@ -20,8 +17,8 @@ class Progress extends _$Progress  {
     ReadingProgress progress = GetIt.instance.get<ReadingProgress>();
     progress.book          = saved.book;
     progress.fontSize      = saved.fontSize;
-    progress.chapterNumber = saved.chapterNumber;
-    progress.pageNumber    = saved.pageNumber;
+    progress.chapterNumber = 5;
+    progress.pageNumber    = 1;
 
     ref.read(epubProvider.notifier).setProgress(saved);
 

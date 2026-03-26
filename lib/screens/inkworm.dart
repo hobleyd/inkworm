@@ -9,10 +9,8 @@ import 'package:get_it/get_it.dart';
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 
 import '../database/reading_db.dart';
-import '../models/book_state.dart';
 import '../models/epub_book.dart';
 import '../models/page_size.dart';
-import '../providers/book_state_management.dart';
 import '../providers/epub.dart';
 import '../widgets/fatal_error.dart';
 import '../widgets/page_canvas.dart';
@@ -37,8 +35,11 @@ class _Inkworm extends ConsumerState<Inkworm> {
     EpubBook book = ref.watch(epubProvider);
     var asyncDb = ref.watch(readingDBProvider);
 
-    BookState bookState = ref.watch(bookStateManagementProvider);
-    if (bookPath.isNotEmpty && bookState.hasAll(BookState.initialised|BookState.progress)) {
+    if (bookPath.isEmpty && book.uri.isNotEmpty) {
+      bookPath = book.uri;
+    }
+
+    if (bookPath.isNotEmpty) {
       Future(() => ref.read(epubProvider.notifier).openBook(bookPath));
     }
 
