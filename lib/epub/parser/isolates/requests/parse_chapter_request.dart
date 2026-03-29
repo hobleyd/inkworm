@@ -21,13 +21,15 @@ import '../../../structure/build_page.dart';
 import '../../../structure/epub_chapter.dart';
 import '../../css_parser.dart';
 import '../../epub_parser.dart';
+import '../../extensions.dart';
 import '../responses/chapter_response.dart';
 
 class ParseChapterRequest extends IsolateParseRequest {
   final String book;
   final PageSize pageSize;
+  final Map<String, CssDeclarations> css;
 
-  ParseChapterRequest({required super.id, required super.href, required this.book, required this.pageSize});
+  ParseChapterRequest({required super.id, required super.href, required this.book, required this.pageSize, required this.css});
 
   bool initComplete = false;
 
@@ -53,6 +55,10 @@ class ParseChapterRequest extends IsolateParseRequest {
       GetIt.instance.registerSingleton<TextCache>(TextCache());
     } catch (e) {}
 
+    CssParser parser = GetIt.instance.get<CssParser>();
+    for (String selector in css.keys) {
+      parser.css.combine(selector, css[selector]!);
+    }
     initComplete = true;
   }
 

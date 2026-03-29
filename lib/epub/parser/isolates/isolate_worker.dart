@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:isolate';
 
 import 'package:get_it/get_it.dart';
+import 'package:inkworm/epub/parser/isolates/responses/opened_response.dart';
 import 'package:xml/xml.dart';
 
 import '../../interfaces/isolate_listener.dart';
@@ -74,36 +75,36 @@ class IsolateWorker {
     }
   }
 
-  static Future<void> _parseChapter(SendPort port, OpenEpubRequest request, int chapterIndex, String href) async {
+  static Future<void> _parseChapter(SendPort port, OpenEpubRequest request, int chapterIndex, String href, Map<String, CssDeclarations> css) async {
     if (isolateCores.isNotEmpty) {
       WorkerSlot slot = isolateCores.removeAt(0);
-      IsolateParseResponse response = await slot.process(ParseChapterRequest(id: chapterIndex, href: href, book: request.href, pageSize: request.pageSize!));
+      IsolateParseResponse response = await slot.process(ParseChapterRequest(id: chapterIndex, href: href, book: request.href, pageSize: request.pageSize!, css: css));
       isolateCores.add(slot);
       port.send(response);
     } else {
-      Future.delayed(Duration(milliseconds: 100), () => _parseChapter(port, request, chapterIndex, href));
+      Future.delayed(Duration(milliseconds: 100), () => _parseChapter(port, request, chapterIndex, href, css));
     }
   }
 
-  static void _parseChapters(SendPort port, OpenEpubRequest request) async {
+  static void _parseChapters(SendPort port, OpenEpubRequest request, Map<String, CssDeclarations> css) async {
     EpubParser parser = GetIt.instance.get<EpubParser>();
     XmlDocument opf = parser.getOPF();
 
     final int spineLength = opf.spine.length;
     final Set<int> completedChapters = {};
 
-    _parseChapter(port, request, request.initialChapter!, opf.manifest[opf.spine[request.initialChapter!]]!.href);
+    _parseChapter(port, request, request.initialChapter!, opf.manifest[opf.spine[request.initialChapter!]]!.href, css);
     completedChapters.add(request.initialChapter!);
 
     final int nextChapter = request.initialChapter!+1;
     if (nextChapter < spineLength) {
-      _parseChapter(port, request, nextChapter, opf.manifest[opf.spine[nextChapter]]!.href);
+      _parseChapter(port, request, nextChapter, opf.manifest[opf.spine[nextChapter]]!.href, css);
       completedChapters.add(nextChapter);
     }
 
     if (request.initialChapter! > 0) {
       final int previousChapter = request.initialChapter!-1;
-      _parseChapter(port, request, previousChapter, opf.manifest[opf.spine[previousChapter]]!.href);
+      _parseChapter(port, request, previousChapter, opf.manifest[opf.spine[previousChapter]]!.href, css);
       completedChapters.add(previousChapter);
     }
 
@@ -112,7 +113,7 @@ class IsolateWorker {
       if (completedChapters.contains(chapterIndex)) {
         continue;
       }
-      _parseChapter(port, request, chapterIndex, opf.manifest[opf.spine[chapterIndex]]!.href);
+      _parseChapter(port, request, chapterIndex, opf.manifest[opf.spine[chapterIndex]]!.href, css);
     }
   }
 
@@ -125,9 +126,9 @@ class IsolateWorker {
 
     receiveFromUIThreadPort.listen((dynamic msg) async {
       if (msg is OpenEpubRequest) {
-        await msg.process(port);
+        var response = await msg.process(port);
         // TODO: Pass default CSS to the child isolates; then get the combined CSS back again.
-        _parseChapters(port, msg);
+        _parseChapters(port, msg, (response as OpenedResponse).css);
       } else if (msg is ExitRequest) {
         for (var core in isolateCores) {
           core.process(msg);

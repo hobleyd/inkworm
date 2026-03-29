@@ -66,6 +66,6 @@ class OpenEpubRequest extends IsolateParseRequest {
     CssParser cssParser = GetIt.instance.get<CssParser>();
     cssParser.parseCss(css!);
 
-    return OpenedResponse();
+    return OpenedResponse(css: cssParser.css);
   }
 }

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:get_it/get_it.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -22,6 +23,7 @@ class Epub extends _$Epub implements IsolateListener {
 
   late List<EpubChapter> _chapters;
   late int _spineLength;
+  late Stopwatch _stopwatch;
 
   bool get parsed => _chapters.where((chapter) => chapter.pages.isEmpty).isEmpty;
 
@@ -69,6 +71,9 @@ class Epub extends _$Epub implements IsolateListener {
     if (parsed) {
       ref.read(bookStateManagementProvider.notifier).set(BookState.complete);
       _worker?.close();
+      _stopwatch.stop();
+
+      debugPrint('parsing took: ${_stopwatch.elapsed.inMilliseconds} milliseconds');
     }
   }
 
@@ -95,6 +100,8 @@ class Epub extends _$Epub implements IsolateListener {
   void openBookInIsolate() {
     if (ref.read(bookStateManagementProvider).hasNone(BookState.parsing|BookState.complete)) {
       ref.read(bookStateManagementProvider.notifier).set(BookState.parsing);
+      _stopwatch = Stopwatch()..start();
+
       _worker?.openBook(_epubRequest);
     }
   }
