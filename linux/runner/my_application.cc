@@ -5,12 +5,57 @@
 #include <gdk/gdkx.h>
 #endif
 
+#include <cstring>
+
 #include "flutter/generated_plugin_registrant.h"
 
 struct _MyApplication {
   GtkApplication parent_instance;
   char** dart_entrypoint_arguments;
 };
+
+namespace {
+
+constexpr char kFileChannelName[] = "au.com.sharpblue.inkworm/file";
+
+gchar* get_opened_file_path(char** arguments) {
+  if (arguments == nullptr) {
+    return nullptr;
+  }
+
+  for (int i = 0; arguments[i] != nullptr; ++i) {
+    if (arguments[i][0] != '-') {
+      return arguments[i];
+    }
+  }
+
+  return nullptr;
+}
+
+static void file_channel_method_call_cb(FlMethodChannel*,
+                                        FlMethodCall* method_call,
+                                        gpointer user_data) {
+  MyApplication* self = MY_APPLICATION(user_data);
+  const gchar* method = fl_method_call_get_name(method_call);
+
+  if (std::strcmp(method, "getOpenedFile") == 0) {
+    const gchar* opened_file =
+        get_opened_file_path(self->dart_entrypoint_arguments);
+    g_autoptr(FlValue) result =
+        opened_file != nullptr ? fl_value_new_string(opened_file)
+                               : fl_value_new_null();
+    g_autoptr(FlMethodResponse) response =
+        FL_METHOD_RESPONSE(fl_method_success_response_new(result));
+    fl_method_call_respond(method_call, response, nullptr);
+    return;
+  }
+
+  g_autoptr(FlMethodResponse) response =
+      FL_METHOD_RESPONSE(fl_method_not_implemented_response_new());
+  fl_method_call_respond(method_call, response, nullptr);
+}
+
+}  // namespace
 
 G_DEFINE_TYPE(MyApplication, my_application, GTK_TYPE_APPLICATION)
 
@@ -72,6 +117,13 @@ static void my_application_activate(GApplication* application) {
   gtk_widget_realize(GTK_WIDGET(view));
 
   fl_register_plugins(FL_PLUGIN_REGISTRY(view));
+
+  g_autoptr(FlStandardMethodCodec) codec = fl_standard_method_codec_new();
+  g_autoptr(FlMethodChannel) file_channel = fl_method_channel_new(
+      fl_engine_get_binary_messenger(fl_view_get_engine(view)),
+      kFileChannelName, FL_METHOD_CODEC(codec));
+  fl_method_channel_set_method_call_handler(
+      file_channel, file_channel_method_call_cb, self, nullptr);
 
   gtk_widget_grab_focus(GTK_WIDGET(view));
 }
