@@ -22,6 +22,7 @@ import '../../../structure/epub_chapter.dart';
 import '../../css_parser.dart';
 import '../../epub_parser.dart';
 import '../../extensions.dart';
+import '../../font_management.dart';
 import '../responses/chapter_response.dart';
 
 class ParseChapterRequest extends IsolateParseRequest {
@@ -53,6 +54,7 @@ class ParseChapterRequest extends IsolateParseRequest {
       GetIt.instance.registerSingleton<BuildPage>(BuildPage());
       GetIt.instance.registerSingleton<LinkCache>(LinkCache());
       GetIt.instance.registerSingleton<TextCache>(TextCache());
+      GetIt.instance.registerSingleton<FontManagement>(FontManagement());
     } catch (e) {}
 
     CssParser parser = GetIt.instance.get<CssParser>();
