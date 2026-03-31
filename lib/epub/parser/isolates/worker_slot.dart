@@ -23,8 +23,13 @@ class WorkerSlot {
 
   WorkerSlot({required this.uiPort});
 
-  static void loadFont(String fontFamily, String fontPath) {
-    staticUIPort?.send(LoadFontRequest(fontFamily: fontFamily, href: fontPath,));
+  static Future<IsolateParseResponse> loadFont(String fontFamily, String fontPath) async {
+    final reply = ReceivePort();
+    staticUIPort?.send(LoadFontRequest(fontFamily: fontFamily, href: fontPath, port: reply.sendPort));
+
+    IsolateParseResponse result = await reply.first;
+    reply.close();
+    return result;
   }
 
   static Future<ElementSize> measureImageInMainThread(String name, Uint8List imageBytes) async {

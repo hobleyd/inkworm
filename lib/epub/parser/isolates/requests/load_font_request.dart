@@ -1,3 +1,4 @@
+import 'dart:isolate';
 import 'dart:typed_data';
 
 import 'package:get_it/get_it.dart';
@@ -9,9 +10,11 @@ import '../../font_management.dart';
 
 class LoadFontRequest extends IsolateParseRequest {
   final String fontFamily;
+  final SendPort port;
+
   late Uint8List fontBytes;
 
-  LoadFontRequest({super.id=1, required super.href, required this.fontFamily}) {
+  LoadFontRequest({super.id=1, required super.href, required this.fontFamily, required this.port}) {
     // Knowing how the getBytes function works, strip out the relative paths as they won't be needed. Purists will disagree ;-)
     if (href.startsWith('url')) {
       href = href.substring(4, href.length-1);
