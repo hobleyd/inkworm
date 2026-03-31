@@ -1,8 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:get_it/get_it.dart';
+import 'package:inkworm/providers/progress.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../database/reading_db.dart';
 import '../epub/interfaces/isolate_listener.dart';
 import '../epub/parser/isolates/isolate_worker.dart';
 import '../epub/parser/isolates/requests/open_epub_request.dart';
@@ -18,7 +20,7 @@ part 'epub.g.dart';
 
 @Riverpod(keepAlive: true)
 class Epub extends _$Epub implements IsolateListener {
-  final OpenEpubRequest _epubRequest = OpenEpubRequest(href: "");
+  OpenEpubRequest _epubRequest = OpenEpubRequest(href: "");
   IsolateWorker? _worker;
 
   late List<EpubChapter> _chapters;
@@ -66,13 +68,14 @@ class Epub extends _$Epub implements IsolateListener {
   @override
   void onParsedChapter(EpubChapter chapter) {
     _chapters[chapter.chapterNumber] = chapter;
-    state = state.copyWith(chapters: _chapters);
+    state = state.copyWith(chapters: List.from(_chapters));
 
     if (parsed) {
       ref.read(bookStateManagementProvider.notifier).set(BookState.complete);
       _worker?.close();
-      _stopwatch.stop();
+      _worker = null;
 
+      _stopwatch.stop();
       debugPrint('parsing took: ${_stopwatch.elapsed.inMilliseconds} milliseconds');
     }
   }
@@ -98,12 +101,26 @@ class Epub extends _$Epub implements IsolateListener {
   }
 
   void openBookInIsolate() {
+    // Due to the async nature of Riverpod updates, this can get called more than once; ignore subsequent calls unless we have tweaked state to pay attention.
     if (ref.read(bookStateManagementProvider).hasNone(BookState.parsing|BookState.complete)) {
       ref.read(bookStateManagementProvider.notifier).set(BookState.parsing);
+      debugPrint('starting timer for parsing');
       _stopwatch = Stopwatch()..start();
 
       _worker?.openBook(_epubRequest);
     }
+  }
+
+  // Called when we open a new book
+  void resetBook(String book) async {
+    _worker = null;
+    _epubRequest = OpenEpubRequest(href: "", pageSize: _epubRequest.pageSize,);
+    ref.read(bookStateManagementProvider.notifier).clear();
+
+    state = EpubBook(uri: book, author: "", title: "", chapters: []);
+
+    final progress = await ref.read(readingDBProvider.notifier).getReadingProgress(book);
+    ref.read(progressProvider.notifier).setProgress(book, progress.fontSize, progress.chapterNumber, progress.pageNumber);
   }
 
   void setError(String description, StackTrace stackTrace) {
@@ -111,10 +128,13 @@ class Epub extends _$Epub implements IsolateListener {
   }
 
   void setProgress(ReadingProgress progress) {
-    state = state.copyWith(uri: progress.book);
+    if (state.uri != progress.book) {
+      state = state.copyWith(uri: progress.book);
+    }
 
     if (_epubRequest.update(fontSize: progress.fontSize, initialChapter: progress.chapterNumber,)) {
       openBookInIsolate();
     }
+
   }
 }

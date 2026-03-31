@@ -11,6 +11,10 @@ class BookStateManagement extends _$BookStateManagement {
     return BookState(state: 0);
   }
 
+  void clear() {
+    state = BookState(state: 0);
+  }
+
   void set(int flags) {
     state = state.set(flags);
   }

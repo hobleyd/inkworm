@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:isolate';
 
+import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 import 'package:inkworm/epub/parser/isolates/responses/opened_response.dart';
 import 'package:xml/xml.dart';

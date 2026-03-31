@@ -17,8 +17,8 @@ class Progress extends _$Progress  {
     ReadingProgress progress = GetIt.instance.get<ReadingProgress>();
     progress.book          = saved.book;
     progress.fontSize      = saved.fontSize;
-    progress.chapterNumber = 5;
-    progress.pageNumber    = 1;
+    progress.chapterNumber = saved.chapterNumber;
+    progress.pageNumber    = saved.pageNumber;
 
     ref.read(epubProvider.notifier).setProgress(saved);
 
