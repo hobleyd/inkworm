@@ -1,5 +1,4 @@
 import 'package:injectable/injectable.dart';
-import 'package:inkworm/epub/content/text_content.dart';
 
 import '../elements/line_element.dart';
 import '../elements/separators/space_separator.dart';

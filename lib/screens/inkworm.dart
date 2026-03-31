@@ -6,13 +6,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get_it/get_it.dart';
+import 'package:inkworm/providers/progress.dart';
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 
 import '../database/reading_db.dart';
-import '../models/book_state.dart';
 import '../models/epub_book.dart';
 import '../models/page_size.dart';
-import '../providers/book_state_management.dart';
 import '../providers/epub.dart';
 import '../widgets/fatal_error.dart';
 import '../widgets/page_canvas.dart';
@@ -37,9 +36,9 @@ class _Inkworm extends ConsumerState<Inkworm> {
     EpubBook book = ref.watch(epubProvider);
     var asyncDb = ref.watch(readingDBProvider);
 
-    BookState bookState = ref.watch(bookStateManagementProvider);
-    if (bookPath.isNotEmpty && bookState.hasAll(BookState.initialised|BookState.progress)) {
-      Future(() => ref.read(epubProvider.notifier).openBook(bookPath));
+    if (book.uri.isNotEmpty && bookPath != book.uri) {
+      bookPath = book.uri;
+      Future(() => ref.read(epubProvider.notifier).openBook(book.uri));
     }
 
     MediaQueryData data = MediaQueryData.fromView(View.maybeOf(context)!);
@@ -94,9 +93,7 @@ class _Inkworm extends ConsumerState<Inkworm> {
         _handleLinuxIntent();
         break;
       default:
-        setState(() {
-          bookPath = Platform.environment['EBOOK']!;
-        });
+        _resetBook(Platform.environment['EBOOK']!);
         break;
     }
   }
@@ -105,9 +102,7 @@ class _Inkworm extends ConsumerState<Inkworm> {
     // Listen for Intents coming from outside the app while the app is in the memory.
     _intentSub = ReceiveSharingIntent.instance.getMediaStream().listen((value) {
       if (value.isNotEmpty) {
-        setState(() {
-          bookPath = value.first.path;
-        });
+        _resetBook(value.first.path);
       }
     }, onError: (e, s) {
       ref.read(epubProvider.notifier).setError(e.toString(), s);
@@ -116,9 +111,7 @@ class _Inkworm extends ConsumerState<Inkworm> {
     // Get Intents coming from outside the app while the app is closed.
     ReceiveSharingIntent.instance.getInitialMedia().then((value) {
       if (value.isNotEmpty) {
-        setState(() {
-          bookPath = value.first.path;
-        });
+        _resetBook(value.first.path);
       }
 
       ReceiveSharingIntent.instance.reset();
@@ -128,11 +121,9 @@ class _Inkworm extends ConsumerState<Inkworm> {
   Future<void> _handleLinuxIntent() async {
     const platform = MethodChannel('au.com.sharpblue.inkworm/file');
     try {
-      final String? filePath = await platform.invokeMethod('getOpenedFile');
-      if (filePath != null && filePath.isNotEmpty) {
-        setState(() {
-          bookPath = filePath;
-        });
+      final String? path = await platform.invokeMethod('getOpenedFile');
+      if (path != null && path.isNotEmpty) {
+        _resetBook(path);
       }
     } catch (e, s) {
       ref.read(epubProvider.notifier).setError(e.toString(), s);
@@ -140,10 +131,9 @@ class _Inkworm extends ConsumerState<Inkworm> {
   }
 
   Future<void> _handleMacOSIntent() async {
+    FileOpen.setLoggingEnabled(false);
     FileOpen.onOpened.listen((uris) {
-      setState(() {
-        bookPath = uris.first.toFilePath();
-      });
+      _resetBook(uris.first.toFilePath());
     });
   }
 
@@ -151,11 +141,9 @@ class _Inkworm extends ConsumerState<Inkworm> {
     // 1. Get the file path passed on the command line at launch (the common
     //    case: user double-clicks an .epub or uses "Open with…").
     try {
-      final String? filePath = await _fileChannel.invokeMethod('getOpenedFile');
-      if (filePath != null && filePath.isNotEmpty) {
-        setState(() {
-          bookPath = filePath;
-        });
+      final String? path = await _fileChannel.invokeMethod('getOpenedFile');
+      if (path != null && path.isNotEmpty) {
+        _resetBook(path);
       }
     } catch (e, s) {
       ref.read(epubProvider.notifier).setError(e.toString(), s);
@@ -165,13 +153,15 @@ class _Inkworm extends ConsumerState<Inkworm> {
     //    The C++ side posts these via setMethodCallHandler.
     _fileChannel.setMethodCallHandler((call) async {
       if (call.method == 'fileOpened') {
-        final path = call.arguments as String?;
+        final String? path = call.arguments;
         if (path != null && path.isNotEmpty) {
-          setState(() {
-            bookPath = path;
-          });
+          _resetBook(path);
         }
       }
     });
+  }
+
+  void _resetBook(String path) {
+    ref.read(epubProvider.notifier).resetBook(path);
   }
 }

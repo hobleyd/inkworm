@@ -1,13 +1,10 @@
 import 'dart:math';
 
-import 'package:flutter/foundation.dart';
-import 'package:get_it/get_it.dart';
 import 'package:injectable/injectable.dart';
 import 'package:xml/xml.dart';
 
 import '../content/html_content.dart';
 import '../content/paragraph_break.dart';
-import '../parser/css_parser.dart';
 import '../parser/extensions.dart';
 import '../styles/block_style.dart';
 import '../styles/element_style.dart';

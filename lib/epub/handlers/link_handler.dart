@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:get_it/get_it.dart';
 import 'package:injectable/injectable.dart';
+import 'package:inkworm/epub/parser/isolates/worker_slot.dart';
 import 'package:xml/xml.dart';
 
 import '../../models/element_size.dart';
@@ -11,7 +12,6 @@ import '../content/image_content.dart';
 import '../content/link_content.dart';
 import '../content/text_content.dart';
 import '../parser/epub_parser.dart';
-import '../parser/epub_parser_worker.dart';
 import '../parser/extensions.dart';
 import '../styles/block_style.dart';
 import '../styles/element_style.dart';
@@ -53,8 +53,8 @@ class LinkHandler extends HtmlHandler {
       if (childElements != null && childElements.isNotEmpty) {
         for (var child in childElements) {
           ElementSize size = switch (child) {
-            ImageContent ic => await EpubParserWorker.measureImageInMainThread(ic.image, ic.bytes),
-            TextContent  tc => await EpubParserWorker.measureTextInMainThread(tc.text, tc.elementStyle.textStyle),
+            ImageContent ic => await WorkerSlot.measureImageInMainThread(ic.image, ic.bytes),
+            TextContent  tc => await WorkerSlot.measureTextInMainThread(tc.text, tc.elementStyle.textStyle),
                           _ => ElementSize(ascent: 0, descent: 0, width: 50, height: 50) // Just to stop analysis warnings; should never be hit!
           };
 
