@@ -10,6 +10,7 @@ import '../../interfaces/isolate_parse_response.dart';
 import '../epub_parser.dart';
 import '../extensions.dart';
 import 'requests/exit_request.dart';
+import 'requests/load_font_request.dart';
 import 'requests/measure_image_request.dart';
 import 'requests/measure_text_request.dart';
 import 'requests/open_epub_request.dart';
@@ -65,10 +66,15 @@ class IsolateWorker {
       case ChapterResponse cr:
         listener.onParsedChapter(cr.chapter);
         break;
+      case LoadFontRequest lfr:
+        lfr.process(sendToIsolatePort);
+        break;
       case MeasureImageRequest mir:
         mir.process(sendToIsolatePort);
+        break;
       case MeasureTextRequest mtr:
         mtr.process(sendToIsolatePort);
+        break;
       default:
         listener.onError(response.error, response.stacktrace);
         break;

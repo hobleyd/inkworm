@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
+import 'package:inkworm/epub/parser/isolates/requests/load_font_request.dart';
 
 import '../../../models/element_size.dart';
 import '../../cache/text_cache.dart';
@@ -21,6 +22,10 @@ class WorkerSlot {
   static SendPort? staticUIPort;
 
   WorkerSlot({required this.uiPort});
+
+  static void loadFont(String fontFamily, String fontPath) {
+    staticUIPort?.send(LoadFontRequest(fontFamily: fontFamily, href: fontPath,));
+  }
 
   static Future<ElementSize> measureImageInMainThread(String name, Uint8List imageBytes) async {
     // TODO: While the ui.Image is cached in the main isolate, we should also cache on this side to save the

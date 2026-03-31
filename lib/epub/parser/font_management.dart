@@ -8,20 +8,14 @@ import 'epub_parser.dart';
 class FontManagement {
   Set<String> verifiedFonts = {};
 
-  Future<void> loadFontFromEpub(String fontFamily, String fontPath) async {
-    // Knowing how the getBytes function works, strip out the relative paths as they won't be needed. Purists will disagree ;-)
-    if (fontPath.startsWith('url')) {
-      fontPath = fontPath.substring(4, fontPath.length-1);
+  Future<void> loadFontFromEpub(String fontFamily, Uint8List fontBytes) async {
+    if (!verifiedFonts.contains(fontFamily)) {
+      final fontLoader = FontLoader(fontFamily);
+      fontLoader.addFont(Future.value(ByteData.view(fontBytes.buffer)));
+      await fontLoader.load();
+
+      verifiedFonts.add(fontFamily);
     }
-    String cleanedPath = fontPath.replaceAll(RegExp(r'^(\.\.\/)+'), '');
-
-    final bytes = GetIt.instance.get<EpubParser>().getBytes(cleanedPath);
-
-    final fontLoader = FontLoader(fontFamily);
-    fontLoader.addFont(Future.value(ByteData.view(bytes.buffer)));
-    await fontLoader.load();
-
-    verifiedFonts.add(fontFamily);
   }
 
 }

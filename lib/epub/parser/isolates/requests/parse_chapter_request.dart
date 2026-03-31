@@ -54,7 +54,6 @@ class ParseChapterRequest extends IsolateParseRequest {
       GetIt.instance.registerSingleton<BuildPage>(BuildPage());
       GetIt.instance.registerSingleton<LinkCache>(LinkCache());
       GetIt.instance.registerSingleton<TextCache>(TextCache());
-      GetIt.instance.registerSingleton<FontManagement>(FontManagement());
     } catch (e) {}
 
     CssParser parser = GetIt.instance.get<CssParser>();

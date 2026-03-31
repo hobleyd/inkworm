@@ -289,7 +289,7 @@ class CssParser {
               declarations.remove("font-family");
 
               if (declarations['src'] != null) {
-                GetIt.instance.get<FontManagement>().loadFontFromEpub(individual, declarations['src']!);
+                WorkerSlot.loadFont(individual, declarations['src']!);
               }
             }
 
