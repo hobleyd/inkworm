@@ -11,6 +11,7 @@ class ImageCache {
 
   ui.Image operator[](String name) => _imageCache[name]!;
 
+  void clear()               => _imageCache.clear();
   bool isCached(String name) => _imageCache.containsKey(name);
 
   Future<ui.Image> createImageFromUint8List(Uint8List imageData) async {

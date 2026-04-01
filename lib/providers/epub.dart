@@ -5,6 +5,7 @@ import 'package:inkworm/providers/progress.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../database/reading_db.dart';
+import '../epub/cache/image_cache.dart';
 import '../epub/interfaces/isolate_listener.dart';
 import '../epub/parser/isolates/isolate_worker.dart';
 import '../epub/parser/isolates/requests/open_epub_request.dart';
@@ -113,6 +114,9 @@ class Epub extends _$Epub implements IsolateListener {
 
   // Called when we open a new book
   void resetBook(String book) async {
+    ImageCache cache = GetIt.instance.get<ImageCache>();
+    cache.clear();
+
     _worker = null;
     _epubRequest = OpenEpubRequest(href: "", pageSize: _epubRequest.pageSize,);
     ref.read(bookStateManagementProvider.notifier).clear();
