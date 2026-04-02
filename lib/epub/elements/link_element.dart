@@ -14,7 +14,6 @@ class LinkElement extends LineElement {
   @override
   void paint(Canvas c, double height, double xPos, double yPos) {
     return src.paint(c, height, xPos, yPos);
-    //c.drawLine(Offset(xPos, yPos+height+2), Offset(xPos + width, yPos+height+2), Paint()..color = Colors.black);
   }
 
   @override

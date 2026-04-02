@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../epub/structure/line.dart';
 import '../providers/epub.dart';
 import '../models/epub_book.dart';
 import '../models/reading_progress.dart';
@@ -10,11 +11,18 @@ import '../providers/theme.dart';
 import '../screens/settings.dart';
 import 'page_renderer.dart';
 
-class PageCanvas extends ConsumerWidget {
+class PageCanvas extends ConsumerStatefulWidget {
   const PageCanvas({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PageCanvas> createState() => _PageCanvas();
+}
+
+class _PageCanvas extends ConsumerState<PageCanvas> {
+  int lastPageNumber = -1;
+
+  @override
+  Widget build(BuildContext context,) {
     EpubBook book = ref.watch(epubProvider);
     var progressAsync =  ref.watch(progressProvider);
 
@@ -30,10 +38,15 @@ class PageCanvas extends ConsumerWidget {
 
           // This is required to work around Flutter's desire not to repaint if nothing has changed; even though it has (from
           // an isolate).
-          PageRenderer renderer =
-          PageRenderer(    lines: book.chapters.elementAtOrNull(progress.chapterNumber)?[progress.pageNumber]?.lines ?? [],
-                       footnotes: book.chapters.elementAtOrNull(progress.chapterNumber)?[progress.pageNumber]?.footnotes ?? []);
-          renderer.needsRepaint = true;
+          final List<Line> lines = book.chapters.elementAtOrNull(progress.chapterNumber)?[progress.pageNumber]?.lines ?? [];
+          final List<Line> foots = book.chapters.elementAtOrNull(progress.chapterNumber)?[progress.pageNumber]?.footnotes ?? [];
+          PageRenderer renderer = PageRenderer(lines: lines, footnotes: foots);
+          if (lastPageNumber != progress.pageNumber && lines.isNotEmpty) {
+            renderer.needsRepaint = true;
+            setState(() {
+              lastPageNumber = progress.pageNumber;
+            });
+          }
 
           return Container(
             padding: const EdgeInsets.only(top: 6, bottom: 6),

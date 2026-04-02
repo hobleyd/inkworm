@@ -2,6 +2,7 @@ import 'package:injectable/injectable.dart';
 
 import '../elements/line_element.dart';
 import '../elements/separators/space_separator.dart';
+import '../elements/word_element.dart';
 import '../interfaces/line_listener.dart';
 import '../styles/block_style.dart';
 import 'line.dart';
@@ -48,6 +49,13 @@ class BuildLine {
       // Only adjust the line height if this is not a dropcaps element. For obvious reasons. Given the use of dropcaps I can't
       // imagine it will be possible that this is the only thing on the line. On the other hand. HTML. Sigh.
       currentLine.height = e.height;
+
+      if (!currentLine.isEmpty && currentLine.elements.first is WordElement) {
+        final WordElement first = currentLine.elements.first as WordElement;
+        if (first.isDropCaps) {
+          (currentLine.elements.first as WordElement).dropCapsAdjust = currentLine.maxHeight - first.word.descent + 2;
+        }
+      }
     }
 
     if (!currentLine.willFitWidth(e) && e is! SpaceSeparator) {

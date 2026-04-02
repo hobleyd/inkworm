@@ -9,7 +9,7 @@ import '../epub/elements/line_element.dart';
 class PageRenderer extends CustomPainter {
   List<Line> lines = [];
   List<Line> footnotes = [];
-  bool needsRepaint = true;
+  bool needsRepaint = false;
 
   PageRenderer({required this.lines, required this.footnotes});
 

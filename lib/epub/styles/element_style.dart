@@ -63,7 +63,7 @@ class ElementStyle extends Style {
     String? floatValue = _parser.getStringAttribute(element, this, "float");
     String? lineHeight = _parser.getStringAttribute(element, this, "line-height");
 
-    if ((floatValue != null && floatValue == "left") ||  (lineHeight != null && lineHeight == "0em")) {
+    if ((floatValue != null && floatValue == "left") || (lineHeight != null && lineHeight == "0em")) {
       isDropCaps = true;
     }
   }
@@ -86,6 +86,7 @@ class ElementStyle extends Style {
       fontSize:   fontSize ?? textStyle.fontSize,
       fontStyle:  fontStyle == "italic" ? FontStyle.italic : textStyle.fontStyle,
       fontWeight: fontWeight != null ? _parser.getFontWeight(fontWeight) : textStyle.fontWeight,
+      height: 1.0,
     );
   }
 

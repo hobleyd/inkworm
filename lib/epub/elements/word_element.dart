@@ -5,6 +5,7 @@ import 'line_element.dart';
 
 class WordElement extends LineElement {
   final TextContent word;
+  double dropCapsAdjust = 0;
 
   @override
   get element => word;
@@ -23,13 +24,13 @@ class WordElement extends LineElement {
   void paint(Canvas c, double height, double xPos, double yPos) {
     final TextPainter textPainter = TextPainter(text: word.span, textDirection: TextDirection.ltr,);
     textPainter.layout(maxWidth: width);
-    textPainter.paint(c, Offset(xPos, yPos));
+    textPainter.paint(c, Offset(xPos, word.isDropCaps ? yPos - dropCapsAdjust: yPos));
 
     textPainter.dispose();
   }
 
   @override
   String toString() {
-    return word.toString();
+    return '($width/$height/$dropCapsAdjust) ${word.span.style?.fontFamily} $word';
   }
 }

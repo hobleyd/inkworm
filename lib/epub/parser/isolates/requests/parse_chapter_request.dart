@@ -78,10 +78,10 @@ class ParseChapterRequest extends IsolateParseRequest {
       PageSize size = GetIt.instance.get<PageSize>();
       size.update(
           canvasHeight: pageSize.canvasHeight,
-          canvasWidth: pageSize.canvasWidth,
+          canvasWidth:  pageSize.canvasWidth,
           pixelDensity: pageSize.pixelDensity,
-          leftIndent: pageSize.leftIndent,
-          rightIndent: pageSize.rightIndent);
+          leftIndent:   pageSize.leftIndent,
+          rightIndent:  pageSize.rightIndent);
       final EpubChapter chapter = await parser.parseChapter(id, href);
       final ChapterResponse response = ChapterResponse(chapter: chapter);
       return response;
