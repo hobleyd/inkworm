@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'dart:isolate';
 
-import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 import 'package:inkworm/epub/parser/isolates/responses/opened_response.dart';
 import 'package:xml/xml.dart';
@@ -85,7 +84,7 @@ class IsolateWorker {
   static Future<void> _parseChapter(SendPort port, OpenEpubRequest request, int chapterIndex, String href, Map<String, CssDeclarations> css) async {
     if (isolateCores.isNotEmpty) {
       WorkerSlot slot = isolateCores.removeAt(0);
-      IsolateParseResponse response = await slot.process(ParseChapterRequest(id: chapterIndex, href: href, book: request.href, pageSize: request.pageSize!, css: css));
+      IsolateParseResponse response = await slot.process(ParseChapterRequest(id: chapterIndex, href: href, book: request.href, pageSize: request.pageSize!, css: css, fontSize: request.fontSize ?? 12));
       isolateCores.add(slot);
       port.send(response);
     } else {

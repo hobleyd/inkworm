@@ -19,18 +19,19 @@ import '../../../interfaces/isolate_parse_response.dart';
 import '../../../structure/build_line.dart';
 import '../../../structure/build_page.dart';
 import '../../../structure/epub_chapter.dart';
+import '../../../styles/element_style.dart';
 import '../../css_parser.dart';
 import '../../epub_parser.dart';
 import '../../extensions.dart';
-import '../../font_management.dart';
 import '../responses/chapter_response.dart';
 
 class ParseChapterRequest extends IsolateParseRequest {
   final String book;
+  final int fontSize;
   final PageSize pageSize;
   final Map<String, CssDeclarations> css;
 
-  ParseChapterRequest({required super.id, required super.href, required this.book, required this.pageSize, required this.css});
+  ParseChapterRequest({required super.id, required super.href, required this.book, required this.pageSize, required this.css, required this.fontSize});
 
   bool initComplete = false;
 
@@ -68,6 +69,9 @@ class ParseChapterRequest extends IsolateParseRequest {
     if (!initComplete) {
       init();
     }
+
+    ElementStyle.defaultFontSize = fontSize.toDouble();
+
     EpubParser parser = GetIt.instance.get<EpubParser>();
     try {
       parser.openBook(book);
@@ -80,11 +84,9 @@ class ParseChapterRequest extends IsolateParseRequest {
           rightIndent: pageSize.rightIndent);
       final EpubChapter chapter = await parser.parseChapter(id, href);
       final ChapterResponse response = ChapterResponse(chapter: chapter);
-      //uiPort.send(response);
       return response;
     } catch (e, s) {
       IsolateParseResponse response = IsolateParseResponse(error: e.toString(), stacktrace: s.toString());
-      //uiPort.send(response);
       return response;
     }
   }

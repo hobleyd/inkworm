@@ -9,7 +9,6 @@ import '../../models/page_size.dart';
 import '../styles/element_style.dart';
 import '../styles/style.dart';
 import 'epub_parser.dart';
-import 'font_management.dart';
 import 'extensions.dart';
 import 'isolates/worker_slot.dart';
 
@@ -137,7 +136,7 @@ class CssParser {
       return fontSize;
     }
 
-    return null;
+    return preferredSize;
   }
 
   FontWeight getFontWeight(String fontWeight) {

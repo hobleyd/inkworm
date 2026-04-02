@@ -18,20 +18,15 @@ class OpenEpubRequest extends IsolateParseRequest {
   int?      fontSize;
   int?      initialChapter;
   PageSize? pageSize;
-  bool      isolatesReady = false;
-
-  bool get requestComplete => css != null && fontSize != null && initialChapter != null && pageSize != null && isolatesReady;
 
   OpenEpubRequest({super.id=1, required super.href, this.css, this.fontSize, this.pageSize, this.initialChapter});
 
-  bool update({String? href, String? css, int? fontSize, int? initialChapter, PageSize? pageSize}) {
+  void update({String? href, String? css, int? fontSize, int? initialChapter, PageSize? pageSize}) {
     this.css            = css            ?? this.css;
     this.fontSize       = fontSize       ?? this.fontSize;
     super.href          = href           ?? this.href;
     this.initialChapter = initialChapter ?? this.initialChapter;
     this.pageSize       = pageSize       ?? this.pageSize;
-
-    return requestComplete;
   }
 
   @override
