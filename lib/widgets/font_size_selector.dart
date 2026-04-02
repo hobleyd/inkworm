@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get_it/get_it.dart';
+import 'package:inkworm/providers/book_state_management.dart';
 
 
+import '../models/book_state.dart';
 import '../models/page_size.dart';
 import '../models/reading_progress.dart';
 import '../providers/epub.dart';
@@ -24,8 +26,9 @@ class _FontSize extends ConsumerState<FontSize> {
   @override
   Widget build(BuildContext context) {
     PageSize size = GetIt.instance.get<PageSize>();
-    var progressAsync = ref.watch(progressProvider);
+    BookState bookState = ref.watch(bookStateManagementProvider);
 
+    var progressAsync = ref.watch(progressProvider);
     return progressAsync.when(error: (error, stackTrace) {
       return const Text("It's time to panic; we can't make any progress!");
     }, loading: () {
@@ -43,7 +46,11 @@ class _FontSize extends ConsumerState<FontSize> {
           Row(mainAxisAlignment: MainAxisAlignment.center, children: _getSizedFontRow(12, 6, progress),),
           SizedBox(height: 12),
           Row(mainAxisAlignment: MainAxisAlignment.center, children: _getSizedFontRow(18, 6, progress),),
-          DefaultFontSizeCheckbox(selectedFontSize: progress.fontSize,)
+          DefaultFontSizeCheckbox(selectedFontSize: progress.fontSize,),
+          if (bookState.hasNone(BookState.complete)) Padding(
+            padding: EdgeInsetsGeometry.only(left: size.leftIndent, bottom: 12),
+            child: Text("Please wait until Book parsing is complete before changing font size.", style: Theme.of(context).textTheme.labelMedium),
+          ),
         ],
       );
     });
@@ -56,11 +63,15 @@ class _FontSize extends ConsumerState<FontSize> {
         padding: const EdgeInsets.symmetric(horizontal: 4),
         child: ElevatedButton(
           onPressed: () {
-            ref.read(themeProvider.notifier).setFontSize(fontSize.toDouble());
-            setState(() {
-              this.fontSize = fontSize;
-            });
+            BookState bookState = ref.read(bookStateManagementProvider);
+            if (bookState.hasAny(BookState.complete)) {
+              ref.read(themeProvider.notifier).setFontSize(fontSize.toDouble());
+              setState(() {
+                this.fontSize = fontSize;
+              });
+
             _setFontSize(progress.copyWith(book: progress.book, fontSize: fontSize, chapterNumber: progress.chapterNumber, pageNumber: 0));
+            }
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: progress.fontSize == fontSize ? Colors.blue : Colors.grey[300],
@@ -74,7 +85,9 @@ class _FontSize extends ConsumerState<FontSize> {
 
   void _setFontSize(ReadingProgress progress) async {
     // Reset page to 0 as they'll change with a different font size.
-    await ref.read(progressProvider.notifier).setProgress(progress.book, progress.fontSize, progress.chapterNumber, progress.pageNumber);
-    ref.read(epubProvider.notifier).resetBook(progress.book);
+
+      await ref.read(progressProvider.notifier).setProgress(progress.book, progress.fontSize, progress.chapterNumber, progress.pageNumber);
+      ref.read(epubProvider.notifier).resetBook(progress.book);
+
   }
 }
