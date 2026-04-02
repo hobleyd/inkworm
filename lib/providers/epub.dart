@@ -1,7 +1,5 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:get_it/get_it.dart';
-import 'package:inkworm/providers/progress.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../database/reading_db.dart';
@@ -16,6 +14,7 @@ import '../models/page_size.dart';
 import '../models/page_size_isolate_listener.dart';
 import '../models/reading_progress.dart';
 import 'book_state_management.dart';
+import 'progress.dart';
 
 part 'epub.g.dart';
 
@@ -26,7 +25,6 @@ class Epub extends _$Epub implements IsolateListener {
 
   late List<EpubChapter> _chapters;
   late int _spineLength;
-  late Stopwatch _stopwatch;
 
   bool get parsed => _chapters.where((chapter) => chapter.pages.isEmpty).isEmpty;
 
@@ -59,11 +57,9 @@ class Epub extends _$Epub implements IsolateListener {
 
   @override
   Future<void> onIsolatesInitialised() async {
-    _epubRequest.isolatesReady = true;
+    Future(() => ref.read(bookStateManagementProvider.notifier).set(BookState.initialised));
 
-    if (_epubRequest.requestComplete) {
-      openBookInIsolate();
-    }
+    openBookInIsolate();
   }
 
   @override
@@ -75,17 +71,20 @@ class Epub extends _$Epub implements IsolateListener {
       ref.read(bookStateManagementProvider.notifier).set(BookState.complete);
       _worker?.close();
       _worker = null;
-
-      _stopwatch.stop();
-      debugPrint('parsing took: ${_stopwatch.elapsed.inMilliseconds} milliseconds');
     }
   }
 
   // Called when the size changes and is passed to the parsing isolate.
   @override
   void onSizeChanged(PageSize size) async {
-    if (_epubRequest.update(pageSize: size)) {
-      openBookInIsolate();
+    Future(() => ref.read(bookStateManagementProvider.notifier).set(BookState.sized));
+    _epubRequest.update(pageSize: size);
+
+    var bookState = ref.read(bookStateManagementProvider);
+    if (bookState.hasNone(BookState.initialised)) {
+      if (bookState.hasAll(BookState.progress)) {
+        openBook(state.uri);
+      }
     }
   }
 
@@ -102,11 +101,10 @@ class Epub extends _$Epub implements IsolateListener {
   }
 
   void openBookInIsolate() {
-    // Due to the async nature of Riverpod updates, this can get called more than once; ignore subsequent calls unless we have tweaked state to pay attention.
+    // Due to the async nature of Riverpod updates, this can get called more than once; ignore subsequent calls unless we have tweaked state
+    // to pay attention.
     if (ref.read(bookStateManagementProvider).hasNone(BookState.parsing|BookState.complete)) {
-      ref.read(bookStateManagementProvider.notifier).set(BookState.parsing);
-      debugPrint('starting timer for parsing');
-      _stopwatch = Stopwatch()..start();
+      Future(() => ref.read(bookStateManagementProvider.notifier).set(BookState.parsing));
 
       _worker?.openBook(_epubRequest);
     }
@@ -117,14 +115,16 @@ class Epub extends _$Epub implements IsolateListener {
     ImageCache cache = GetIt.instance.get<ImageCache>();
     cache.clear();
 
-    _worker = null;
-    _epubRequest = OpenEpubRequest(href: "", pageSize: _epubRequest.pageSize,);
+    final progress = await ref.read(readingDBProvider.notifier).getReadingProgress(book);
+    ref.read(progressProvider.notifier).setProgress(book, progress.fontSize, progress.chapterNumber, progress.pageNumber);
+
+    _epubRequest = OpenEpubRequest(href: "", pageSize: _epubRequest.pageSize, fontSize: progress.fontSize, initialChapter: progress.chapterNumber);
     ref.read(bookStateManagementProvider.notifier).clear();
 
     state = EpubBook(uri: book, author: "", title: "", chapters: []);
 
-    final progress = await ref.read(readingDBProvider.notifier).getReadingProgress(book);
-    ref.read(progressProvider.notifier).setProgress(book, progress.fontSize, progress.chapterNumber, progress.pageNumber);
+    _worker = null;
+    openBook(book);
   }
 
   void setError(String description, StackTrace stackTrace) {
@@ -132,13 +132,18 @@ class Epub extends _$Epub implements IsolateListener {
   }
 
   void setProgress(ReadingProgress progress) {
+    Future(() => ref.read(bookStateManagementProvider.notifier).set(BookState.progress));
+    _epubRequest.update(fontSize: progress.fontSize, initialChapter: progress.chapterNumber,);
+
     if (state.uri != progress.book) {
       state = state.copyWith(uri: progress.book);
     }
 
-    if (_epubRequest.update(fontSize: progress.fontSize, initialChapter: progress.chapterNumber,)) {
-      openBookInIsolate();
+    var bookState = ref.read(bookStateManagementProvider);
+    if (bookState.hasNone(BookState.initialised)) {
+      if (bookState.hasAll(BookState.sized)) {
+        openBook(progress.book);
+      }
     }
-
   }
 }
