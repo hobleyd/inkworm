@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:get_it/get_it.dart';
 
-import '../models/book_state.dart';
-import '../providers/book_state_management.dart';
 import '../providers/epub.dart';
 import '../models/epub_book.dart';
 import '../models/reading_progress.dart';
 import '../providers/progress.dart';
+import '../providers/theme.dart';
 import '../screens/settings.dart';
 import 'page_renderer.dart';
 
@@ -28,18 +26,7 @@ class PageCanvas extends ConsumerWidget {
           return const Center(child: CircularProgressIndicator());
         },
         data: (ReadingProgress progress) {
-          BookState bookState = ref.watch(bookStateManagementProvider);
-
-          if (book.uri.isNotEmpty && book.uri != progress.book) {
-            progress = GetIt.instance.get<ReadingProgress>();
-            progress.book = book.uri;
-            progress.chapterNumber = 0;
-            progress.pageNumber = 0;
-
-            ref.read(progressProvider.notifier).setProgress(book.uri, progress.fontSize, 0, 0);
-          } else if (book.uri.isEmpty && progress.book.isNotEmpty && bookState.hasAll(BookState.initialised|BookState.progress)) {
-            Future(() => ref.read(epubProvider.notifier).openBook(progress.book));
-          }
+          Future(() => ref.read(themeProvider.notifier).setFontSize(progress.fontSize.toDouble()));
 
           // This is required to work around Flutter's desire not to repaint if nothing has changed; even though it has (from
           // an isolate).
