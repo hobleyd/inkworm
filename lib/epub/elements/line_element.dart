@@ -18,6 +18,6 @@ abstract class LineElement {
 
   @override
   String toString() {
-    return '$element';
+    return '($width/$height) $element';
   }
 }
