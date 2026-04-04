@@ -13,13 +13,10 @@ class ProgressBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // While we don't do anything with bookState, it is used to trigger the rebuild on change so that we can drive the
-    // UI updates off the notifier, below.
     BookState bookState = ref.watch(bookStateManagementProvider);
+    EpubBook       book = ref.watch(epubProvider);
 
     String chapterProgress = 'Analysing the eBook; please be patient...';
-    String title = '';
-    String author = '';
 
     if (bookState.hasAll(BookState.complete)) {
       var progressAsync = ref.watch(progressProvider);
@@ -32,20 +29,40 @@ class ProgressBar extends ConsumerWidget {
           : '';
       }
     }
-    if (bookState.hasAll(BookState.details)) {
-      EpubBook book = ref.watch(epubProvider);
-      // TODO: this should be dynamic based on screen width.
-      title = book.title.length > 30 ? '${book.title.substring(0, 27)}...' : book.title;
-      author = book.author;
-    }
 
+    final Widget left   = Text(book.title, overflow: TextOverflow.ellipsis, textAlign: TextAlign.left, style: Theme.of(context).textTheme.labelSmall);
+    final Widget centre = Text(chapterProgress, textAlign: TextAlign.center, style: Theme.of(context).textTheme.labelSmall);
+    final Widget right  = Text(book.author, overflow: TextOverflow.ellipsis, textAlign: TextAlign.right, style: Theme.of(context).textTheme.labelSmall);
     return Padding(
       padding: EdgeInsets.fromLTRB(12, 3, 12, 3),
       child: Stack(
+        alignment: Alignment.center,
         children: [
-          Align(alignment: Alignment.centerLeft, child: Text(title, style: Theme.of(context).textTheme.labelSmall)),
-          Align(alignment: Alignment.center, child: Text(chapterProgress, textAlign: TextAlign.center, style: Theme.of(context).textTheme.labelSmall)),
-          Align(alignment: Alignment.centerRight, child: Text(author, textAlign: TextAlign.right, style: Theme.of(context).textTheme.labelSmall)),
+          centre,
+          Row(
+            children: [
+              Expanded(
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: ClipRect(
+                    child: left,
+                  ),
+                ),
+              ),
+              Opacity(
+                opacity: 0,
+                child: IgnorePointer(child: centre),
+              ),
+              Expanded(
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: ClipRect(
+                    child: right,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
