@@ -24,15 +24,15 @@ class Inkworm extends ConsumerStatefulWidget {
 }
 
 class _Inkworm extends ConsumerState<Inkworm> {
-  late StreamSubscription _intentSub;
+  StreamSubscription? _intentSub;
   String bookPath = "";
+  bool _startupResolved = false;
 
   // Shared channel name — must match the C++ side.
   static const _fileChannel = MethodChannel('au.com.sharpblue.inkworm/file');
 
   @override
   Widget build(BuildContext context) {
-    EpubBook book = ref.watch(epubProvider);
     var asyncDb = ref.watch(readingDBProvider);
 
     MediaQueryData data = MediaQueryData.fromView(View.maybeOf(context)!);
@@ -44,6 +44,16 @@ class _Inkworm extends ConsumerState<Inkworm> {
     }, loading: () {
       return const Center(child: CircularProgressIndicator());
     }, data: (var db) {
+      if (!_startupResolved) {
+        return const Scaffold(
+          appBar: null,
+          body: SafeArea(
+            child: Center(child: CircularProgressIndicator()),
+          ),
+        );
+      }
+
+      EpubBook book = ref.watch(epubProvider);
       return Scaffold(
         appBar: null,
         body: SafeArea(
@@ -64,7 +74,7 @@ class _Inkworm extends ConsumerState<Inkworm> {
   @override
   void dispose() {
     if (Platform.isAndroid) {
-      _intentSub.cancel();
+      _intentSub?.cancel();
     }
     super.dispose();
   }
@@ -72,27 +82,39 @@ class _Inkworm extends ConsumerState<Inkworm> {
   @override
   void initState() {
     super.initState();
+    _resolveStartupBook();
+  }
 
+  Future<void> _resolveStartupBook() async {
     switch (Platform.operatingSystem) {
       case "android":
-        _handleAndroidIntent();
+        await _handleAndroidIntent();
         break;
       case "macos":
-        _handleMacOSIntent();
+        await _handleMacOSIntent();
         break;
       case "windows":
-        _handleWindowsIntent();
+        await _handleWindowsIntent();
         break;
       case "linux":
-        _handleLinuxIntent();
+        await _handleLinuxIntent();
         break;
       default:
-        _resetBook(Platform.environment['EBOOK']!);
+        final String? book = Platform.environment['EBOOK'];
+        if (book != null && book.isNotEmpty) {
+          _resetBook(book);
+        }
         break;
+    }
+
+    if (mounted) {
+      setState(() {
+        _startupResolved = true;
+      });
     }
   }
 
-  void _handleAndroidIntent() async {
+  Future<void> _handleAndroidIntent() async {
     // Listen for Intents coming from outside the app while the app is in the memory.
     _intentSub = ReceiveSharingIntent.instance.getMediaStream().listen((value) {
       if (value.isNotEmpty) {
@@ -103,13 +125,12 @@ class _Inkworm extends ConsumerState<Inkworm> {
     },);
 
     // Get Intents coming from outside the app while the app is closed.
-    ReceiveSharingIntent.instance.getInitialMedia().then((value) {
-      if (value.isNotEmpty) {
-        _resetBook(value.first.path);
-      }
+    final value = await ReceiveSharingIntent.instance.getInitialMedia();
+    if (value.isNotEmpty) {
+      _resetBook(value.first.path);
+    }
 
-      ReceiveSharingIntent.instance.reset();
-    });
+    ReceiveSharingIntent.instance.reset();
   }
 
   Future<void> _handleLinuxIntent() async {

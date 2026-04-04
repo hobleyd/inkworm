@@ -31,6 +31,7 @@ class ProgressBar extends ConsumerWidget {
     final Widget left   = Text(book.title, overflow: TextOverflow.ellipsis, textAlign: TextAlign.left, style: Theme.of(context).textTheme.labelSmall);
     final Widget centre = Text(chapterProgress, textAlign: TextAlign.center, style: Theme.of(context).textTheme.labelSmall);
     final Widget right  = Text(book.author, overflow: TextOverflow.ellipsis, textAlign: TextAlign.right, style: Theme.of(context).textTheme.labelSmall);
+
     return Padding(
       padding: EdgeInsets.fromLTRB(12, 3, 12, 3),
       child: Stack(

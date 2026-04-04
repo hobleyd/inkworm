@@ -12,7 +12,8 @@ class Progress extends _$Progress  {
   @override
   Future <ReadingProgress> build() async {
     var readingHistory = ref.read(readingDBProvider.notifier);
-    ReadingProgress saved = await readingHistory.getReadingProgress(null);
+    final requestedBook = ref.read(epubProvider).uri;
+    ReadingProgress saved = await readingHistory.getReadingProgress(requestedBook.isNotEmpty ? requestedBook : null,);
 
     ReadingProgress progress = GetIt.instance.get<ReadingProgress>();
     progress.book          = saved.book;

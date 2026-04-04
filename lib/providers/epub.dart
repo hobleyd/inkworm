@@ -127,13 +127,13 @@ class Epub extends _$Epub implements IsolateListener {
     ImageCache cache = GetIt.instance.get<ImageCache>();
     cache.clear();
 
+    ref.read(bookStateManagementProvider.notifier).clear();
+    state = EpubBook(uri: book, author: "", title: "", chapters: []);
+
     final progress = await ref.read(readingDBProvider.notifier).getReadingProgress(book);
     ref.read(progressProvider.notifier).setProgress(book, progress.fontSize, progress.chapterNumber, progress.pageNumber);
 
     _epubRequest = OpenEpubRequest(href: "", pageSize: _epubRequest.pageSize, fontSize: progress.fontSize, initialChapter: progress.chapterNumber);
-    ref.read(bookStateManagementProvider.notifier).clear();
-
-    state = EpubBook(uri: book, author: "", title: "", chapters: []);
 
     _worker = null;
     openBook(book);
