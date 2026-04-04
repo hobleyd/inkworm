@@ -105,6 +105,34 @@ void main() {
       });
     });
 
+    group('pagination', () {
+      test('uses max line height when checking if content fits on the page', () {
+        final Page page = Page();
+        page.pageHeight = 80;
+        page.currentBottomYPos = 70;
+
+        final Line line = Line();
+        line.height = 10;
+        line.maxHeight = 20;
+
+        expect(line.lineHeight, 10);
+        expect(line.maxLineHeight, 20);
+        expect(page.willFitHeight(line), isFalse);
+      });
+
+      test('re-bases drop caps height when moving content to a new page', () {
+        buildPage.currentPage.pageHeight = 80;
+        buildPage.currentPage.currentBottomYPos = 30;
+        buildPage.currentPage.dropCapsXPosition = 18;
+        buildPage.currentPage.dropCapsYPosition = 54;
+
+        buildPage.addPage();
+
+        expect(buildPage.currentPage.dropCapsXPosition, 18);
+        expect(buildPage.currentPage.dropCapsYPosition, 24);
+      });
+    });
+
     group('addText', () {
       test('check for lines, words and separators', () {
         final TextContent content = TextContent(

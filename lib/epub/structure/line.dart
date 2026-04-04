@@ -30,7 +30,7 @@ class Line {
   double get width              => leftIndents + elements.fold(0, (sum, item) => sum + item.width);
 
   set height(double height)     => lineHeight = max(height, lineHeight);
-  set maxHeight(double height)  => lineHeight = max(height, maxLineHeight);
+  set maxHeight(double height)  => maxLineHeight = max(height, maxLineHeight);
   set yPos(double pos)          => yPosOnPage = pos;
 
   Line() {

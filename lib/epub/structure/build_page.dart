@@ -135,10 +135,13 @@ class BuildPage implements LineListener {
     _pageListener?.addPage(currentPage);
 
     PageSize size = GetIt.instance.get<PageSize>();
+    final double remainingDropCapsHeight = currentPage.dropCapsYPosition > currentPage.currentBottomYPos
+        ? currentPage.dropCapsYPosition - currentPage.currentBottomYPos
+        : 0;
 
     Page newPage = Page();
     newPage.dropCapsXPosition = currentPage.dropCapsXPosition;
-    newPage.dropCapsYPosition = currentPage.dropCapsYPosition;
+    newPage.dropCapsYPosition = remainingDropCapsHeight;
     newPage.pageHeight        = size.canvasHeight;
 
     currentPage = newPage;
