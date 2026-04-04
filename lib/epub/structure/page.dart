@@ -30,16 +30,16 @@ class Page {
     double footnotesYPos = pageHeight + BuildPage.footnoteMargin;
     for (Line l in footnotes) {
       l.yPos = footnotesYPos;
-      footnotesYPos += l.maxHeight;
+      footnotesYPos += l.lineHeight;
     }
   }
 
   void addLine(Line line) {
     lines.add(line);
-    currentBottomYPos += line.maxHeight - line.baselineAdjust;
+    currentBottomYPos += line.lineHeight - line.baselineAdjust;
   }
 
   bool willFitHeight(Line line) {
-    return (currentBottomYPos + line.maxHeight) <= pageHeight;
+    return (currentBottomYPos + line.maxLineHeight) <= pageHeight;
   }
 }

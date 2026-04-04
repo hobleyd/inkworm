@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:isolate';
 
 import 'package:get_it/get_it.dart';
+import 'package:inkworm/epub/parser/isolates/requests/book_details_request.dart';
 import 'package:inkworm/epub/parser/isolates/responses/opened_response.dart';
 import 'package:xml/xml.dart';
 
@@ -30,8 +31,12 @@ class IsolateWorker {
   }
 
   void close() {
-    sendToIsolatePort.send(ExitRequest(id: -1, href: ""));
+    sendToIsolatePort.send(ExitRequest(href: ""));
     // TODO: Clear the Image and Text measurements cache.
+  }
+
+  void getBookDetails(String book) {
+    sendToIsolatePort.send(BookDetailsRequest(href: book));
   }
 
   void openBook(OpenEpubRequest request) {
@@ -84,7 +89,7 @@ class IsolateWorker {
   static Future<void> _parseChapter(SendPort port, OpenEpubRequest request, int chapterIndex, String href, Map<String, CssDeclarations> css) async {
     if (isolateCores.isNotEmpty) {
       WorkerSlot slot = isolateCores.removeAt(0);
-      IsolateParseResponse response = await slot.process(ParseChapterRequest(id: chapterIndex, href: href, book: request.href, pageSize: request.pageSize!, css: css, fontSize: request.fontSize ?? 12));
+      IsolateParseResponse response = await slot.process(ParseChapterRequest(chapterNumber: chapterIndex, href: href, book: request.href, pageSize: request.pageSize!, css: css, fontSize: request.fontSize ?? 12));
       isolateCores.add(slot);
       port.send(response);
     } else {
@@ -131,15 +136,20 @@ class IsolateWorker {
     _createPool(port);
 
     receiveFromUIThreadPort.listen((dynamic msg) async {
-      if (msg is OpenEpubRequest) {
-        var response = await msg.process(port);
-        // TODO: Pass default CSS to the child isolates; then get the combined CSS back again.
-        _parseChapters(port, msg, (response as OpenedResponse).css);
-      } else if (msg is ExitRequest) {
-        for (var core in isolateCores) {
-          core.process(msg);
-        }
-        msg.process(port);
+      switch (msg) {
+        case OpenEpubRequest oer:
+          var response = await msg.process(port);
+          // TODO: Pass default CSS to the child isolates; then get the combined CSS back again.
+          _parseChapters(port, msg, (response as OpenedResponse).css);
+          break;
+        case ExitRequest er:
+          for (var core in isolateCores) {
+            core.process(msg);
+          }
+          msg.process(port);
+          break;
+        default:
+          msg.process(port);
       }
     });
   }

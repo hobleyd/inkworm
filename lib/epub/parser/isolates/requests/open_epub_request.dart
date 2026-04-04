@@ -19,7 +19,7 @@ class OpenEpubRequest extends IsolateParseRequest {
   int?      initialChapter;
   PageSize? pageSize;
 
-  OpenEpubRequest({super.id=1, required super.href, this.css, this.fontSize, this.pageSize, this.initialChapter});
+  OpenEpubRequest({required super.href, this.css, this.fontSize, this.pageSize, this.initialChapter});
 
   void update({String? href, String? css, int? fontSize, int? initialChapter, PageSize? pageSize}) {
     this.css            = css            ?? this.css;
@@ -35,7 +35,6 @@ class OpenEpubRequest extends IsolateParseRequest {
     if (!GetIt.instance.isRegistered<PageSize>()) {
       GetIt.instance.registerSingleton<PageSize>(PageSize());
       GetIt.instance.registerSingleton<CssParser>(CssParser());
-      GetIt.instance.registerSingleton<EpubParser>(EpubParser());
       GetIt.instance.registerSingleton<PageSizeIsolateListener>(PageSizeIsolateListener());
     }
   }
@@ -51,12 +50,6 @@ class OpenEpubRequest extends IsolateParseRequest {
         pixelDensity: pageSize!.pixelDensity,
         leftIndent:   pageSize!.leftIndent,
         rightIndent:  pageSize!.rightIndent);
-
-    EpubParser parser = GetIt.instance.get<EpubParser>();
-    parser.openBook(href);
-
-    XmlDocument opf = parser.getOPF();
-    uiPort.send(BookDetailsResponse(author: opf.author, title: opf.title, length: opf.spine.length));
 
     CssParser cssParser = GetIt.instance.get<CssParser>();
     cssParser.parseCss(css!);

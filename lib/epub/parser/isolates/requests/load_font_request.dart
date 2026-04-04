@@ -14,7 +14,7 @@ class LoadFontRequest extends IsolateParseRequest {
 
   late Uint8List fontBytes;
 
-  LoadFontRequest({super.id=1, required super.href, required this.fontFamily, required this.port}) {
+  LoadFontRequest({required super.href, required this.fontFamily, required this.port}) {
     // Knowing how the getBytes function works, strip out the relative paths as they won't be needed. Purists will disagree ;-)
     if (href.startsWith('url')) {
       href = href.substring(4, href.length-1);

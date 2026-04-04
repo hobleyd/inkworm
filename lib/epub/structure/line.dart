@@ -14,7 +14,8 @@ class Line {
 
   double baselineAdjust = 0;
   double dropCapsIndent = 0;
-  double maxHeight      = 0;
+  double lineHeight     = 0;
+  double maxLineHeight  = 0;
   double leftIndent     = 0;
   double rightIndent    = 0;
   double textIndent     = 0;
@@ -28,7 +29,8 @@ class Line {
   double get leftIndents        => leftIndent + textIndent + dropCapsIndent;
   double get width              => leftIndents + elements.fold(0, (sum, item) => sum + item.width);
 
-  set height(double height)     => maxHeight = max(height, maxHeight);
+  set height(double height)     => lineHeight = max(height, lineHeight);
+  set maxHeight(double height)  => lineHeight = max(height, maxLineHeight);
   set yPos(double pos)          => yPosOnPage = pos;
 
   Line() {
@@ -91,7 +93,7 @@ class Line {
 
   @override
   String toString() {
-    String result = "YP: $yPosOnPage: YP+H: ${yPosOnPage + maxHeight}: WI: $width: ${alignment.name}: LI: $leftIndent: RI: $rightIndent: TI: $textIndent: DCI: $dropCapsIndent: ";
+    String result = "YP: $yPosOnPage: YP+H: ${yPosOnPage + lineHeight}: WI: $width: ${alignment.name}: LI: $leftIndent: RI: $rightIndent: TI: $textIndent: DCI: $dropCapsIndent: ";
     for (var el in elements) {
       result += '$el';
     }
@@ -106,5 +108,5 @@ class Line {
 }
 
 extension LineListMetrics on List<Line> {
-  double get totalHeight => fold(0.0, (sum, line) => sum + line.maxHeight);
+  double get totalHeight => fold(0.0, (sum, line) => sum + line.lineHeight);
 }

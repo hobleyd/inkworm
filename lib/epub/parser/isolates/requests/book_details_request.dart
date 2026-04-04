@@ -1,28 +1,22 @@
 import 'dart:isolate';
 
 import 'package:get_it/get_it.dart';
-import 'package:inkworm/epub/parser/isolates/responses/opened_response.dart';
 import 'package:xml/xml.dart';
 
-import '../../../../models/page_size.dart';
-import '../../../../models/page_size_isolate_listener.dart';
 import '../../../interfaces/isolate_parse_request.dart';
 import '../../../interfaces/isolate_parse_response.dart';
-import '../../css_parser.dart';
 import '../../epub_parser.dart';
 import '../../extensions.dart';
 import '../responses/book_details_response.dart';
 
-class ParseCssRequest extends IsolateParseRequest {
-  final String css;
-
-  ParseCssRequest({super.id=1, super.href="",, required this.css});
+class BookDetailsRequest extends IsolateParseRequest {
+  BookDetailsRequest({required super.href,});
 
   @override
   void init() {
     // TODO: why is this being called more than once?
-    if (!GetIt.instance.isRegistered<CssParser>()) {
-      GetIt.instance.registerSingleton<CssParser>(CssParser());
+    if (!GetIt.instance.isRegistered<EpubParser>()) {
+      GetIt.instance.registerSingleton<EpubParser>(EpubParser());
     }
   }
 
@@ -30,9 +24,12 @@ class ParseCssRequest extends IsolateParseRequest {
   Future<IsolateParseResponse> process(SendPort uiPort) async {
     init();
 
-    CssParser cssParser = GetIt.instance.get<CssParser>();
-    cssParser.parseCss(css);
+    EpubParser parser = GetIt.instance.get<EpubParser>();
+    parser.openBook(href);
 
-    return OpenedResponse(css: cssParser.css);
+    XmlDocument opf = parser.getOPF();
+    uiPort.send(BookDetailsResponse(author: opf.author, title: opf.title, length: opf.spine.length));
+
+    return IsolateParseResponse();
   }
 }

@@ -26,12 +26,13 @@ import '../../extensions.dart';
 import '../responses/chapter_response.dart';
 
 class ParseChapterRequest extends IsolateParseRequest {
-  final String book;
-  final int fontSize;
+  final String   book;
+  final int      chapterNumber;
+  final int      fontSize;
   final PageSize pageSize;
   final Map<String, CssDeclarations> css;
 
-  ParseChapterRequest({required super.id, required super.href, required this.book, required this.pageSize, required this.css, required this.fontSize});
+  ParseChapterRequest({required super.href, required this.book, required this.chapterNumber, required this.pageSize, required this.css, required this.fontSize});
 
   bool initComplete = false;
 
@@ -82,7 +83,7 @@ class ParseChapterRequest extends IsolateParseRequest {
           pixelDensity: pageSize.pixelDensity,
           leftIndent:   pageSize.leftIndent,
           rightIndent:  pageSize.rightIndent);
-      final EpubChapter chapter = await parser.parseChapter(id, href);
+      final EpubChapter chapter = await parser.parseChapter(chapterNumber, href);
       final ChapterResponse response = ChapterResponse(chapter: chapter);
       return response;
     } catch (e, s) {

@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 import 'package:injectable/injectable.dart';
 
@@ -117,7 +116,7 @@ class BuildPage implements LineListener {
     buildLine.addLine();
     buildLine.setAlignment(line.alignment);
 
-    if (currentPage.currentBottomYPos + line.maxHeight < currentPage.dropCapsYPosition) {
+    if (currentPage.currentBottomYPos + line.lineHeight < currentPage.dropCapsYPosition) {
       buildLine.dropCapsIndent = currentPage.dropCapsXPosition;
     } else {
       currentPage.dropCapsXPosition = 0;

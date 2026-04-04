@@ -12,7 +12,7 @@ class MeasureImageRequest extends IsolateParseRequest {
   final Uint8List imageBytes;
   final SendPort port;
 
-  MeasureImageRequest({super.id=1, required super.href, required this.imageBytes, required this.port});
+  MeasureImageRequest({required super.href, required this.imageBytes, required this.port});
 
   @override
   void init() {}

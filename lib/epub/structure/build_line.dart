@@ -16,7 +16,7 @@ class BuildLine {
 
   bool   get isEmpty    =>  currentLine.isEmpty;
   bool   get isNotEmpty => !currentLine.isEmpty;
-  double get maxHeight  =>  currentLine.maxHeight;
+  double get maxHeight  =>  currentLine.lineHeight;
 
   set dropCapsIndent(double indent)        => currentLine.dropCapsIndent = indent;
   set lineListener(LineListener? listener) => _lineListener = listener;
@@ -38,13 +38,14 @@ class BuildLine {
     // But if we do need an adjustment, then we calculate it the second time through when
     // we know the actual height.
     if (alignmentToBaselineRequired) {
-      currentLine.baselineAdjust = currentLine.maxHeight - e.height;
+      currentLine.baselineAdjust = currentLine.lineHeight - e.height;
       alignmentToBaselineRequired = false;
     } else if (e.alignToBaseline) {
       // We need to adjust the yPos of both the element and the line if we are aligning to the baseline.
       alignmentToBaselineRequired = true;
     }
 
+    currentLine.maxHeight = e.height;
     if (!e.isDropCaps) {
       // Only adjust the line height if this is not a dropcaps element. For obvious reasons. Given the use of dropcaps I can't
       // imagine it will be possible that this is the only thing on the line. On the other hand. HTML. Sigh.
@@ -53,7 +54,7 @@ class BuildLine {
       if (!currentLine.isEmpty && currentLine.elements.first is WordElement) {
         final WordElement first = currentLine.elements.first as WordElement;
         if (first.isDropCaps) {
-          (currentLine.elements.first as WordElement).dropCapsAdjust = currentLine.maxHeight - first.word.descent + 2;
+          (currentLine.elements.first as WordElement).dropCapsAdjust = currentLine.lineHeight - first.word.descent + 2;
         }
       }
     }

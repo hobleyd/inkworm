@@ -13,7 +13,7 @@ class MeasureTextRequest extends IsolateParseRequest {
   final SendPort port;
 
   // TODO: remove id and href from the abstract super class?
-  MeasureTextRequest({super.id=1, required super.href, required this.style, required this.port});
+  MeasureTextRequest({required super.href, required this.style, required this.port});
 
   @override
   void init() {}
