@@ -21,6 +21,7 @@ class PageCanvas extends ConsumerStatefulWidget {
 }
 
 class _PageCanvas extends ConsumerState<PageCanvas> {
+  static const EdgeInsets _pagePadding = EdgeInsets.only(top: 6, bottom: 6);
   int lastPageNumber = -1;
 
   @override
@@ -53,10 +54,10 @@ class _PageCanvas extends ConsumerState<PageCanvas> {
           return LayoutBuilder(
               builder: (context, constraints) {
                 final pageSize = GetIt.instance.get<PageSize>();
-                pageSize.update(canvasWidth: constraints.maxWidth, canvasHeight: constraints.maxHeight,);
+                pageSize.update(canvasWidth: constraints.maxWidth, canvasHeight: constraints.maxHeight - _pagePadding.vertical,);
 
                 return Container(
-                  padding: const EdgeInsets.only(top: 6, bottom: 6),
+                  padding: _pagePadding,
                   child: GestureDetector(
                     onTapUp: (TapUpDetails details) {
                       double screenWidth = MediaQuery.of(context).size.width;
