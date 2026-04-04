@@ -20,8 +20,6 @@ class ProgressBar extends ConsumerWidget {
 
     if (bookState.hasAll(BookState.complete)) {
       var progressAsync = ref.watch(progressProvider);
-      EpubBook book = ref.watch(epubProvider);
-
       if (progressAsync.hasValue) {
         ReadingProgress progress = progressAsync.value!;
         chapterProgress = progress.chapterNumber > 0
