@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:injectable/injectable.dart';
 import 'package:xml/xml.dart';
 
