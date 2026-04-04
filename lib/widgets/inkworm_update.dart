@@ -4,6 +4,8 @@ import 'package:android_package_installer/android_package_installer.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:inkworm/providers/epub.dart';
+import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 
 import '../../models/version_check.dart';
@@ -70,17 +72,35 @@ class _InkwormUpdate extends ConsumerState<InkwormUpdate> {
       downloading = true;
     });
 
-    String apkPath = "${(await getTemporaryDirectory()).path}/$package}";
-    await Dio().download(url, apkPath);
+    try {
+      final tempDir = await getTemporaryDirectory();
+      final apkPath = path.join(tempDir.path, package);
 
-    setState(() {
-      downloading = false;
-    });
+      await Dio().download(url, apkPath);
 
-    int? statusCode = await AndroidPackageInstaller.installApk(apkFilePath: apkPath);
-    if (statusCode != null) {
-      PackageInstallerStatus installationStatus = PackageInstallerStatus.byCode(statusCode);
-      // TODO: decide how to deal with errors, here.
+      final int? statusCode = await AndroidPackageInstaller.installApk(
+        apkFilePath: apkPath,
+      );
+
+      if (statusCode == null) {
+        ref.read(epubProvider.notifier).setError('Android did not return an installation result.', StackTrace.current);
+        return;
+      }
+
+      final installationStatus = PackageInstallerStatus.byCode(statusCode);
+      if (installationStatus != PackageInstallerStatus.success) {
+        ref.read(epubProvider.notifier).setError('Update install failed: ${installationStatus.name}.', StackTrace.current);
+      }
+    } on DioException catch (error) {
+      ref.read(epubProvider.notifier).setError('Update download failed: ${error.message ?? 'network error'}.', StackTrace.current);
+    } catch (error) {
+      ref.read(epubProvider.notifier).setError('Update failed: $error', StackTrace.current);
+    } finally {
+      if (mounted) {
+        setState(() {
+          downloading = false;
+        });
+      }
     }
   }
 }
