@@ -8,8 +8,8 @@ class BookState {
   static const int initialised = 1 << 1; // 0000 0010 - bi-directional communication configured between the main and parsing isolate(s)
   static const int sized       = 1 << 2; // 0000 0100 - PageSize received from widget build
   static const int progress    = 1 << 3; // 0000 1000 - ReadingProgress retrieved from DB
-  static const int parsing     = 1 << 4; // 0001 0000 - Chapter parsing commenced
-  static const int details     = 1 << 5; // 0010 0000 - Book details retrieved.
+  static const int details     = 1 << 4; // 0001 0000 - Chapter parsing commenced
+  static const int parsing     = 1 << 5; // 0010 0000 - Book details retrieved.
   static const int complete    = 1 << 6; // 0100 0000 - All chapter's parsed.
 
   int state;
@@ -58,6 +58,7 @@ class BookState {
       'initialised': initialised,
       'sized':       sized,
       'progress':    progress,
+      'details':     details,
       'parsing':     parsing,
       'complete':    complete,
     }.entries
