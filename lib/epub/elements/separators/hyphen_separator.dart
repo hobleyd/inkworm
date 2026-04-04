@@ -10,7 +10,7 @@ class HyphenSeparator extends Separator {
 
   @override
   void paint(Canvas c, double height, double xPos, double yPos) {
-    final double y = (yPos + height / 2 + 1).roundToDouble();
+    final double y = (yPos + height / 2).roundToDouble();
     c.drawLine(
         Offset(xPos+1, y),
         Offset(xPos+width-1, y),
