@@ -25,7 +25,7 @@ class TextCache {
       text,
       style.fontSize?.toStringAsFixed(3) ?? 'null',
       style.fontFamily                   ?? 'null',
-      style.fontWeight?.index.toString() ?? 'null',
+      style.fontWeight?.value.toString() ?? 'null',
       style.fontStyle?.index.toString()  ?? 'null',
     ].join('|');
   }

@@ -138,9 +138,7 @@ class BlockStyle extends Style {
 
   Future<void> getLineHeightMultiplier(XmlNode element) async {
     // TODO: Should we support this?
-    if (false) {
-      lineHeightMultiplier = await _parser.getFloatAttribute(element, "line-height", elementStyle, false) ?? lineHeightMultiplier;
-    }
+    // lineHeightMultiplier = await _parser.getFloatAttribute(element, "line-height", elementStyle, false) ?? lineHeightMultiplier;
     lineHeightMultiplier = 1;
   }
 

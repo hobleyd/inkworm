@@ -38,7 +38,6 @@ class ParseChapterRequest extends IsolateParseRequest {
 
   @override
   void init() {
-    // TODO: The try loop is here, because this gets called twice, and I am not sure why. Look into this.
     try {
       GetIt.instance.registerSingleton<PageSize>(PageSize());
       GetIt.instance.registerSingleton<PageSizeIsolateListener>(PageSizeIsolateListener());
@@ -56,7 +55,10 @@ class ParseChapterRequest extends IsolateParseRequest {
       GetIt.instance.registerSingleton<BuildPage>(BuildPage());
       GetIt.instance.registerSingleton<LinkCache>(LinkCache());
       GetIt.instance.registerSingleton<TextCache>(TextCache());
-    } catch (e) {}
+    } catch (e) {
+      // The try/catch is here, because this gets called each time through the Isolate. Because we reuse the Isolates,
+      // it will fail after the first time through. Not easy to fix, so this feels appropriate.
+    }
 
     CssParser parser = GetIt.instance.get<CssParser>();
     for (String selector in css.keys) {

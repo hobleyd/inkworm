@@ -140,11 +140,11 @@ class IsolateWorker {
         case OpenEpubRequest oer:
           var response = await msg.process(port);
           // TODO: Pass default CSS to the child isolates; then get the combined CSS back again.
-          _parseChapters(port, msg, (response as OpenedResponse).css);
+          _parseChapters(port, oer, (response as OpenedResponse).css);
           break;
         case ExitRequest er:
           for (var core in isolateCores) {
-            core.process(msg);
+            core.process(er);
           }
           msg.process(port);
           break;

@@ -14,7 +14,6 @@ class BookDetailsRequest extends IsolateParseRequest {
 
   @override
   void init() {
-    // TODO: why is this being called more than once?
     if (!GetIt.instance.isRegistered<EpubParser>()) {
       GetIt.instance.registerSingleton<EpubParser>(EpubParser());
     }
