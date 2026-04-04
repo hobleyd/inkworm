@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:get_it/get_it.dart';
 
 import '../epub/content/text_content.dart';
-import '../models/page_size.dart';
 import '../epub/structure/line.dart';
 import '../epub/elements/line_element.dart';
 
@@ -21,18 +19,13 @@ class PageRenderer extends CustomPainter {
         yPos -= line.baselineAdjust;
         yPos += (el.element as TextContent).descent;
       }
-      el.paint(canvas, el.alignToBaseline ? line.maxHeight : line.maxHeight - line.baselineAdjust, xPos, yPos);
+      el.paint(canvas, el.alignToBaseline ? line.lineHeight : line.lineHeight - line.baselineAdjust, xPos, yPos);
       xPos += el.width;
     }
   }
 
   @override
   void paint(Canvas canvas, Size size) {
-    // This is a little icky and should not be down in here; but I need the Canvas size and this is the only
-    // way I can find to get it accurately!
-    PageSize pageSize = GetIt.instance.get<PageSize>();
-    pageSize.update(canvasWidth: size.width, canvasHeight: size.height,);
-
     canvas.clipRect(Offset(0, 0) & size);
 
     for (Line line in lines) {
