@@ -20,15 +20,27 @@ class InkwormUpdate extends ConsumerStatefulWidget {
 
 class _InkwormUpdate extends ConsumerState<InkwormUpdate> {
   bool downloading = false;
+  double? downloadProgress;
 
   @override
   Widget build(BuildContext context) {
     VersionCheck? versions = ref.watch(updateProvider).value;
 
     if (downloading) {
+      final int progressPercentage = ((downloadProgress ?? 0) * 100).round();
+
       return Column(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: [CircularProgressIndicator()]
+        children: [
+          CircularProgressIndicator(value: downloadProgress),
+          Padding(
+            padding: const EdgeInsets.only(top: 12),
+            child: Text(
+              'Downloading update... $progressPercentage%',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ),
+        ]
       );
     } else if (versions == null) {
       final String noUpdateLabel = Platform.isAndroid
@@ -70,13 +82,26 @@ class _InkwormUpdate extends ConsumerState<InkwormUpdate> {
   Future<void> _download(WidgetRef ref, String url, String package) async {
     setState(() {
       downloading = true;
+      downloadProgress = 0;
     });
 
     try {
       final tempDir = await getTemporaryDirectory();
       final apkPath = path.join(tempDir.path, package);
 
-      await Dio().download(url, apkPath);
+      await Dio().download(
+        url,
+        apkPath,
+        onReceiveProgress: (received, total) {
+          if (!mounted || total <= 0) {
+            return;
+          }
+
+          setState(() {
+            downloadProgress = received / total;
+          });
+        },
+      );
 
       final int? statusCode = await AndroidPackageInstaller.installApk(
         apkFilePath: apkPath,
@@ -99,6 +124,7 @@ class _InkwormUpdate extends ConsumerState<InkwormUpdate> {
       if (mounted) {
         setState(() {
           downloading = false;
+          downloadProgress = null;
         });
       }
     }
