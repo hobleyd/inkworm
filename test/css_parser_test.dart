@@ -343,7 +343,7 @@ void main() {
       parentStyle.parseElement(element: parent);
 
       ElementStyle style = ElementStyle(parentStyle: parentStyle);
-      style.parseElement(element: child, parentStyle: parentStyle);
+      style.parseElement(element: child,);
       final color = cssParser.getStringAttribute(child, style, 'color');
       expect(color, 'red');
     });
