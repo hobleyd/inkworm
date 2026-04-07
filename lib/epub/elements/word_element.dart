@@ -31,6 +31,6 @@ class WordElement extends LineElement {
 
   @override
   String toString() {
-    return '($width/$height/$dropCapsAdjust) ${word.span.style?.fontFamily} $word';
+    return '($width/$height/$dropCapsAdjust) ${word.span.style?.fontFamily ?? ""} $word';
   }
 }
