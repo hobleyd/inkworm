@@ -152,6 +152,9 @@ extension StringFootnotes on String {
     final allAsterisks = !RegExp(r'[^\*]').hasMatch(this);
     if (allAsterisks) return true;
 
+    final allCrosses = !RegExp(r'[^\†]').hasMatch(this);
+    if (allCrosses) return true;
+    
     final allDigits = !RegExp(r'[^0-9]').hasMatch(this);
     if (allDigits) return true;
 
