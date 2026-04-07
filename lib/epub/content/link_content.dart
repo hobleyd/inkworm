@@ -6,6 +6,8 @@ class LinkContent extends HtmlContent {
   final String href;
   final List<HtmlContent> footnotes = [];
 
+  bool get hasFootnotes => footnotes.isNotEmpty;
+
   @override
   Iterable<LineElement> get elements => src.elements;
 
