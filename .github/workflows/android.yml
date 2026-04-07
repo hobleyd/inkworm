@@ -26,6 +26,8 @@ jobs:
           architecture: x64
           cache: false
       - run: dart run build_runner build --delete-conflicting-outputs
+      - run: flutter test test/css_parser_test.dart
+      - run: flutter test test/epub_page_test.dart
       - run: dart run flutter_launcher_icons
       - name: Create relevant secret files
         run: |
@@ -45,4 +47,3 @@ jobs:
           name: 'inkworm-${{ env.VERSION }}.apk'
           files: 'build/app/outputs/apk/release/inkworm-${{ env.VERSION }}-release.apk'
           tag_name: ${{ env.VERSION }}
-

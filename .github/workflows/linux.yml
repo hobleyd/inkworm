@@ -26,6 +26,8 @@ jobs:
       - run: flutter config --enable-linux-desktop
       - run: flutter create --platforms=linux .
       - run: dart run build_runner build --delete-conflicting-outputs
+      - run: flutter test test/css_parser_test.dart
+      - run: flutter test test/epub_page_test.dart
       - run: flutter build linux --release
       - name: Prepare bundle assets
         run:
