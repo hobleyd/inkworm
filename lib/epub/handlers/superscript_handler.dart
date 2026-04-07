@@ -28,7 +28,6 @@ class SuperscriptHandler extends HtmlHandler {
 
     ElementStyle elementStyle = ElementStyle(parentStyle: parentElementStyle);
     await elementStyle.parseElement(element: element,);
-    elementStyle.setWeight(weight: FontWeight.w500);
 
     BlockStyle blockStyle = BlockStyle(elementStyle: elementStyle, parentStyle: parentBlockStyle);
     blockStyle.parseElement(element: element,);
@@ -38,6 +37,8 @@ class SuperscriptHandler extends HtmlHandler {
       if (childElements != null) {
         for (var child in childElements) {
           if (child is LinkContent) {
+            child.elementStyle.setTextStyle(weight: FontWeight.w500, decoration: TextDecoration.none);
+
             // If we have a Link in a Superscript, this will be a footnote. Find the footnote, so we can display it on the page.
             var (fnFile, fnRef) = child.href.splitReference;
             EpubParser parser = GetIt.instance.get<EpubParser>();

@@ -34,7 +34,7 @@ class LinkHandler extends HtmlHandler {
     await elementStyle.parseElement(element: element,);
     // TODO: I want to highlight footnotes, this will also highlight standard links, but see how it looks before making a decision. Given
     // this will normally relate to chapter headings, I don't think it will make a difference.
-    elementStyle.setWeight(weight: FontWeight.w700);
+    elementStyle.setTextStyle(weight: FontWeight.w700);
 
     BlockStyle blockStyle = BlockStyle(elementStyle: elementStyle, parentStyle: parentBlockStyle);
     await blockStyle.parseElement(element: element,);
@@ -63,6 +63,8 @@ class LinkHandler extends HtmlHandler {
           // Process Footnotes, if required.
           if (child is TextContent) {
             if (child.text.isFootnote || element.getAttribute('vertical-align') == "super") {
+              child.elementStyle.setTextStyle(weight: FontWeight.w500, decoration: TextDecoration.none);
+              
               if (!cache.contains(id)) {
                 cache.add(id);
               }
@@ -80,6 +82,7 @@ class LinkHandler extends HtmlHandler {
               }
             }
           }
+
           elements.add(lc);
         }
       }
