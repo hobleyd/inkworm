@@ -62,8 +62,10 @@ class LinkHandler extends HtmlHandler {
 
           // Process Footnotes, if required.
           if (child is TextContent) {
-            if (!cache.contains(id) && child.text.isFootnote || element.getAttribute('vertical-align') == "super") {
-              cache.add(id);
+            if (child.text.isFootnote || element.getAttribute('vertical-align') == "super") {
+              if (!cache.contains(id)) {
+                cache.add(id);
+              }
 
               var (fnFile, fnRef) = href.splitReference;
               if (!cache.contains(fnRef)) {
