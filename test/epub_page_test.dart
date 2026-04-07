@@ -1,11 +1,15 @@
 import 'dart:isolate';
 
+import 'package:archive/archive.dart';
 import 'package:flutter/material.dart' hide Page;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get_it/get_it.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:inkworm/epub/cache/link_cache.dart';
 import 'package:inkworm/epub/cache/text_cache.dart';
+import 'package:inkworm/epub/content/html_content.dart';
 import 'package:inkworm/epub/structure/epub_chapter.dart';
+import 'package:inkworm/epub/content/link_content.dart';
 import 'package:inkworm/epub/elements/separators/non_breaking_space_separator.dart';
 import 'package:inkworm/epub/handlers/block_handler.dart';
 import 'package:inkworm/epub/handlers/css_handler.dart';
@@ -21,6 +25,7 @@ import 'package:inkworm/epub/content/text_content.dart';
 import 'package:inkworm/epub/elements/separators/hyphen_separator.dart';
 import 'package:inkworm/epub/elements/separators/space_separator.dart';
 import 'package:inkworm/epub/parser/css_parser.dart';
+import 'package:inkworm/epub/parser/extensions.dart';
 import 'package:inkworm/epub/parser/isolates/worker_slot.dart';
 import 'package:inkworm/providers/epub.dart';
 import 'package:inkworm/epub/structure/build_line.dart';
@@ -131,6 +136,7 @@ void main() {
       GetIt.instance.registerSingleton<PageSize>(PageSize());
       GetIt.instance.registerSingleton<ReadingProgress>(ReadingProgress());
       GetIt.instance.registerSingleton<EpubParser>(EpubParser());
+      GetIt.instance.registerSingleton<LinkCache>(LinkCache());
       GetIt.instance.registerSingleton<TextCache>(TextCache());
       GetIt.instance.registerSingleton<BuildPage>(BuildPage());
       GetIt.instance.registerSingleton<BuildLine>(BuildLine());
@@ -468,6 +474,103 @@ i, cite, em, var, dfn {
           expect(yPositions[i], greaterThanOrEqualTo(yPositions[i - 1]));
         }
         expect(yPositions.toSet().length, greaterThan(1));
+      });
+    });
+
+    group('footnotes', () {
+      test('builds a single footnote from an asterisk link without an anchor id', () async {
+        const String chapterHtml = '''
+<html><body>
+<p class="calibre19">When does it start?</p>
+<a class="calibre11"></a><a id="filepos1893" class="calibre11"></a><p class="calibre19">There are very few starts. Oh, some things <span class="italic">seem</span> to be beginnings. The curtain goes up, the first pawn moves, the first shot is fired<a href="Lords_and_Ladies_split_012.html#filepos689280" class="calibre12"><span class="calibre20"><span class="calibre13"><span class="calibre14" style="text-decoration:underline">*</span></span></span></a>—but <span class="italic">that’s</span> not the start. The play, the game, the war is just a little window on a ribbon of events that may extend back thousands of years. The point is, there’s always something <span class="italic">before.</span> It’s <span class="italic">always</span> a case of Now Read On.</p>
+</body></html>
+''';
+
+        const String footnoteHtml = '''
+<html><body>
+<div id="filepos689280" class="calibre1"><a class="calibre11"></a><p class="calibre31"><a href="Lords_and_Ladies_split_003.html#filepos1893" class="calibre12"><span class="calibre20"><span class="calibre13"><span class="calibre14" style="text-decoration:underline">*</span></span></span></a><span class="calibre20">Probably at the first pawn.</span></p>
+<div class="calibre1"></div>
+<div class="mbppagebreak" id="calibre_pb_12"></div>
+</div>
+</body></html>
+''';
+
+        final PageSize size = GetIt.instance.get<PageSize>();
+        size.canvasWidth = 800;
+        size.canvasHeight = 600;
+
+        final EpubParser parser = GetIt.instance.get<EpubParser>();
+        final Archive archive = Archive();
+        archive.addFile(ArchiveFile.string('Lords_and_Ladies_split_003.html', chapterHtml));
+        archive.addFile(ArchiveFile.string('Lords_and_Ladies_split_012.html', footnoteHtml));
+        parser.bookArchive = archive;
+
+        final EpubChapter chapter = EpubChapter(chapterNumber: 0);
+        await parser.parseChapterFromString(chapter, chapterHtml);
+
+        expect(chapter.pages.length, 1);
+        final List<Line> renderedFootnotes = chapter.pages.single.footnotes.where((line) => line.elements.isNotEmpty).toList();
+        expect(renderedFootnotes, hasLength(1));
+        expect(lineText(renderedFootnotes.single), contains('Probably at the first pawn.'));
+      });
+
+      test('builds nested footnotes when a footnote links to another footnote', () async {
+        const String chapterHtml = '''
+<html><body>
+<a class="calibre11"></a><a id="filepos87864" class="calibre11"></a><p class="calibre19">It was very hard, being a reader in Invisible Writings.<a href="Lords_and_Ladies_split_054.html#filepos705413" class="calibre12"><span class="calibre20"><span class="calibre13"><span class="calibre14" style="text-decoration:underline">*</span></span></span></a></p>
+</body></html>
+''';
+
+        const String firstFootnoteHtml = '''
+<html><body>
+<div id="filepos705413" class="calibre1"><a class="calibre11"></a><a id="filepos705418" class="calibre11"></a><p class="calibre31"><a href="Lords_and_Ladies_split_003.html#filepos87864" class="calibre12"><span class="calibre20"><span class="calibre13"><span class="calibre14" style="text-decoration:underline">*</span></span></span></a><span class="calibre20">The study of invisible writings was a new discipline made available by the discovery of the bi-directional nature of Library-Space. The thaumic mathematics are complex, but boil down to the fact that all books, everywhere, affect all other books. This is obvious: books inspire other books written in the future, and cite books written in the past. But the General Theory</span><a href="Lords_and_Ladies_split_055.html#filepos706258" class="calibre12"><span class="calibre20"><span class="calibre13"><span class="calibre14" style="text-decoration:underline">**</span></span></span></a><span class="calibre20"> of L-Space suggests that, in that case, the contents of books </span><span class="calibre20"><span class="italic">as yet unwritten</span></span><span class="calibre20"> can be deduced from books now in existence.</span></p>
+</div>
+</body></html>
+''';
+
+        const String secondFootnoteHtml = '''
+<html><body>
+<div id="filepos706258" class="calibre1"><a class="calibre11"></a><p class="calibre31"><a href="Lords_and_Ladies_split_054.html#filepos705418" class="calibre12"><span class="calibre20"><span class="calibre13"><span class="calibre14" style="text-decoration:underline">**</span></span></span></a><span class="calibre20">There&apos;s a Special Theory as well, but no one bothers with it much because it&apos;s self-evidently a load of marsh gas.</span></p>
+<div class="calibre1"></div>
+</div>
+</body></html>
+''';
+
+        final PageSize size = GetIt.instance.get<PageSize>();
+        size.canvasWidth = 800;
+        size.canvasHeight = 1000;
+
+        final EpubParser parser = GetIt.instance.get<EpubParser>();
+        final Archive archive = Archive();
+        archive.addFile(ArchiveFile.string('Lords_and_Ladies_split_003.html', chapterHtml));
+        archive.addFile(ArchiveFile.string('Lords_and_Ladies_split_054.html', firstFootnoteHtml));
+        archive.addFile(ArchiveFile.string('Lords_and_Ladies_split_055.html', secondFootnoteHtml));
+        parser.bookArchive = archive;
+
+        final firstFootnote = parser.getFootnote('Lords_and_Ladies_split_054.html', 'filepos705413');
+        final List<HtmlContent>? firstFootnoteElements = await firstFootnote?.handler?.processElement(node: firstFootnote);
+        final LinkContent? nestedFootnoteLink = firstFootnoteElements
+            ?.whereType<LinkContent>()
+            .where((link) => link.href == 'Lords_and_Ladies_split_055.html#filepos706258')
+            .firstOrNull;
+        final secondFootnote = parser.getFootnote('Lords_and_Ladies_split_055.html', 'filepos706258');
+
+        expect(nestedFootnoteLink, isNotNull);
+        expect(secondFootnote, isNotNull);
+        expect(nestedFootnoteLink!.footnotes, isNotEmpty);
+
+        final EpubChapter chapter = EpubChapter(chapterNumber: 0);
+        await parser.parseChapterFromString(chapter, chapterHtml);
+
+        expect(chapter.pages.length, 1);
+
+        final List<Line> renderedFootnotes = chapter.pages.single.footnotes.where((line) => line.elements.isNotEmpty).toList();
+        final List<String> renderedFootnoteText = renderedFootnotes.map(lineText).toList();
+        final List<String> footnoteEntries = renderedFootnoteText.where((text) => text.trimLeft().startsWith('*')).toList();
+
+        expect(footnoteEntries, hasLength(2));
+        expect(renderedFootnoteText.join(' '), contains('The study of invisible writings'));
+        expect(renderedFootnoteText.join(' '), contains("There's a Special Theory as well"));
       });
     });
 
