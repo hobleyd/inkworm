@@ -45,13 +45,14 @@ class _PageCanvas extends ConsumerState<PageCanvas> {
           // an isolate). The page number check is required during development as parsing errors can result in weird numbering if I fuck up.
           final EpubChapter? chapter = book.chapters.elementAtOrNull(progress.chapterNumber);
           int pageNumber = progress.pageNumber >= 0 ? progress.pageNumber : 0;
-          if (chapter != null) {
-            if (pageNumber >= chapter.pages.length) {
-              pageNumber = chapter.pages.length-1;
-            }
+          if (chapter != null && chapter.pages.isNotEmpty && pageNumber >= chapter.pages.length) {
+            pageNumber = chapter.pages.length - 1;
           }
-          final List<Line> lines = chapter?[pageNumber]?.lines ?? [];
-          final List<Line> foots = chapter?[pageNumber]?.footnotes ?? [];
+
+          final page = chapter == null || chapter.pages.isEmpty ? null : chapter[pageNumber];
+          final List<Line> lines = page?.lines ?? [];
+          final List<Line> foots = page?.footnotes ?? [];
+
           PageRenderer renderer = PageRenderer(lines: lines, footnotes: foots);
           if (lastPageNumber != progress.pageNumber && lines.isNotEmpty) {
             renderer.needsRepaint = true;

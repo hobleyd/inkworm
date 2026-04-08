@@ -17,7 +17,7 @@ class EpubChapter implements PageListener {
 
   EpubChapter({required this.chapterNumber,});
 
-  Page? operator [](int index) => pages.elementAtOrNull(index);
+  Page? operator [](int index) => index < 0 ? null : pages.elementAtOrNull(index);
 
   int get lastPageIndex => pages.length - 1;
 
