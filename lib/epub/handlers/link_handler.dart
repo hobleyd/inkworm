@@ -50,6 +50,9 @@ class LinkHandler extends HtmlHandler {
       String? href = node.getAttribute('href');
       String?   id = node.getAttribute('id');
 
+      // Sometimes the Link id is registered against the parent element.
+      id ??= element.parent?.getAttribute('id');
+
       if (childElements != null && childElements.isNotEmpty) {
         for (var child in childElements) {
           ElementSize size = switch (child) {
