@@ -50,6 +50,15 @@ class Epub extends _$Epub implements IsolateListener {
     _spineLength = spineLength;
 
     _chapters = List.generate(_spineLength, (int index) => EpubChapter(chapterNumber: index), growable: false);
+
+    Future.delayed(const Duration(milliseconds: 500), () async {
+      if (ref.read(bookStateManagementProvider).hasNone(BookState.sized)) {
+        Future(() => ref.read(bookStateManagementProvider.notifier).set(BookState.sized));
+        debugPrint('onBookDetails() fallback -> ${ref.read(bookStateManagementProvider)} -> open Book');
+        await openBook(state.uri);
+        openBookInIsolate();
+      }
+    });
   }
 
   @override
@@ -71,6 +80,7 @@ class Epub extends _$Epub implements IsolateListener {
     _chapters[chapter.chapterNumber] = chapter;
     state = state.copyWith(chapters: List.from(_chapters));
 
+    debugPrint('received chapter: ${chapter.chapterNumber}, ${_chapters.where((chapter) => chapter.pages.isEmpty).length} to go!');
     if (parsed) {
       ref.read(bookStateManagementProvider.notifier).set(BookState.complete);
       _worker?.close();
@@ -145,7 +155,7 @@ class Epub extends _$Epub implements IsolateListener {
 
   void setProgress(ReadingProgress progress) {
     Future(() => ref.read(bookStateManagementProvider.notifier).set(BookState.progress));
-    debugPrint('setProgress() -> ${ref.read(bookStateManagementProvider)}');
+    debugPrint('setProgress(${progress.chapterNumber}/${progress.pageNumber}) -> ${ref.read(bookStateManagementProvider)}');
     _epubRequest.update(fontSize: progress.fontSize, initialChapter: progress.chapterNumber,);
 
     if (state.uri != progress.book) {
