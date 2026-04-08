@@ -22,6 +22,7 @@ class PageCanvas extends ConsumerStatefulWidget {
 
 class _PageCanvas extends ConsumerState<PageCanvas> {
   static const EdgeInsets _pagePadding = EdgeInsets.only(top: 6, bottom: 6);
+  final pageSize = GetIt.instance.get<PageSize>();
   int lastPageNumber = -1;
 
   @override
@@ -53,8 +54,9 @@ class _PageCanvas extends ConsumerState<PageCanvas> {
 
           return LayoutBuilder(
               builder: (context, constraints) {
-                final pageSize = GetIt.instance.get<PageSize>();
-                pageSize.update(canvasWidth: constraints.maxWidth, canvasHeight: constraints.maxHeight - _pagePadding.vertical,);
+                if (constraints.maxWidth != pageSize.canvasWidth || constraints.maxHeight - _pagePadding.vertical != pageSize.canvasHeight) {
+                  pageSize.update(canvasWidth: constraints.maxWidth, canvasHeight: constraints.maxHeight - _pagePadding.vertical,);
+                }
 
                 return Container(
                   padding: _pagePadding,
