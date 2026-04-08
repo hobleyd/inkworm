@@ -20,6 +20,7 @@ import 'html_handler.dart';
 class ImageHandler extends HtmlHandler {
   ImageHandler() {
     HtmlHandler.registerHandler('img', this);
+    HtmlHandler.registerHandler('image', this);
   }
   
   @override
@@ -33,15 +34,14 @@ class ImageHandler extends HtmlHandler {
     BlockStyle blockStyle = BlockStyle(elementStyle: elementStyle, parentStyle: parentBlockStyle);
     await blockStyle.parseElement(element: element, );
 
-    final String src = element.getAttribute('src')!;
-    final Uint8List bytes = GetIt.instance
-        .get<EpubParser>()
-        .bookArchive!
-        .getContentAsBytes(src);
+    String? src = element.getAttribute('src');
+    src ??= element.getAttribute('xlink:href');
+    if (src != null) {
+      final Uint8List    bytes = GetIt.instance.get<EpubParser>().bookArchive!.getContentAsBytes(src);
+      final ElementSize result = await WorkerSlot.measureImageInMainThread(src, bytes);
 
-    final ElementSize result = await WorkerSlot.measureImageInMainThread(src, bytes);
-    elements.add(ImageContent(blockStyle: blockStyle, elementStyle: elementStyle, image: src, bytes: bytes, width: result.width, height: result.height));
-
+      elements.add(ImageContent(blockStyle: blockStyle, elementStyle: elementStyle, image: src, bytes: bytes, width: result.width, height: result.height));
+    }
     return elements;
   }
 }
