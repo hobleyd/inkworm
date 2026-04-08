@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get_it/get_it.dart';
 
+import '../epub/structure/epub_chapter.dart';
 import '../epub/structure/line.dart';
 import '../models/page_size.dart';
 import '../providers/epub.dart';
@@ -41,9 +42,16 @@ class _PageCanvas extends ConsumerState<PageCanvas> {
           Future(() => ref.read(themeProvider.notifier).setFontSize(progress.fontSize.toDouble()));
 
           // This is required to work around Flutter's desire not to repaint if nothing has changed; even though it has (from
-          // an isolate).
-          final List<Line> lines = book.chapters.elementAtOrNull(progress.chapterNumber)?[progress.pageNumber]?.lines ?? [];
-          final List<Line> foots = book.chapters.elementAtOrNull(progress.chapterNumber)?[progress.pageNumber]?.footnotes ?? [];
+          // an isolate). The page number check is required during development as parsing errors can result in weird numbering if I fuck up.
+          final EpubChapter? chapter = book.chapters.elementAtOrNull(progress.chapterNumber);
+          int pageNumber = progress.pageNumber >= 0 ? progress.pageNumber : 0;
+          if (chapter != null) {
+            if (pageNumber >= chapter.pages.length) {
+              pageNumber = chapter.pages.length-1;
+            }
+          }
+          final List<Line> lines = chapter?[pageNumber]?.lines ?? [];
+          final List<Line> foots = chapter?[pageNumber]?.footnotes ?? [];
           PageRenderer renderer = PageRenderer(lines: lines, footnotes: foots);
           if (lastPageNumber != progress.pageNumber && lines.isNotEmpty) {
             renderer.needsRepaint = true;
