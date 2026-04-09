@@ -31,6 +31,7 @@ class BlockHandler extends HtmlHandler {
     HtmlHandler.registerHandler('section', this);
     HtmlHandler.registerHandler('figure', this);
     HtmlHandler.registerHandler('hgroup', this);
+    HtmlHandler.registerHandler('header', this);
     HtmlHandler.registerHandler('aside', this);
     HtmlHandler.registerHandler('svg', this);
     HtmlHandler.registerHandler('nav', this);
