@@ -1,4 +1,3 @@
-import 'package:injectable/injectable.dart';
 import 'package:xml/xml.dart';
 
 import '../../models/element_size.dart';
@@ -9,8 +8,6 @@ import '../styles/block_style.dart';
 import '../styles/element_style.dart';
 import 'html_handler.dart';
 
-@Named("TextHandler")
-@Singleton(as: HtmlHandler)
 class TextHandler extends HtmlHandler {
   TextHandler() {
     HtmlHandler.registerHandler(XmlNodeType.TEXT.name.toLowerCase(), this);

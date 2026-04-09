@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:get_it/get_it.dart';
-import 'package:injectable/injectable.dart';
 import 'package:xml/xml.dart';
 
 import '../../models/element_size.dart';
@@ -15,8 +14,6 @@ import '../styles/block_style.dart';
 import '../styles/element_style.dart';
 import 'html_handler.dart';
 
-@Named("ImageHandler")
-@Singleton(as: HtmlHandler)
 class ImageHandler extends HtmlHandler {
   ImageHandler() {
     HtmlHandler.registerHandler('img', this);

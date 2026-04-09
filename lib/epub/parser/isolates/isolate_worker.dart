@@ -51,7 +51,7 @@ class IsolateWorker {
   }
 
   static Future<void> _createPool(SendPort uiPort) async {
-    for (var i = 0; i < Platform.numberOfProcessors; i++) {
+    for (var i = 0; i < 1; i++) {
       final WorkerSlot slot = WorkerSlot(uiPort: uiPort);
       await slot.start();
       isolateCores.add(slot);

@@ -1,5 +1,4 @@
 import 'package:get_it/get_it.dart';
-import 'package:injectable/injectable.dart';
 import 'package:xml/xml.dart';
 
 import '../content/html_content.dart';
@@ -8,8 +7,6 @@ import '../styles/block_style.dart';
 import '../styles/element_style.dart';
 import 'html_handler.dart';
 
-@Named("CssHandler")
-@Singleton(as: HtmlHandler)
 class CssHandler extends HtmlHandler {
   CssHandler() {
     HtmlHandler.registerHandler('link', this);

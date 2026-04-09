@@ -1,8 +1,6 @@
 import 'dart:ui';
 
 import 'package:get_it/get_it.dart';
-import 'package:injectable/injectable.dart';
-import 'package:inkworm/epub/parser/isolates/worker_slot.dart';
 import 'package:xml/xml.dart';
 
 import '../../models/element_size.dart';
@@ -13,12 +11,11 @@ import '../content/link_content.dart';
 import '../content/text_content.dart';
 import '../parser/epub_parser.dart';
 import '../parser/extensions.dart';
+import '../parser/isolates/worker_slot.dart';
 import '../styles/block_style.dart';
 import '../styles/element_style.dart';
 import 'html_handler.dart';
 
-@Named("LinkHandler")
-@Singleton(as: HtmlHandler)
 class LinkHandler extends HtmlHandler {
   LinkHandler() {
     HtmlHandler.registerHandler('a', this);

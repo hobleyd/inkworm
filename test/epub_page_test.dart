@@ -18,6 +18,7 @@ import 'package:inkworm/epub/handlers/inline_handler.dart';
 import 'package:inkworm/epub/handlers/line_break_handler.dart';
 import 'package:inkworm/epub/handlers/link_handler.dart';
 import 'package:inkworm/epub/handlers/superscript_handler.dart';
+import 'package:inkworm/epub/handlers/table_handler.dart';
 import 'package:inkworm/epub/handlers/text_handler.dart';
 import 'package:inkworm/epub/parser/epub_parser.dart';
 import 'package:inkworm/models/page_size.dart';
@@ -147,6 +148,7 @@ void main() {
       GetIt.instance.registerSingleton<LinkHandler>(LinkHandler());
       GetIt.instance.registerSingleton<ImageHandler>(ImageHandler());
       GetIt.instance.registerSingleton<SuperscriptHandler>(SuperscriptHandler());
+      GetIt.instance.registerSingleton<TableHandler>(TableHandler());
       GetIt.instance.registerSingleton<CssHandler>(CssHandler());
 
       uiPort = ReceivePort();
@@ -275,6 +277,44 @@ void main() {
         }
 
         expect(lines.last.alignment, LineAlignment.left);
+      });
+
+      test('linearizes table rows and cells into readable text', () async {
+        const String chapterHtml = '''
+<html><body>
+<p>Before table.</p>
+<table>
+  <tbody>
+    <tr><th>Planet</th><th>Population</th></tr>
+    <tr><td>Manticore</td><td>3.2B</td></tr>
+    <tr><td>Grayson</td><td>1.8B</td></tr>
+  </tbody>
+</table>
+<p>After table.</p>
+</body></html>
+''';
+
+        final PageSize size = GetIt.instance.get<PageSize>();
+        size.canvasWidth = 800;
+        size.canvasHeight = 1000;
+
+        final EpubParser parser = GetIt.instance.get<EpubParser>();
+        final EpubChapter chapter = EpubChapter(chapterNumber: 0);
+
+        await parser.parseChapterFromString(chapter, chapterHtml);
+
+        expect(chapter.pages, hasLength(1));
+
+        final List<String> renderedLines = chapter.pages.single.lines
+            .where((line) => line.elements.isNotEmpty)
+            .map(lineText)
+            .toList();
+
+        expect(renderedLines, contains('Before table.'));
+        expect(renderedLines, contains('Planet | Population'));
+        expect(renderedLines, contains('Manticore | 3.2B'));
+        expect(renderedLines, contains('Grayson | 1.8B'));
+        expect(renderedLines, contains('After table.'));
       });
 
       test('flows body text around a drop caps element before returning to normal width', () {

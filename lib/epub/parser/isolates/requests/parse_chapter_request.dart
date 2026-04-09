@@ -13,6 +13,7 @@ import '../../../handlers/inline_handler.dart';
 import '../../../handlers/line_break_handler.dart';
 import '../../../handlers/link_handler.dart';
 import '../../../handlers/superscript_handler.dart';
+import '../../../handlers/table_handler.dart';
 import '../../../handlers/text_handler.dart';
 import '../../../interfaces/isolate_parse_request.dart';
 import '../../../interfaces/isolate_parse_response.dart';
@@ -39,20 +40,24 @@ class ParseChapterRequest extends IsolateParseRequest {
   @override
   void init() {
     try {
-      GetIt.instance.registerSingleton<PageSize>(PageSize());
-      GetIt.instance.registerSingleton<PageSizeIsolateListener>(PageSizeIsolateListener());
       GetIt.instance.registerSingleton<CssParser>(CssParser());
       GetIt.instance.registerSingleton<EpubParser>(EpubParser());
+      GetIt.instance.registerSingleton<PageSize>(PageSize());
+      GetIt.instance.registerSingleton<PageSizeIsolateListener>(PageSizeIsolateListener());
+
       GetIt.instance.registerSingleton<BlockHandler>(BlockHandler());
-      GetIt.instance.registerSingleton<TextHandler>(TextHandler());
-      GetIt.instance.registerSingleton<LineBreakHandler>(LineBreakHandler());
-      GetIt.instance.registerSingleton<InlineHandler>(InlineHandler());
-      GetIt.instance.registerSingleton<LinkHandler>(LinkHandler());
-      GetIt.instance.registerSingleton<ImageHandler>(ImageHandler());
-      GetIt.instance.registerSingleton<SuperscriptHandler>(SuperscriptHandler());
       GetIt.instance.registerSingleton<CssHandler>(CssHandler());
+      GetIt.instance.registerSingleton<ImageHandler>(ImageHandler());
+      GetIt.instance.registerSingleton<InlineHandler>(InlineHandler());
+      GetIt.instance.registerSingleton<LineBreakHandler>(LineBreakHandler());
+      GetIt.instance.registerSingleton<LinkHandler>(LinkHandler());
+      GetIt.instance.registerSingleton<SuperscriptHandler>(SuperscriptHandler());
+      GetIt.instance.registerSingleton<TableHandler>(TableHandler());
+      GetIt.instance.registerSingleton<TextHandler>(TextHandler());
+
       GetIt.instance.registerSingleton<BuildLine>(BuildLine());
       GetIt.instance.registerSingleton<BuildPage>(BuildPage());
+
       GetIt.instance.registerSingleton<LinkCache>(LinkCache());
       GetIt.instance.registerSingleton<TextCache>(TextCache());
     } catch (e) {
