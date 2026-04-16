@@ -20,6 +20,7 @@ class InkwormUpdate extends ConsumerStatefulWidget {
 
 class _InkwormUpdate extends ConsumerState<InkwormUpdate> {
   bool downloading = false;
+  bool checkingVersion = false;
   double? downloadProgress;
 
   @override
@@ -51,7 +52,10 @@ class _InkwormUpdate extends ConsumerState<InkwormUpdate> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Padding(padding: EdgeInsetsGeometry.only(top: 30), child: Text(noUpdateLabel, style: Theme.of(context).textTheme.labelMedium)),
-          IconButton(icon: const Icon(Icons.refresh), onPressed: () => ref.read(updateProvider.notifier).checkVersion()),
+          Padding(
+            padding: const EdgeInsets.only(top: 10),
+            child: _buildCheckVersionAction(),
+          ),
         ],
       );
     } else {
@@ -71,14 +75,45 @@ class _InkwormUpdate extends ConsumerState<InkwormUpdate> {
             if (!versions.hasUpdate)
               Padding(
                   padding: const EdgeInsets.only(top: 10),
-                  child: IconButton(icon: const Icon(Icons.refresh), onPressed: () => ref.read(updateProvider.notifier).checkVersion()),
+                  child: _buildCheckVersionAction(),
               ),
           ]
       );
     }
   }
 
-  // TODO: UX affordance for when we are downloading.
+  Widget _buildCheckVersionAction() {
+    if (checkingVersion) {
+      return Column(
+        children: [
+          const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2),),
+          Padding(
+            padding: const EdgeInsets.only(top: 12),
+            child: Text('Checking for updates...', style: Theme.of(context).textTheme.bodyMedium,),
+          ),
+        ],
+      );
+    }
+
+    return IconButton(icon: const Icon(Icons.refresh), onPressed: _checkVersion,);
+  }
+
+  Future<void> _checkVersion() async {
+    setState(() {
+      checkingVersion = true;
+    });
+
+    try {
+      await ref.read(updateProvider.notifier).checkVersion();
+    } finally {
+      if (mounted) {
+        setState(() {
+          checkingVersion = false;
+        });
+      }
+    }
+  }
+
   Future<void> _download(WidgetRef ref, String url, String package) async {
     setState(() {
       downloading = true;
