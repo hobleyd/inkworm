@@ -103,10 +103,7 @@ class _InkwormUpdate extends ConsumerState<InkwormUpdate> {
         },
       );
 
-      final int? statusCode = await AndroidPackageInstaller.installApk(
-        apkFilePath: apkPath,
-      );
-
+      final int? statusCode = await AndroidPackageInstaller.installApk(apkFilePath: apkPath,);
       if (statusCode == null) {
         ref.read(epubProvider.notifier).setError('Android did not return an installation result.', StackTrace.current);
         return;
