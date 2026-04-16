@@ -30,7 +30,7 @@ class DefaultFontSizeCheckbox extends ConsumerWidget {
                     ref.read(fontSizeProvider.notifier).setDefaultFontSize(selectedFontSize);
                   }
               },
-              title: Text('Make this font the new default (for new books)', style: Theme.of(context).textTheme.labelMedium),
+              title: Text('Make this size the default (for new books)', style: Theme.of(context).textTheme.labelMedium),
             ),
           );
     });
