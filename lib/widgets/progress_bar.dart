@@ -19,7 +19,7 @@ class ProgressBar extends ConsumerWidget {
     var epubNotifier = ref.read(epubProvider.notifier);
     String chapterProgress = 'Analysing the eBook';
     if (bookState.hasAny(BookState.details|BookState.parsing)) {
-      chapterProgress += ': ${epubNotifier.empty} chapters to go.';
+      chapterProgress += ': ${epubNotifier.remaining} chapters remaining.';
     }
 
     if (bookState.hasAll(BookState.complete)) {

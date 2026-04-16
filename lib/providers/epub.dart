@@ -27,9 +27,8 @@ class Epub extends _$Epub implements IsolateListener {
   late List<EpubChapter> _chapters;
   late int _spineLength;
 
-  int  get  empty => _chapters.where((chapter) => chapter.pages.isEmpty).length;
-  int  get length => _chapters.length;
-  bool get parsed => _chapters.where((chapter) => chapter.pages.isEmpty).isEmpty;
+  bool get    parsed => _chapters.where((chapter) => chapter.pages.isEmpty).isEmpty;
+  int  get remaining => _chapters.where((chapter) => chapter.pages.isEmpty).length;
 
   @override
   EpubBook build() {
