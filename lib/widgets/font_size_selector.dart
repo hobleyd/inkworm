@@ -39,17 +39,20 @@ class _FontSize extends ConsumerState<FontSize> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Padding(
-            padding: EdgeInsetsGeometry.only(left: size.leftIndent, bottom: 12),
-            child: Text('Select your preferred font size:', style: Theme.of(context).textTheme.labelMedium),
-          ),
-          Row(mainAxisAlignment: MainAxisAlignment.center, children: _getSizedFontRow(12, 6, progress),),
-          SizedBox(height: 12),
-          Row(mainAxisAlignment: MainAxisAlignment.center, children: _getSizedFontRow(18, 6, progress),),
-          DefaultFontSizeCheckbox(selectedFontSize: progress.fontSize,),
+          if (bookState.hasAll(BookState.complete))
+            ...[
+              Padding(
+                padding: EdgeInsetsGeometry.only(left: size.leftIndent, bottom: 12, top: 32),
+                child: Text('Select your preferred font size:', style: Theme.of(context).textTheme.labelMedium),
+              ),
+              Row(mainAxisAlignment: MainAxisAlignment.center, children: _getSizedFontRow(12, 6, progress),),
+              SizedBox(height: 12),
+              Row(mainAxisAlignment: MainAxisAlignment.center, children: _getSizedFontRow(18, 6, progress),),
+              DefaultFontSizeCheckbox(selectedFontSize: progress.fontSize,),
+            ],
           if (bookState.hasNone(BookState.complete)) Padding(
-            padding: EdgeInsetsGeometry.only(left: size.leftIndent, bottom: 12),
-            child: Text("Please wait until Book parsing is complete before changing font size.", style: Theme.of(context).textTheme.labelMedium),
+            padding: EdgeInsetsGeometry.only(left: size.leftIndent, bottom: 12, top: 64),
+            child: Text("Please wait until Book parsing is complete before changing font size.", textAlign: TextAlign.center, style: Theme.of(context).textTheme.labelMedium),
           ),
         ],
       );
