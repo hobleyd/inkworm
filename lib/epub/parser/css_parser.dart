@@ -16,6 +16,7 @@ import 'isolates/worker_slot.dart';
 class CssParser {
   final Map<String, CssDeclarations> css = {};
   final Set<String> nonInheritableProperties = {};
+  final Set<String> _enabledMediaTypes = {};        // ← new
 
   CssDeclarations? operator [](String key) => css[key];
 
@@ -25,6 +26,11 @@ class CssParser {
     nonInheritableProperties.add("margin-right");
     nonInheritableProperties.add("margin-top");
     nonInheritableProperties.add("margin-bottom");
+  }
+
+  // TODO: test out support for @media elements if ever required.
+  void enableMedia(String mediaType) {
+    _enabledMediaTypes.add(mediaType);
   }
 
   Future <double?> getFloatAttribute(XmlNode element, String attribute, Style style, bool isHorizontal) async {
@@ -266,6 +272,9 @@ class CssParser {
     var cleaned = cssContent.replaceAll(RegExp(r'/\*[\s\S]*?\*/'), '');
     cleaned = cleaned.replaceAll(RegExp(r'@namespace url\(.*\);'), '');
 
+    // strip out @media blocks, inlining rules only for enabled types
+    cleaned = _resolveMediaBlocks(cleaned);
+
     // Regular expression to match selector { properties }
     final regExp = RegExp(r'([^{]+)\{\s*([^}]*)\s*\}');
 
@@ -366,5 +375,68 @@ class CssParser {
 
     complexSelectors.removeWhere((selector) => '.'.allMatches(selector).length <= 1);
     return complexSelectors;
+  }
+
+  /// Finds all @media blocks in [css]. If the media type is in [_enabledMediaTypes],
+  /// the inner rules are inlined into the returned string. Otherwise the block is dropped.
+  String _resolveMediaBlocks(String css) {
+    final buffer = StringBuffer();
+    int i = 0;
+
+    while (i < css.length) {
+      final mediaStart = css.indexOf('@media', i);
+      if (mediaStart == -1) {
+        // No more @media blocks — append remainder and stop
+        buffer.write(css.substring(i));
+        break;
+      }
+
+      // Append everything before this @media block
+      buffer.write(css.substring(i, mediaStart));
+
+      // Find the opening brace
+      final braceOpen = css.indexOf('{', mediaStart);
+      if (braceOpen == -1) break; // malformed, give up
+
+      // Extract the media query string, e.g. "amzn-mobi" or "screen and (max-width: 600px)"
+      final mediaQuery = css.substring(mediaStart + '@media'.length, braceOpen).trim();
+
+      // Find the matching closing brace (accounting for nesting)
+      final braceClose = _findMatchingBrace(css, braceOpen);
+      if (braceClose == -1) break; // malformed, give up
+
+      // The inner content (the rules inside the @media block)
+      final innerContent = css.substring(braceOpen + 1, braceClose);
+
+      if (_isMediaEnabled(mediaQuery)) {
+        buffer.write(innerContent);
+      }
+      // else: drop the block entirely
+
+      i = braceClose + 1;
+    }
+
+    return buffer.toString();
+  }
+
+  /// Returns true if [mediaQuery] matches any of the enabled media types.
+  /// Handles bare names ("amzn-mobi") and "only screen"-style prefixes.
+  bool _isMediaEnabled(String mediaQuery) {
+    final query = mediaQuery.toLowerCase().trim();
+    return _enabledMediaTypes.any((type) => query == type.toLowerCase() ||
+        query.startsWith('${type.toLowerCase()} '));
+  }
+
+  /// Finds the index of the closing brace that matches the opening brace at [openIndex].
+  int _findMatchingBrace(String s, int openIndex) {
+    int depth = 0;
+    for (int i = openIndex; i < s.length; i++) {
+      if (s[i] == '{') depth++;
+      else if (s[i] == '}') {
+        depth--;
+        if (depth == 0) return i;
+      }
+    }
+    return -1; // unmatched
   }
 }
