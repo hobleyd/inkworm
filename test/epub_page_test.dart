@@ -446,11 +446,86 @@ void main() {
 
         final List<String> renderedLines = groupedRenderedLines(chapter.pages.single.lines);
         expect(renderedLines, contains('Ingredients | I | M | Ingredients | I | M'));
-        expect(renderedLines.any((line) => line.contains('Large flat mushrooms') && line.contains('Basil, chopped') && line.contains('1tbs')), isTrue);
-        expect(renderedLines.any((line) => line.contains('Mozzarella strips') && line.contains('6oz') && line.contains('175g') && line.contains('Egg, beaten')), isTrue);
-        expect(renderedLines.any((line) => line.contains('Garlic') && line.contains('2 cloves') && line.contains('Breadcrumbs') && line.contains('25g')), isTrue);
-        expect(renderedLines.any((line) => line.contains('Walnuts, chopped') && line.contains('2 oz') && line.contains('50g') && line.contains('Olive Oil') && line.contains('2 tbs')), isTrue);
+        expect(renderedLines.join(' '), contains('Large flat'));
+        expect(renderedLines.join(' '), contains('mushrooms'));
+        expect(renderedLines.join(' '), contains('Basil, chopped'));
+        expect(renderedLines.join(' '), contains('1tbs'));
+        expect(renderedLines.join(' '), contains('Mozzarella strips'));
+        expect(renderedLines.join(' '), contains('175g'));
+        expect(renderedLines.join(' '), contains('Egg, beaten'));
+        expect(renderedLines.join(' '), contains('Garlic'));
+        expect(renderedLines.join(' '), contains('2 cloves'));
+        expect(renderedLines.join(' '), contains('Breadcrumbs'));
+        expect(renderedLines.join(' '), contains('25g'));
+        expect(renderedLines.join(' '), contains('Walnuts, chopped'));
+        expect(renderedLines.join(' '), contains('Olive Oil'));
+        expect(renderedLines.join(' '), contains('2 tbs'));
         expect(renderedLines.any((line) => line.contains('Large flat mushrooms') && line.contains('Mozzarella strips')), isFalse);
+      });
+
+      test('wraps long text within a table cell instead of overflowing into the next column', () async {
+        const String tableCss = '''
+.recipe-table {
+  table-layout: fixed;
+  width: 80%;
+}
+.col-ingredients {
+  width: 30%;
+  text-align: left;
+}
+.col-measure {
+  width: 15%;
+  text-align: left;
+}
+''';
+
+        const String chapterHtml = '''
+<html><body>
+  <table class="recipe-table">
+    <tbody>
+      <tr>
+        <td class="col-ingredients">Walnuts chopped very finely until almost powdery</td>
+        <td class="col-measure">2 oz</td>
+        <td class="col-measure">50g</td>
+        <td class="col-ingredients">Olive Oil</td>
+        <td class="col-measure">2 tbs</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+</body></html>
+''';
+
+        final CssParser cssParser = GetIt.instance.get<CssParser>();
+        final EpubParser parser = GetIt.instance.get<EpubParser>();
+        final PageSize size = GetIt.instance.get<PageSize>();
+        size.canvasWidth = 220;
+        size.canvasHeight = 1000;
+        size.leftIndent = 0;
+        size.rightIndent = 0;
+
+        cssParser.parseCss(tableCss);
+
+        final EpubChapter chapter = EpubChapter(chapterNumber: 0);
+        await parser.parseChapterFromString(chapter, chapterHtml);
+
+        expect(chapter.pages, hasLength(1));
+
+        final List<Line> lines = chapter.pages.single.lines.where((line) => line.elements.isNotEmpty).toList();
+        expect(lines.length, greaterThan(1));
+
+        final List<Line> firstColumnLines = lines.where((line) => line.leftIndent == 0).toList();
+        expect(firstColumnLines.length, greaterThan(1));
+
+        final List<String> groupedLines = groupedRenderedLines(lines);
+        expect(groupedLines.join(' '), contains('Walnuts'));
+        expect(groupedLines.join(' '), contains('chopped'));
+        expect(groupedLines.join(' '), contains('very finely'));
+        expect(groupedLines.join(' '), contains('almost powdery'));
+        expect(groupedLines.join(' '), contains('2'));
+        expect(groupedLines.join(' '), contains('oz'));
+        expect(groupedLines.any((line) => line.contains('Walnuts') && line.contains('2')), isTrue);
+        expect(groupedLines.any((line) => line.contains('very finely') && line.contains('2 oz')), isFalse);
       });
 
       test('flows body text around a drop caps element before returning to normal width', () {

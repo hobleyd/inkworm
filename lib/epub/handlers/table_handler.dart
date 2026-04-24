@@ -46,8 +46,11 @@ class TableHandler extends HtmlHandler {
         if (!tableStyle.dynamicTableColumns) {
           cellBlockStyle.getWidth(columns[i], tableStyle);
           if (cellBlockStyle.cellWidth == 0) {
-            // Fallback to the header widths if we miss one in the table.
-            cellBlockStyle.cellWidth = contents.rows.first[i]?.width ?? 0;
+            // Fallback to the width already established for this column, when available.
+            final TableRow? firstRow = contents.rows.isNotEmpty ? contents.rows.first : null;
+            if (firstRow != null) {
+              cellBlockStyle.cellWidth = firstRow.row[i]?.width ?? 0;
+            }
           }
         }
         TableCell tableCell = TableCell(blockStyle: cellBlockStyle, elementStyle: cellElementStyle, height: 0, width: cellBlockStyle.cellWidth);

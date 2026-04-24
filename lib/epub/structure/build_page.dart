@@ -185,9 +185,9 @@ class BuildPage implements LineListener {
 
       double leftYPos = size.leftIndent + content.marginLeft;
       for (final MapEntry(:key, :value) in row.entries) {
-        // Ensure the lines have the correct width for the column.
-        final double lineWidth = leftYPos + value.paddingLeft + value.width;
-        var (tablePage, tableLine) = _getTemporaryBuildSpace(lineWidth);
+        // Wrap within the cell's own content box, not the table's running X position.
+        final double contentWidth = value.width - value.paddingLeft - value.paddingRight;
+        var (tablePage, tableLine) = _getTemporaryBuildSpace(contentWidth > 0 ? contentWidth : value.width);
         tablePage.addContents(value.contents, tableLine);
         rowLines[key] = tablePage.lines;
         for (final line in rowLines[key]!) {
@@ -247,7 +247,7 @@ class BuildPage implements LineListener {
     BuildPage page = BuildPage();
     page.currentPage.pageHeight = 10000; // Don't need to paginate this as it is temporary.
 
-    BuildLine line = BuildLine(availableWidth: width+1, rightIndent: 0);
+    BuildLine line = BuildLine(availableWidth: width + 1, leftIndent: 0, rightIndent: 0);
     line.lineListener = page;
 
     return (page, line);
