@@ -73,6 +73,9 @@ class CssParser {
   }
 
   String? getStringAttribute(XmlNode element, Style style, String attribute) {
+    String? result = element.getAttribute(attribute);
+    if (result != null) return result;
+
     return getCSSAttributeValue(element, style, attribute);
   }
 
