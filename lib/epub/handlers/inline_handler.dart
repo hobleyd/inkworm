@@ -21,8 +21,7 @@ class InlineHandler extends HtmlHandler {
   Future<List<HtmlContent>> processElement({required XmlNode node, BlockStyle? parentBlockStyle, ElementStyle? parentElementStyle}) async {
     XmlElement element = node as XmlElement;
 
-    ElementStyle elementStyle = ElementStyle(parentStyle: parentElementStyle);
-    await elementStyle.parseElement(element: element,);
+    ElementStyle elementStyle = await ElementStyle.getElementStyle(element, parentElementStyle);
 
     List<HtmlContent> elements = [];
     for (var child in node.children) {

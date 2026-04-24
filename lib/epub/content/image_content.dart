@@ -8,9 +8,11 @@ import 'html_content.dart';
 class ImageContent extends HtmlContent {
   final String image;
   final Uint8List bytes;
+  final double requiredWidth;
+  final double requiredHeight;
 
   @override
-  Iterable<LineElement> get elements => [ImageElement(image: this, height: height, width: width)];
+  Iterable<LineElement> get elements => [ImageElement(image: this, height: requiredHeight, width: requiredWidth)];
 
   const ImageContent({
     required super.blockStyle,
@@ -19,6 +21,8 @@ class ImageContent extends HtmlContent {
     required super.height,
     required this.image,
     required this.bytes,
+    required this.requiredHeight,
+    required this.requiredWidth,
   });
 
   @override

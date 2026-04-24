@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 
 import '../../models/page_size.dart';
@@ -11,7 +12,7 @@ import '../elements/line_element.dart';
 
 class Line {
   LineAlignment alignment = LineAlignment.justify;
-
+  double availableWidth = 0;
   double baselineAdjust = 0;
   double dropCapsIndent = 0;
   double lineHeight     = 0;
@@ -26,26 +27,27 @@ class Line {
   bool   get isEmpty            => elements.isEmpty;
   bool   get lastElementIsSpace => elements.isNotEmpty && (elements.last is SpaceSeparator || elements.last is NonBreakingSpaceSeparator);
   int    get separators         => elements.whereType<Separator>().length;
+  double get elementsWidth      => elements.fold(0, (sum, item) => sum + item.width);
   double get leftIndents        => leftIndent + textIndent + dropCapsIndent;
-  double get width              => leftIndents + elements.fold(0, (sum, item) => sum + item.width);
+  double get width              => leftIndents + elementsWidth;
 
   set height(double height)     => lineHeight = max(height, lineHeight);
   set maxHeight(double height)  => maxLineHeight = max(height, maxLineHeight);
   set yPos(double pos)          => yPosOnPage = pos;
 
-  Line() {
+  Line({double? availableWidth, double? leftIndent, double? rightIndent}) {
     PageSize size = GetIt.instance.get<PageSize>();
 
-    leftIndent = size.leftIndent;
-    rightIndent = size.rightIndent;
+    this.availableWidth = availableWidth ?? size.canvasWidth;
+    this.leftIndent = leftIndent ?? size.leftIndent;
+    this.rightIndent = rightIndent ?? size.rightIndent;
   }
 
   void add(LineElement e) => elements.add(e);
 
   void calculateSeparatorWidth() {
-    PageSize size = GetIt.instance.get<PageSize>();
     if (alignment == LineAlignment.justify) {
-      double additionalSpaceWidth = (size.canvasWidth - rightIndent - elements.first.marginRight - width) / separators;
+      double additionalSpaceWidth = (availableWidth - rightIndent - elements.first.marginRight - width) / separators;
 
       bool printedSpaces = false;
       for (LineElement e in elements) {
@@ -58,12 +60,12 @@ class Line {
       }
     } else if (alignment == LineAlignment.centre) {
       // Adjust left margin now we know the width of the words in the line.
-      double margin = (size.canvasWidth - width - elements.first.marginRight) / 2;
+      double margin = (availableWidth - elementsWidth - elements.first.marginRight) / 2;
       leftIndent = margin;
-      rightIndent = size.canvasWidth - margin;
+      rightIndent = availableWidth - margin;
     } else {
       if (alignment == LineAlignment.right) {
-        leftIndent = size.canvasWidth - width;
+        leftIndent = availableWidth - width;
         textIndent = 0;
       }
     }
@@ -102,8 +104,7 @@ class Line {
   }
 
   bool willFitWidth(LineElement e) {
-    PageSize size = GetIt.instance.get<PageSize>();
-    return (width + e.width) <= (size.canvasWidth - rightIndent - e.marginRight);
+    return (width + e.width) <= (availableWidth - rightIndent - e.marginRight);
   }
 }
 

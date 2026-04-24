@@ -7,6 +7,7 @@ import '../content/paragraph_break.dart';
 import '../parser/extensions.dart';
 import '../styles/block_style.dart';
 import '../styles/element_style.dart';
+import '../styles/table_cell_style.dart';
 import 'html_handler.dart';
 
 class BlockHandler extends HtmlHandler {
@@ -32,17 +33,19 @@ class BlockHandler extends HtmlHandler {
     HtmlHandler.registerHandler('aside', this);
     HtmlHandler.registerHandler('svg', this);
     HtmlHandler.registerHandler('nav', this);
+    HtmlHandler.registerHandler('td', this);
+    HtmlHandler.registerHandler('th', this);
   }
 
   @override
   Future<List<HtmlContent>> processElement({required XmlNode node, BlockStyle? parentBlockStyle, ElementStyle? parentElementStyle}) async {
     XmlElement element = node as XmlElement;
 
-    ElementStyle elementStyle = ElementStyle(parentStyle: parentElementStyle);
-    await elementStyle.parseElement(element: element);
-
-    BlockStyle blockStyle = BlockStyle(elementStyle: elementStyle, parentStyle: parentBlockStyle);
-    await blockStyle.parseElement(element: element,);
+    ElementStyle elementStyle = await ElementStyle.getElementStyle(element, parentElementStyle);
+    BlockStyle blockStyle = switch (element.localName) {
+      'td' || 'th' => await TableCellStyle.getTableCellStyle(element, elementStyle: elementStyle, parentStyle: parentBlockStyle,),
+                _  => await     BlockStyle.getBlockStyle(element, elementStyle: elementStyle, parentStyle: parentBlockStyle,),
+    };
 
     if (blockStyle.display == "none") {
       return [];

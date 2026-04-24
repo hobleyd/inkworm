@@ -14,12 +14,13 @@ class ImageElement extends LineElement {
 
   ImageElement({required this.image, required super.height, required super.width}) {
     resizeImageIfRequired();
+    scaleImageToFitScreen();
   }
 
   double calculateAspectRatio(double desiredWidth, double desiredHeight) {
-    if (image.width > desiredWidth || image.height > desiredHeight) {
-      final widthScale = desiredWidth / image.width;
-      final heightScale = desiredHeight / image.height;
+    if (width > desiredWidth || height > desiredHeight) {
+      final widthScale = desiredWidth / width;
+      final heightScale = desiredHeight / height;
 
       return widthScale < heightScale ? widthScale : heightScale;
     }
@@ -28,12 +29,40 @@ class ImageElement extends LineElement {
   }
 
   void resizeImageIfRequired() {
+    final bool widthSpecified = image.requiredWidth != image.width;
+    final bool heightSpecified = image.requiredHeight != image.height;
+
+    if (widthSpecified && heightSpecified) {
+      width = image.requiredWidth;
+      height = image.requiredHeight;
+      return;
+    }
+
+    if (widthSpecified) {
+      final double scale = image.requiredWidth / image.width;
+      width = image.requiredWidth;
+      height = image.height * scale;
+      return;
+    }
+
+    if (heightSpecified) {
+      final double scale = image.requiredHeight / image.height;
+      width = image.width * scale;
+      height = image.requiredHeight;
+      return;
+    }
+
+    width = image.width;
+    height = image.height;
+  }
+
+  void scaleImageToFitScreen() {
     // Resize the image to fit the screen.
     PageSize size = GetIt.instance.get<PageSize>();
     double scale = calculateAspectRatio(size.canvasWidth, size.canvasHeight);
 
-    width = image.width * scale;
-    height = image.height * scale;
+    width = width * scale;
+    height = height * scale;
 
     // If we need to scale the resized image, we can do this here. Making the assumption that
     // a) maxWidth or maxHeight are a percentage and that
@@ -56,10 +85,11 @@ class ImageElement extends LineElement {
   @override
   void paint(Canvas c, double height, double xPos, double yPos) {
     ImageCache cache = GetIt.instance.get<ImageCache>();
+    final sourceImage = cache[image.image];
 
     c.drawImageRect(
-      cache[image.image],
-      Rect.fromLTWH(0, 0, image.width, image.height),
+      sourceImage,
+      Rect.fromLTWH(0, 0, sourceImage.width.toDouble(), sourceImage.height.toDouble()),
       Rect.fromLTWH(xPos, yPos, width, this.height),
       Paint(),
     );

@@ -36,6 +36,12 @@ class ElementStyle extends Style {
 
   }
 
+  static Future<ElementStyle> getElementStyle(XmlElement element, Style? parentStyle) async {
+    final ElementStyle elementStyle = ElementStyle(parentStyle: parentStyle as ElementStyle?);
+    await elementStyle.parseElement(element: element);
+    return elementStyle;
+  }
+
   ElementStyle copyWith(ElementStyle parentStyle) {
     textStyle = textStyle.copyWith(
         color: parentStyle.textStyle.color,

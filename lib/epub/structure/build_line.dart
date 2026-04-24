@@ -10,13 +10,19 @@ import 'line.dart';
 @LazySingleton()
 class BuildLine {
   LineListener? _lineListener;
-  Line currentLine = Line();
+  final double? availableWidth;
+  final double? leftIndent;
+  final double? rightIndent;
+  Line currentLine;
 
   bool alignmentToBaselineRequired = false;
 
   bool   get isEmpty    =>  currentLine.isEmpty;
   bool   get isNotEmpty => !currentLine.isEmpty;
   double get maxHeight  =>  currentLine.lineHeight;
+
+  BuildLine({this.availableWidth, this.leftIndent, this.rightIndent})
+      : currentLine = Line(availableWidth: availableWidth, leftIndent: leftIndent, rightIndent: rightIndent);
 
   set dropCapsIndent(double indent)        => currentLine.dropCapsIndent = indent;
   set lineListener(LineListener? listener) => _lineListener = listener;
@@ -62,7 +68,7 @@ class BuildLine {
     if (!currentLine.willFitWidth(e) && e is! SpaceSeparator) {
       completeLine();
 
-      currentLine.leftIndent += e.element.blockStyle.marginLeft;
+      currentLine.leftIndent += e.marginLeft;
 
       // If we create a new line, this will not have the height from the previous assignment (obviously). Also,
       // it can't be a dropcaps as that would fit on the line given they are always at the start of a sentence.
@@ -73,7 +79,7 @@ class BuildLine {
   }
 
   void addLine() {
-    currentLine = Line();
+    currentLine = Line(availableWidth: availableWidth, leftIndent: leftIndent, rightIndent: rightIndent);
   }
 
   void completeLine() {

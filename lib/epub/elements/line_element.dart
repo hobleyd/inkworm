@@ -10,6 +10,7 @@ abstract class LineElement {
 
   bool    get alignToBaseline => element.elementStyle.alignToBaseline ?? false;
   bool    get isDropCaps      => element.elementStyle.isDropCaps ?? false;
+  double  get marginLeft      => element.blockStyle.marginLeft;
   double  get marginRight     => element.blockStyle.marginRight;
 
   LineElement({required this.width, required this.height});

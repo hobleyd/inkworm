@@ -1,4 +1,5 @@
 import 'dart:isolate';
+import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
 import 'package:flutter/material.dart' hide Page;
@@ -8,8 +9,10 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:inkworm/epub/cache/link_cache.dart';
 import 'package:inkworm/epub/cache/text_cache.dart';
 import 'package:inkworm/epub/content/html_content.dart';
+import 'package:inkworm/epub/content/image_content.dart';
 import 'package:inkworm/epub/structure/epub_chapter.dart';
 import 'package:inkworm/epub/content/link_content.dart';
+import 'package:inkworm/epub/elements/image_element.dart';
 import 'package:inkworm/epub/elements/separators/non_breaking_space_separator.dart';
 import 'package:inkworm/epub/handlers/block_handler.dart';
 import 'package:inkworm/epub/handlers/css_handler.dart';
@@ -205,6 +208,26 @@ void main() {
         final Page page = Page();
         expect(page.lines, isEmpty);
         expect(page.footnotes, isEmpty);
+      });
+    });
+
+    group('image sizing', () {
+      test('uses required width and height when both are specified', () {
+        final ImageContent imageContent = ImageContent(
+          blockStyle: blockStyle,
+          elementStyle: ElementStyle(),
+          image: 'test-image',
+          bytes: Uint8List(0),
+          width: 120,
+          height: 80,
+          requiredWidth: 40,
+          requiredHeight: 30,
+        );
+
+        final ImageElement element = imageContent.elements.first as ImageElement;
+
+        expect(element.width, 40);
+        expect(element.height, 30);
       });
     });
 

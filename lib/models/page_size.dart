@@ -14,6 +14,8 @@ class PageSize {
   double leftIndent;
   double rightIndent;
 
+  double get actualWidth => canvasWidth - leftIndent - rightIndent;
+
   PageSize() : canvasWidth = 0, canvasHeight = 0, pixelDensity = 1, leftIndent = 12, rightIndent = 12;
 
   void update({double? canvasWidth, double? canvasHeight, double? pixelDensity, double? leftIndent, double? rightIndent}) {

@@ -2,12 +2,20 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:get_it/get_it.dart';
 import 'package:inkworm/models/page_size.dart';
 import 'package:mockito/annotations.dart';
+import 'package:mockito/mockito.dart';
 import 'package:xml/xml.dart';
+import 'dart:isolate';
+import 'dart:typed_data';
 
+import 'package:inkworm/epub/cache/text_cache.dart';
 import 'package:inkworm/epub/parser/css_parser.dart';
 import 'package:inkworm/epub/parser/epub_parser.dart';
 import 'package:inkworm/epub/parser/font_management.dart';
+import 'package:inkworm/epub/parser/isolates/worker_slot.dart';
+import 'package:inkworm/epub/styles/block_style.dart';
 import 'package:inkworm/epub/styles/element_style.dart';
+import 'package:inkworm/epub/styles/table_cell_style.dart';
+import 'package:inkworm/epub/styles/table_style.dart';
 
 @GenerateMocks([EpubParser, FontManagement])
 import 'css_parser_test.mocks.dart';
@@ -16,25 +24,39 @@ void main() {
   late CssParser cssParser;
   late MockEpubParser mockEpubParser;
   late MockFontManagement mockFontManagement;
+  late ReceivePort uiPort;
 
   setUp(() {
     TestWidgetsFlutterBinding.ensureInitialized();
 
     mockEpubParser = MockEpubParser();
     mockFontManagement = MockFontManagement();
+    when(mockEpubParser.getBytes(any)).thenReturn(Uint8List(0));
 
     GetIt.instance.registerSingleton<CssParser>(CssParser());
     GetIt.instance.registerSingleton<PageSize>(PageSize());
     GetIt.instance.registerSingleton<EpubParser>(mockEpubParser);
     GetIt.instance.registerSingleton<FontManagement>(mockFontManagement);
+    GetIt.instance.registerSingleton<TextCache>(TextCache());
 
     cssParser = GetIt.instance.get<CssParser>();
     PageSize size = GetIt.instance.get<PageSize>();
 
+    size.canvasHeight = 800;
+    size.canvasWidth = 600;
+    size.leftIndent = 12;
+    size.rightIndent = 12;
     size.pixelDensity = 1;
+
+    uiPort = ReceivePort();
+    uiPort.listen((dynamic request) {
+      request.process(uiPort.sendPort);
+    });
+    WorkerSlot.staticUIPort = uiPort.sendPort;
   });
 
   tearDown(() {
+    uiPort.close();
     GetIt.instance.reset();
   });
 
@@ -528,6 +550,92 @@ void main() {
       expect(color, 'red');
     });
 
+  });
+
+  group('ElementStyle.getElementStyle', () {
+    test('should create and parse an element style with its parent style', () async {
+      cssParser.css['div'] = {'color': 'red'};
+      cssParser.css['span'] = {'font-size': '18px'};
+
+      final parent = XmlElement(XmlName('div'));
+      final child = XmlElement(XmlName('span'));
+      parent.children.add(child);
+
+      final ElementStyle parentStyle = await ElementStyle.getElementStyle(parent, null);
+      final ElementStyle style = await ElementStyle.getElementStyle(child, parentStyle);
+
+      expect(cssParser.getStringAttribute(child, style, 'color'), 'red');
+      expect(cssParser.getStringAttribute(child, style, 'font-size'), '18px');
+    });
+  });
+
+  group('BlockStyle.getBlockStyle', () {
+    test('should create and parse a block style with its parent style', () async {
+      cssParser.css['div'] = {'text-align': 'center'};
+      cssParser.css['p'] = {'display': 'none'};
+
+      final parent = XmlElement(XmlName('div'));
+      final child = XmlElement(XmlName('p'));
+      parent.children.add(child);
+
+      final ElementStyle parentElementStyle = await ElementStyle.getElementStyle(parent, null);
+      final BlockStyle parentBlockStyle = await BlockStyle.getBlockStyle(
+        parent,
+        elementStyle: parentElementStyle,
+      );
+
+      final ElementStyle childElementStyle = await ElementStyle.getElementStyle(child, parentElementStyle);
+      final BlockStyle childBlockStyle = await BlockStyle.getBlockStyle(
+        child,
+        elementStyle: childElementStyle,
+        parentStyle: parentBlockStyle,
+      );
+
+      expect(childBlockStyle.alignment, LineAlignment.centre);
+      expect(childBlockStyle.display, 'none');
+    });
+  });
+
+  group('TableStyle.getTableStyle', () {
+    test('should create and parse a table style', () async {
+      cssParser.css['table'] = {
+        'width': '75%',
+        'table-layout': 'fixed',
+      };
+
+      final table = XmlElement(XmlName('table'));
+      final TableStyle tableStyle = await TableStyle.getTableStyle(table);
+
+      expect(tableStyle.tableWidth, 0.75);
+      expect(tableStyle.tableLayout, TableLayout.fixed);
+    });
+  });
+
+  group('TableCellStyle.getTableCellStyle', () {
+    test('should create and parse a table cell style', () async {
+      cssParser.css['td'] = {
+        'display': 'table-cell',
+        'vertical-align': 'middle',
+        'padding-top': '4px',
+        'padding-bottom': '4px',
+        'padding-left': '4px',
+        'padding-right': '4px',
+      };
+
+      final XmlElement cell = XmlElement(XmlName('td'));
+      final ElementStyle elementStyle = await ElementStyle.getElementStyle(cell, null);
+      final TableCellStyle tableCellStyle = await TableCellStyle.getTableCellStyle(
+        cell,
+        elementStyle: elementStyle,
+      );
+
+      expect(tableCellStyle.display, 'table-cell');
+      expect(tableCellStyle.verticalAlignment, TableCellAlignment.middle);
+      expect(tableCellStyle.paddingTop, 4);
+      expect(tableCellStyle.paddingBottom, 4);
+      expect(tableCellStyle.paddingLeft, 4);
+      expect(tableCellStyle.paddingRight, 4);
+    });
   });
 
   group('Integration tests', () {

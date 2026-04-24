@@ -23,11 +23,8 @@ class SuperscriptHandler extends HtmlHandler {
 
     List<HtmlContent> elements = [];
 
-    ElementStyle elementStyle = ElementStyle(parentStyle: parentElementStyle);
-    await elementStyle.parseElement(element: element,);
-
-    BlockStyle blockStyle = BlockStyle(elementStyle: elementStyle, parentStyle: parentBlockStyle);
-    blockStyle.parseElement(element: element,);
+    ElementStyle elementStyle = await ElementStyle.getElementStyle(element, parentElementStyle);
+    BlockStyle     blockStyle = await   BlockStyle.getBlockStyle(element, elementStyle: elementStyle, parentStyle: parentBlockStyle,);
 
     if (node.children.isNotEmpty) {
       List<HtmlContent>? childElements = await node.firstChild!.handler?.processElement(node: node.firstChild!, parentBlockStyle: blockStyle, parentElementStyle: elementStyle);

@@ -1,54 +1,63 @@
-import '../elements/line_element.dart';
-import '../elements/table_row_break.dart';
-import '../styles/table_style.dart';
-import 'html_content.dart';
+import 'package:inkworm/epub/content/paragraph_break.dart';
+
+import '../../elements/line_element.dart';
+import '../../styles/table_style.dart';
+import '../html_content.dart';
+import '../image_content.dart';
+import '../line_break.dart';
+import 'table_cell.dart';
+import 'table_row.dart';
 
 class TableContent extends HtmlContent {
   // Each List item is a Table row, with the contents of each column indexed by id.
-  final List<Map<int, List<HtmlContent>>> contentByColumn = [];
+  final List<TableRow> rows = [];
   final TableStyle tableStyle;
 
   @override
-  Iterable<LineElement> get elements => contentByColumn
-      .expand((map) => map.entries.toList()..sort((a, b) => a.key.compareTo(b.key)))
-      .expand((entry) => entry.value)
-      .expand((htmlContent) => [...htmlContent.elements, TableRowBreak(width: tableStyle.tableWidth, height: 0)])
-      .toList();
+  Iterable<LineElement> get elements => throw UnimplementedError;
 
   TableContent({required super.blockStyle, required super.elementStyle, required super.width, required super.height, required this.tableStyle});
 
-  void addContent(int column, List<HtmlContent> contents) {
-    contentByColumn.add({column: contents});
-  }
-
   void calculateColumnWidths() {
-    if (contentByColumn.isNotEmpty) {
-      // Collect all distinct widths seen per column across all rows.
-      final Map<int, Set<double>> widthsPerColumn = {};
+    if (rows.isEmpty) return;
 
-      for (final row in contentByColumn) {
-        for (final MapEntry(:key, :value) in row.entries) {
-          widthsPerColumn.putIfAbsent(key, Set.new);
-          for (final content in value) {
-            widthsPerColumn[key]!.add(content.width);
+    // Single pass: track whether each column has a consistent width and collect cells.
+    final Map<int, double?> columnWidths = {};  // null = variable (conflicting widths seen)
+    final Map<int, List<TableCell>> cellsPerColumn = {};
+
+    for (final row in rows) {
+      for (final MapEntry(:key, :value) in row.entries) {
+        cellsPerColumn.putIfAbsent(key, () => []).add(value);
+
+        for (final content in value.contents) {
+          if (content is ParagraphBreak || content is LineBreak) continue;
+
+          final double contentWidth = content is ImageContent ? content.requiredWidth : content.width;
+          if (!columnWidths.containsKey(key)) {
+            columnWidths[key] = contentWidth;               // First width seen for this column.
+          } else if (columnWidths[key] != contentWidth) {
+            columnWidths[key] = null;                       // Conflicting width — mark as variable.
+            break;
+            // TODO: TextContent doesn't have a width at this point as we are not at the rendering stage. Need to think about this; may not
+            // matter given text content is unlikely to have a consistent width.
           }
         }
       }
+    }
 
-      // A column is "fixed" only if every piece of content in it shares exactly one width value.
-      for (final MapEntry(:key, :value) in widthsPerColumn.entries) {
-        tableStyle.tableColumnWidths[key] = value.length == 1 ? value.single : null;
-      }
+    // Ensure columns with no non-break content are represented.
+    for (final key in cellsPerColumn.keys) {
+      columnWidths.putIfAbsent(key, () => null);
+    }
 
-      // Distribute the remainder of tableStyle.tableWidth across variable columns.
-      final double fixedTotal = tableStyle.tableColumnWidths.values.whereType<double>().fold(0, (a, b) => a + b);
-      final int variableCount = tableStyle.tableColumnWidths.values.where((w) => w == null).length;
-      final double variableWidth = variableCount > 0
-          ? (tableStyle.tableWidth - fixedTotal) / variableCount
-          : 0;
+    final double    fixedTotal = columnWidths.values.whereType<double>().fold(0.0, (a, b) => a + b);
+    final int    variableCount = columnWidths.values.where((w) => w == null).length;
+    final double variableWidth = variableCount > 0 ? (tableStyle.tableWidth - fixedTotal) / variableCount : 0.0;
 
-      for (final MapEntry(:key, :value) in widthsPerColumn.entries) {
-        tableStyle.tableColumnWidths[key] = value.length == 1 ? value.single : variableWidth;
+    for (final MapEntry(:key, :value) in columnWidths.entries) {
+      final double columnWidth = value ?? variableWidth;
+      for (final cell in cellsPerColumn[key] ?? const <TableCell>[]) {
+        cell.width = columnWidth;
       }
     }
   }
@@ -58,11 +67,10 @@ class TableContent extends HtmlContent {
     if (tableStyle.dynamicTableColumns) {
       calculateColumnWidths();
     }
-
   }
 
   @override
   String toString() {
-    return '$contentByColumn';
+    return '$rows';
   }
 }

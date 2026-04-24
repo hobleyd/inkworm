@@ -33,11 +33,9 @@ extension FindFileExtension on Archive {
 
 const dcNamespace = 'http://purl.org/dc/elements/1.1/';
 extension FileAuthorExtension on XmlDocument {
-  String get author => findAllElements('creator', namespace: dcNamespace).firstOrNull?.innerText ?? "";
-
-  String get title => findAllElements('title', namespace: dcNamespace).firstOrNull?.innerText ?? "";
-
-  List<String> get spine => findAllElements('itemref').map((el) => el.getAttribute('idref')!).toList();
+  String       get author => findAllElements('creator', namespace: dcNamespace).firstOrNull?.innerText ?? "";
+  String       get  title => findAllElements('title',   namespace: dcNamespace).firstOrNull?.innerText ?? "";
+  List<String> get  spine => findAllElements('itemref').map((el) => el.getAttribute('idref')!).toList();
 
   Map<String, ManifestItem> get manifest {
     Map<String, ManifestItem> manifest = {};

@@ -10,6 +10,7 @@ enum LineAlignment { left, right, centre, justify, none }
 
 class BlockStyle extends Style {
   late CssParser _parser;
+  CssParser get parser => _parser;
   ElementStyle elementStyle;
   Style? parentStyle;
 
@@ -35,12 +36,6 @@ class BlockStyle extends Style {
   double? maxHeight;
   double? maxWidth;
 
-  // Table properties
-  Map<int, BlockStyle> tableColumns = {};
-  String? tableLayout;
-  String? tableOverflow;
-  String? tableWhitespace;
-
   bool ignoreVerticalMargins = false;
 
   double get marginBottom => (bottomMargin ?? 0) + (blockMarginEnd ?? 0);
@@ -51,6 +46,12 @@ class BlockStyle extends Style {
 
   BlockStyle({required this.elementStyle, this.parentStyle}) {
     _parser = GetIt.instance.get<CssParser>();
+  }
+
+  static Future<BlockStyle> getBlockStyle(XmlElement element, {required ElementStyle elementStyle, Style? parentStyle,}) async {
+    final BlockStyle blockStyle = BlockStyle(elementStyle: elementStyle, parentStyle: parentStyle as BlockStyle?,);
+    await blockStyle.parseElement(element: element);
+    return blockStyle;
   }
 
   BlockStyle copyFrom(BlockStyle parent) {
@@ -68,7 +69,7 @@ class BlockStyle extends Style {
 
     style.leftMargin   = leftMargin;
     style.rightMargin  = rightMargin;
-    style.topMargin    = topMargin ?? this.topMargin;
+    style.topMargin    = topMargin    ?? this.topMargin;
     style.bottomMargin = bottomMargin ?? this.bottomMargin;
 
     style.blockMarginEnd    = blockMarginEnd;
@@ -83,11 +84,6 @@ class BlockStyle extends Style {
 
     style.maxHeight = maxHeight;
     style.maxWidth = maxWidth;
-
-    style.tableColumns.addAll(tableColumns);
-    style.tableLayout = tableLayout;
-    style.tableOverflow = tableOverflow;
-    style.tableWhitespace = tableWhitespace;
 
     style.ignoreVerticalMargins = ignoreVerticalMargins;
 
@@ -132,7 +128,7 @@ class BlockStyle extends Style {
 
   void getDisplay(XmlNode element) {
     // Display is used to determine whether you want to see an element or not. In an interactive web-page
-    // this can make sense; but in a book? But none-the-less, I've seen it used!
+    // this can make sense; but in a book? But nonetheless, I've seen it used!
     display = _parser.getStringAttribute(element, this, "display");
   }
 
@@ -222,9 +218,9 @@ class BlockStyle extends Style {
     }
 
     // Now check for the other kind of margin. Thanks CSS committee.
-    String blockMarginEndString = _parser.getStringAttribute(element, this, "margin-block-end") ?? "";
-    String blockMarginStartString = _parser.getStringAttribute(element, this, "margin-block-start") ?? "";
-    String inlineMarginEndString = _parser.getStringAttribute(element, this, "margin-inline-end") ?? "";
+    String blockMarginEndString = _parser.getStringAttribute(element, this, "margin-block-end")       ?? "";
+    String blockMarginStartString = _parser.getStringAttribute(element, this, "margin-block-start")   ?? "";
+    String inlineMarginEndString = _parser.getStringAttribute(element, this, "margin-inline-end")     ?? "";
     String inlineMarginStartString = _parser.getStringAttribute(element, this, "margin-inline-start") ?? "";
 
     if (blockMarginEndString.isNotEmpty)    blockMarginEnd    = await _parser.getFloatFromString(elementStyle.textStyle, blockMarginEndString, false);
@@ -240,19 +236,10 @@ class BlockStyle extends Style {
     maxWidth  ??= _parser.getPercentAttribute(element,  this, "width");
   }
 
-  void getTableStyles(XmlNode element) {
-    // TODO: should really support text-overflow: ellipsis; if I am supporting overflow.
-    tableWhitespace = _parser.getStringAttribute(element,  this, "white-space") ?? tableWhitespace;
-    tableOverflow   = _parser.getStringAttribute(element,  this, "overflow") ?? tableOverflow;
-    tableLayout     = _parser.getStringAttribute(element,  this, "table-layout") ?? tableLayout;
-    width           = _parser.getPercentAttribute(element, this, "width") ?? width;
-  }
-
   @override
   Future <Style> parseElement({required XmlNode element}) async {
-    // TODO: Hideous hack. Fix, please. Should ElementStyle and BlockStyle inherit off the same base object?
-    selectors = elementStyle.selectors;
-    declarations = elementStyle.declarations;
+    addSelectors(element);
+    addDeclarations(_parser, element);
 
     if (parentStyle != null) {
       copyFrom(parentStyle as BlockStyle);
@@ -264,7 +251,6 @@ class BlockStyle extends Style {
     getLineHeightMultiplier(element);
     await getMargins(element);
     getMax(element);
-    getTableStyles(element);
 
     return this;
   }

@@ -6,9 +6,13 @@ import '../content/html_content.dart';
 import '../content/line_break.dart';
 import '../content/link_content.dart';
 import '../content/paragraph_break.dart';
+import '../content/table/table_cell.dart';
+import '../content/table/table_content.dart';
+import '../content/table/table_row.dart';
 import '../elements/line_element.dart';
 import '../interfaces/line_listener.dart';
 import '../interfaces/page_listener.dart';
+import '../styles/table_style.dart';
 import 'build_line.dart';
 import 'line.dart';
 import 'page.dart';
@@ -20,9 +24,11 @@ class BuildPage implements LineListener {
   PageListener? _pageListener;
   Page currentPage = Page();
 
-  List<Line> get   footnotes => currentPage.footnotes;
-  List<Line> get       lines => currentPage.lines;
-  double     get totalHeight => lines.totalHeight + footnotes.totalHeight;
+  List<Line> get footnotes => currentPage.footnotes;
+
+  List<Line> get lines => currentPage.lines;
+
+  double get totalHeight => lines.totalHeight + footnotes.totalHeight;
 
   set pageListener(PageListener? listener) => _pageListener = listener;
 
@@ -47,10 +53,16 @@ class BuildPage implements LineListener {
     for (HtmlContent content in contents) {
       // A Paragraph break will complete the previous line, before adding a new line for the new paragraph.
       switch (content) {
-        case ParagraphBreak pb: addParagraphBreak(pb, buildLine);
-        case      LineBreak lb: addLineBreak(lb, buildLine);
-        case    LinkContent lc: addLinkContent(lc, buildLine);
-        default:                addElements(content, buildLine);
+        case ParagraphBreak pb:
+          addParagraphBreak(pb, buildLine);
+        case LineBreak lb:
+          addLineBreak(lb, buildLine);
+        case LinkContent lc:
+          addLinkContent(lc, buildLine);
+        case TableContent tc:
+          addTableContent(tc, buildLine);
+        default:
+          addElements(content, buildLine);
       }
     }
   }
@@ -79,8 +91,7 @@ class BuildPage implements LineListener {
     }
 
     // Create a temp space to build the footnotes. While I use GetIt to provide a singleton generally for page & line builds,
-    // footnotes require a separate space to build. Hence the direct instantiation. This is the only place I break the rules.
-    // Honest.
+    // footnotes require a separate space to build. Hence the direct instantiation.
     BuildPage footnotesPage = BuildPage();
     BuildLine footnotesLine = BuildLine();
     footnotesLine.lineListener = footnotesPage;
@@ -142,7 +153,7 @@ class BuildPage implements LineListener {
     Page newPage = Page();
     newPage.dropCapsXPosition = currentPage.dropCapsXPosition;
     newPage.dropCapsYPosition = remainingDropCapsHeight;
-    newPage.pageHeight        = size.canvasHeight;
+    newPage.pageHeight = size.canvasHeight;
 
     currentPage = newPage;
   }
@@ -152,5 +163,92 @@ class BuildPage implements LineListener {
     buildLine.textIndent = content.leftIndent ?? 0;
 
     currentPage.currentBottomYPos += content.margin;
+  }
+
+  // This is going to be complicated; we need to build out lines that relate to a table column in each row, work out the maximum
+  // height and align the row according to CSS requirements. In effect we'll have different height lines of text and/or images
+  // to be positioned on the page.
+  void addTableContent(TableContent content, BuildLine buildLine) {
+    final PageSize size = GetIt.instance.get<PageSize>();
+
+    if (buildLine.isNotEmpty) {
+      buildLine.completeLine();
+    }
+
+    // Because we don't know how big the Table Cells are at this point, we need to build each Table Row on a temp page
+    // and then transfer them over to the currentPage once we have the heights calculated.
+    // (This is why we don't have Table Elements as we do for the other types of HtmlContent - this is a multi-component
+    // activity as the cells in the row relate to each other and so we have to build it out at once; there is no painting for a table
+    // element to do.)
+    for (final row in content.rows) {
+      Map<int, List<Line>> rowLines = {};
+
+      double leftYPos = size.leftIndent;
+      for (final MapEntry(:key, :value) in row.entries) {
+        // Ensure the lines have the correct width for the column.
+        final double lineWidth = leftYPos + value.paddingLeft + value.width;
+        var (tablePage, tableLine) = _getTemporaryBuildSpace(lineWidth);
+        tablePage.addContents(value.contents, tableLine);
+        rowLines[key] = tablePage.lines;
+        for (final line in rowLines[key]!) {
+          line.leftIndent = leftYPos + value.paddingLeft;
+        }
+        leftYPos += value.width;
+      }
+
+      // Now we have a full table row built, we can align the columns according to the TableStyle.
+      double maxColumnHeight = _maxRowHeight(row, rowLines);
+      Map<int, double> yPosAdjust = {};
+      for (final MapEntry(:key, :value) in row.entries) {
+        if (value.verticalAlignment != TableCellAlignment.top) {
+          // Can only be middle or bottom here.
+          final double columnHeight = _columnHeight(value, rowLines[key] ?? const <Line>[]);
+          yPosAdjust[key] = value.verticalAlignment == TableCellAlignment.middle ? (maxColumnHeight - columnHeight) / 2 : maxColumnHeight - columnHeight;
+        }
+      }
+
+      // Now the heights are known and aligned, we can add the lines to the current page!
+      double yPosOnPage = currentPage.currentBottomYPos;
+
+      // Ensure the row will fit on the current page
+      if (yPosOnPage + maxColumnHeight >= size.canvasHeight) {
+        addPage();
+        yPosOnPage = 0;
+      }
+
+      for (final MapEntry(:key, :value) in rowLines.entries) {
+        currentPage.currentBottomYPos = yPosOnPage + (yPosAdjust[key] ?? 0); // Reset this as each column needs to start from the same position on the page.
+        for (int i = 0; i < value.length; i++) {
+          buildLine.currentLine = value[i];
+          if (i == value.length-1) {
+            buildLine.completeParagraph();
+          } else {
+            buildLine.completeLine();
+          }
+        }
+      }
+    }
+  }
+
+  double _columnHeight(TableCell cell, List<Line> lines) {
+    return cell.paddingTop +
+        lines.fold(0.0, (sum, line) => sum + line.maxLineHeight) +
+        cell.paddingBottom;
+  }
+
+  double _maxRowHeight(TableRow row, Map<int, List<Line>> rowLines) {
+    return row.entries
+        .map((entry) => _columnHeight(entry.value, rowLines[entry.key] ?? const <Line>[]))
+        .fold(0.0, (max, sum) => sum > max ? sum : max);
+  }
+
+  (BuildPage, BuildLine) _getTemporaryBuildSpace(double width) {
+    BuildPage page = BuildPage();
+    page.currentPage.pageHeight = 10000; // Don't need to paginate this as it is temporary.
+
+    BuildLine line = BuildLine(availableWidth: width+1, rightIndent: 0);
+    line.lineListener = page;
+
+    return (page, line);
   }
 }
