@@ -47,3 +47,4 @@ jobs:
           name: 'inkworm-${{ env.VERSION }}.apk'
           files: 'build/app/outputs/apk/release/inkworm-${{ env.VERSION }}-release.apk'
           tag_name: ${{ env.VERSION }}
+          generate_release_notes: true
