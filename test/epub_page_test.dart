@@ -528,6 +528,68 @@ void main() {
         expect(groupedLines.any((line) => line.contains('very finely') && line.contains('2 oz')), isFalse);
       });
 
+      test('wrapped table rows reserve enough height before the next row starts', () async {
+        const String tableCss = '''
+.recipe-table {
+  table-layout: fixed;
+  width: 80%;
+}
+.col-ingredients {
+  width: 30%;
+  text-align: left;
+}
+.col-measure {
+  width: 15%;
+  text-align: left;
+}
+''';
+
+        const String chapterHtml = '''
+<html><body>
+  <table class="recipe-table">
+    <tbody>
+      <tr>
+        <td class="col-ingredients">Walnuts chopped very finely until almost powdery</td>
+        <td class="col-measure">2 oz</td>
+        <td class="col-measure">50g</td>
+        <td class="col-ingredients">Olive Oil</td>
+        <td class="col-measure">2 tbs</td>
+        <td></td>
+      </tr>
+      <tr>
+        <td class="col-ingredients">Second row</td>
+        <td class="col-measure">1</td>
+        <td></td>
+        <td class="col-ingredients">Still below</td>
+        <td class="col-measure">2</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+</body></html>
+''';
+
+        final CssParser cssParser = GetIt.instance.get<CssParser>();
+        final EpubParser parser = GetIt.instance.get<EpubParser>();
+        final PageSize size = GetIt.instance.get<PageSize>();
+        size.canvasWidth = 220;
+        size.canvasHeight = 1000;
+        size.leftIndent = 0;
+        size.rightIndent = 0;
+
+        cssParser.parseCss(tableCss);
+
+        final EpubChapter chapter = EpubChapter(chapterNumber: 0);
+        await parser.parseChapterFromString(chapter, chapterHtml);
+
+        final List<String> groupedLines = groupedRenderedLines(chapter.pages.single.lines);
+        final int wrappedRowLastIndex = groupedLines.lastIndexWhere((line) => line.contains('powdery') || line.contains('almost'));
+        final int secondRowIndex = groupedLines.indexWhere((line) => line.contains('Second') || line.contains('Still below'));
+
+        expect(wrappedRowLastIndex, isNonNegative);
+        expect(secondRowIndex, greaterThan(wrappedRowLastIndex));
+      });
+
       test('flows body text around a drop caps element before returning to normal width', () {
         final PageSize size = GetIt.instance.get<PageSize>();
         size.canvasWidth = 180;

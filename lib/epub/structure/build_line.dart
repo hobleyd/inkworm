@@ -73,6 +73,7 @@ class BuildLine {
       // If we create a new line, this will not have the height from the previous assignment (obviously). Also,
       // it can't be a dropcaps as that would fit on the line given they are always at the start of a sentence.
       currentLine.height = e.height;
+      currentLine.maxHeight = e.height;
     }
 
     currentLine.add(e);
