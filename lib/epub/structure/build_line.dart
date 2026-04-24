@@ -65,7 +65,7 @@ class BuildLine {
       }
     }
 
-    if (!currentLine.willFitWidth(e) && e is! SpaceSeparator) {
+    if (!currentLine.isEmpty && !currentLine.willFitWidth(e) && e is! SpaceSeparator) {
       completeLine();
 
       currentLine.leftIndent += e.marginLeft;

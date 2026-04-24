@@ -126,6 +126,23 @@ void main() {
       }).join();
     }
 
+    List<String> groupedRenderedLines(List<Line> lines) {
+      final Map<double, List<Line>> groupedLines = <double, List<Line>>{};
+
+      for (final line in lines.where((line) => line.elements.isNotEmpty)) {
+        groupedLines.putIfAbsent(line.yPosOnPage, () => <Line>[]).add(line);
+      }
+
+      final List<MapEntry<double, List<Line>>> orderedGroups = groupedLines.entries.toList()
+        ..sort((a, b) => a.key.compareTo(b.key));
+
+      return orderedGroups.map((entry) {
+        final List<Line> rowLines = entry.value
+          ..sort((a, b) => a.leftIndent.compareTo(b.leftIndent));
+        return rowLines.map(lineText).join(' | ');
+      }).toList();
+    }
+
     late BuildPage buildPage;
     late BuildLine buildLine;
     late TextStyle style;
@@ -328,10 +345,7 @@ void main() {
 
         expect(chapter.pages, hasLength(1));
 
-        final List<String> renderedLines = chapter.pages.single.lines
-            .where((line) => line.elements.isNotEmpty)
-            .map(lineText)
-            .toList();
+        final List<String> renderedLines = groupedRenderedLines(chapter.pages.single.lines);
 
         expect(renderedLines, contains('Before table.'));
         expect(renderedLines, contains('Planet | Population'));
