@@ -354,6 +354,105 @@ void main() {
         expect(renderedLines, contains('After table.'));
       });
 
+      test('applies fixed table-layout percentage column widths for recipe tables', () async {
+        const String tableCss = '''
+.recipe-table {
+  table-layout: fixed;
+  margin-left: 10%;
+  margin-right: 10%;
+  overflow: hidden;
+  width: 80%;
+  white-space: wrap;
+  font-size: smaller;
+  background-color: #dbffe5;
+}
+.col-ingredients {
+  width: 30%;
+  text-align: left;
+  font-size: smaller;
+}
+.col-measure {
+  width: 15%;
+  text-align: left;
+  font-size: smaller;
+}
+''';
+
+        const String chapterHtml = '''
+<html><body>
+  <table class="recipe-table">
+    <thead>
+      <tr>
+        <th class="col-ingredients">Ingredients</th>
+        <th class="col-measure">I</th>
+        <th class="col-measure">M</th>
+        <th class="col-ingredients">Ingredients</th>
+        <th class="col-measure">I</th>
+        <th class="col-measure">M</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="col-ingredients">Large flat mushrooms</td>
+        <td class="col-measure">5</td>
+        <td></td>
+        <td class="col-ingredients">Basil, chopped</td>
+        <td class="col-measure">1tbs</td>
+        <td></td>
+      </tr>
+      <tr>
+        <td class="col-ingredients">Mozzarella strips</td>
+        <td class="col-measure">6oz</td>
+        <td class="col-measure">175g</td>
+        <td class="col-ingredients">Egg, beaten</td>
+        <td class="col-measure">1</td>
+        <td></td>
+      </tr>
+      <tr>
+        <td class="col-ingredients">Garlic</td>
+        <td class="col-measure">2 cloves</td>
+        <td></td>
+        <td class="col-ingredients">Breadcrumbs</td>
+        <td class="col-measure">1 oz</td>
+        <td class="col-measure">25g</td>
+      </tr>
+      <tr>
+        <td class="col-ingredients">Walnuts, chopped finely</td>
+        <td class="col-measure">2 oz</td>
+        <td class="col-measure">50g</td>
+        <td class="col-ingredients">Olive Oil</td>
+        <td class="col-measure">2 tbs</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+</body></html>
+''';
+
+        final CssParser cssParser = GetIt.instance.get<CssParser>();
+        final EpubParser parser = GetIt.instance.get<EpubParser>();
+        final PageSize size = GetIt.instance.get<PageSize>();
+        size.canvasWidth = 800;
+        size.canvasHeight = 1400;
+        size.leftIndent = 0;
+        size.rightIndent = 0;
+
+        cssParser.parseCss(tableCss);
+
+        final EpubChapter chapter = EpubChapter(chapterNumber: 0);
+        await parser.parseChapterFromString(chapter, chapterHtml);
+
+        expect(chapter.pages, hasLength(1));
+
+        final List<String> renderedLines = groupedRenderedLines(chapter.pages.single.lines);
+        expect(renderedLines, contains('Ingredients | I | M | Ingredients | I | M'));
+        expect(renderedLines.any((line) => line.contains('Large flat mushrooms') && line.contains('Basil, chopped') && line.contains('1tbs')), isTrue);
+        expect(renderedLines.any((line) => line.contains('Mozzarella strips') && line.contains('6oz') && line.contains('175g') && line.contains('Egg, beaten')), isTrue);
+        expect(renderedLines.any((line) => line.contains('Garlic') && line.contains('2 cloves') && line.contains('Breadcrumbs') && line.contains('25g')), isTrue);
+        expect(renderedLines.any((line) => line.contains('Walnuts, chopped') && line.contains('2 oz') && line.contains('50g') && line.contains('Olive Oil') && line.contains('2 tbs')), isTrue);
+        expect(renderedLines.any((line) => line.contains('Large flat mushrooms') && line.contains('Mozzarella strips')), isFalse);
+      });
+
       test('flows body text around a drop caps element before returning to normal width', () {
         final PageSize size = GetIt.instance.get<PageSize>();
         size.canvasWidth = 180;

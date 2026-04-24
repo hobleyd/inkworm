@@ -1,18 +1,25 @@
+import 'package:get_it/get_it.dart';
 import 'package:xml/xml.dart';
 
+import '../parser/css_parser.dart';
 import 'block_style.dart';
 import 'element_style.dart';
 import 'style.dart';
 import 'table_style.dart';
 
 class TableCellStyle extends BlockStyle {
+  late CssParser _parser;
+
   TableCellAlignment verticalAlignment = TableCellAlignment.top;
+  double cellWidth     = 0;
   double paddingTop    = 0;
   double paddingBottom = 0;
   double paddingLeft   = 0;
   double paddingRight  = 0;
 
-  TableCellStyle({required super.elementStyle, super.parentStyle});
+  TableCellStyle({required super.elementStyle, super.parentStyle}) {
+    _parser = GetIt.instance.get<CssParser>();
+  }
 
   static Future<TableCellStyle> getTableCellStyle(XmlElement element, {required ElementStyle elementStyle, Style? parentStyle,}) async {
     final TableCellStyle tableCellStyle = TableCellStyle(elementStyle: elementStyle, parentStyle: parentStyle as BlockStyle?,);
@@ -79,6 +86,11 @@ class TableCellStyle extends BlockStyle {
     if (bottomPaddingString != null) {
       paddingBottom = await parser.getFloatFromString(elementStyle.textStyle, bottomPaddingString, false) ?? 0;
     }
+  }
+
+  void getWidth(XmlNode element, TableStyle tableStyle) {
+    final String? width = _parser.getStringAttribute(element, this, "width");
+    cellWidth = width != null ? _parser.parseFloatCssValue(width, tableStyle.tableWidth) : 0;
   }
 
   @override

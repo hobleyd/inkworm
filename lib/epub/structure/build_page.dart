@@ -183,7 +183,7 @@ class BuildPage implements LineListener {
     for (final row in content.rows) {
       Map<int, List<Line>> rowLines = {};
 
-      double leftYPos = size.leftIndent;
+      double leftYPos = size.leftIndent + content.marginLeft;
       for (final MapEntry(:key, :value) in row.entries) {
         // Ensure the lines have the correct width for the column.
         final double lineWidth = leftYPos + value.paddingLeft + value.width;
@@ -227,6 +227,7 @@ class BuildPage implements LineListener {
           }
         }
       }
+      currentPage.currentBottomYPos = yPosOnPage + maxColumnHeight;
     }
   }
 

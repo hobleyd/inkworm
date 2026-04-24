@@ -43,7 +43,14 @@ class TableHandler extends HtmlHandler {
         final ElementStyle cellElementStyle = await   ElementStyle.getElementStyle(columns[i], elementStyle);
         final TableCellStyle cellBlockStyle = await TableCellStyle.getTableCellStyle(columns[i], elementStyle: cellElementStyle, parentStyle: blockStyle,);
 
-        TableCell tableCell = TableCell(blockStyle: cellBlockStyle, elementStyle: cellElementStyle, height: 0, width: 0);
+        if (!tableStyle.dynamicTableColumns) {
+          cellBlockStyle.getWidth(columns[i], tableStyle);
+          if (cellBlockStyle.cellWidth == 0) {
+            // Fallback to the header widths if we miss one in the table.
+            cellBlockStyle.cellWidth = contents.rows.first[i]?.width ?? 0;
+          }
+        }
+        TableCell tableCell = TableCell(blockStyle: cellBlockStyle, elementStyle: cellElementStyle, height: 0, width: cellBlockStyle.cellWidth);
 
         final List<HtmlContent>? cellContents = await columns[i].handler?.processElement(node: columns[i], parentBlockStyle: cellBlockStyle, parentElementStyle: cellElementStyle,);
         if (cellContents?.isNotEmpty ?? false) {

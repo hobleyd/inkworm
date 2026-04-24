@@ -10,6 +10,8 @@ class TableRow extends HtmlContent {
 
   Iterable<MapEntry<int, TableCell>> get entries => row.entries;
 
+  TableCell? operator[](int i) => row[i];
+
   @override
   Iterable<LineElement> get elements => throw UnimplementedError();
 

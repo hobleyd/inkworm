@@ -3,7 +3,6 @@ import 'package:xml/xml.dart';
 
 import '../../models/page_size.dart';
 import '../parser/css_parser.dart';
-import 'block_style.dart';
 import 'style.dart';
 
 enum TableLayout { auto, fixed }
@@ -31,9 +30,13 @@ class TableStyle extends Style {
     return tableStyle;
   }
 
-  void getTableStyles(XmlNode element) {
+  void getTableWidth(XmlNode element) {
     PageSize size = GetIt.instance.get<PageSize>();
-    tableWidth  = _parser.getPercentAttribute(element, this, "width") ?? size.actualWidth;
+    final String? width = _parser.getStringAttribute(element, this, "width");
+    tableWidth = width != null ? _parser.parseFloatCssValue(width, size.actualWidth) : size.actualWidth;
+  }
+
+  void getTableLayout(XmlNode element) {
     tableLayout = switch(_parser.getStringAttribute(element,  this, "table-layout")) {
       'fixed' => TableLayout.fixed,
            _  => TableLayout.auto
@@ -45,7 +48,8 @@ class TableStyle extends Style {
     addSelectors(element);
     addDeclarations(_parser, element);
 
-    getTableStyles(element);
+    getTableLayout(element);
+    getTableWidth(element);
 
     return this;
   }
