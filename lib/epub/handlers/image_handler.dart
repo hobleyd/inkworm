@@ -54,7 +54,7 @@ class ImageHandler extends HtmlHandler {
           requiredWidth = requiredWidth * percent;
           requiredHeight = requiredHeight * percent;
         } else if (heightString?.endsWith('%') ?? false) {
-          double percent = double.parse(widthString.substring(0, heightString!.length-1)) / 100;
+          double percent = double.parse(heightString!.substring(0, heightString.length-1)) / 100;
           requiredWidth = requiredWidth * percent;
           requiredHeight = requiredHeight * percent;
         } else {
