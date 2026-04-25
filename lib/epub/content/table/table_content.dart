@@ -66,6 +66,24 @@ class TableContent extends HtmlContent {
   void complete() {
     if (tableStyle.dynamicTableColumns) {
       calculateColumnWidths();
+    } else {
+      scaleFixedColumns();
+    }
+    for (final row in rows) {
+      row.syncWidth();
+    }
+  }
+
+  // For fixed layout, proportionally scale column widths down if they exceed the table width.
+  void scaleFixedColumns() {
+    for (final row in rows) {
+      final double totalWidth = row.entries.fold(0.0, (sum, e) => sum + e.value.width);
+      if (totalWidth <= tableStyle.tableWidth || totalWidth == 0) continue;
+
+      final double scale = tableStyle.tableWidth / totalWidth;
+      for (final entry in row.entries) {
+        entry.value.width = entry.value.width * scale;
+      }
     }
   }
 
