@@ -141,7 +141,7 @@ class Epub extends _$Epub implements IsolateListener {
 
     _epubRequest = OpenEpubRequest(href: "", pageSize: _epubRequest.pageSize, fontSize: progress.fontSize, initialChapter: progress.chapterNumber);
 
-    _worker = null;
+    _worker = IsolateWorker(listener: this);
     openBook(book);
   }
 
