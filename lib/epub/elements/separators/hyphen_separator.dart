@@ -3,10 +3,7 @@ import 'package:flutter/material.dart';
 import 'separator.dart';
 
 class HyphenSeparator extends Separator {
-  HyphenSeparator({required super.blockStyle, required super.elementStyle, required super.width, required super.height}) : super(separator: "-") {
-    // I want to ensure Hyphens are a little more visible when displaying them.
-    width = width * 1.5;
-  }
+  HyphenSeparator({required super.blockStyle, required super.elementStyle, required super.width, required super.height}) : super(separator: "-");
 
   @override
   void paint(Canvas c, double height, double xPos, double yPos) {
