@@ -715,6 +715,40 @@ void main() {
         expect(backgrounds.every((bg) => bg.rect.width == 640), isTrue);
       });
 
+      test('superscript text has top vertical alignment so it is not shifted down to the baseline', () async {
+        const String chapterHtml = '''
+<html><body>
+<p>May 4<sup>th</sup></p>
+</body></html>
+''';
+
+        final PageSize size = GetIt.instance.get<PageSize>();
+        size.canvasWidth = 800;
+        size.canvasHeight = 600;
+        size.leftIndent = 0;
+        size.rightIndent = 0;
+
+        final EpubParser parser = GetIt.instance.get<EpubParser>();
+        final EpubChapter chapter = EpubChapter(chapterNumber: 0);
+        await parser.parseChapterFromString(chapter, chapterHtml);
+
+        expect(chapter.pages, hasLength(1));
+
+        final lines = chapter.pages.single.lines.where((l) => l.elements.isNotEmpty).toList();
+        final textLine = lines.firstWhere((l) => l.elements.any((el) => el.toString().contains('4')));
+
+        // "th" is on the same line as "4"
+        expect(textLine.elements.any((el) => el.toString().contains('th')), isTrue);
+
+        // The superscript "th" must be top-aligned so the renderer does not push it down to the baseline.
+        final supElement = textLine.elements.firstWhere((el) => el.toString().contains('th'));
+        expect(supElement.verticalAlignment, equals(VerticalAlignment.top));
+
+        // The normal "4" retains default alignment.
+        final normalElement = textLine.elements.firstWhere((el) => el.toString().contains('4'));
+        expect(normalElement.verticalAlignment, equals(VerticalAlignment.none));
+      });
+
       test('flows body text around a drop caps element before returning to normal width', () {
         final PageSize size = GetIt.instance.get<PageSize>();
         size.canvasWidth = 180;

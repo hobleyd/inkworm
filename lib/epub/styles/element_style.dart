@@ -5,7 +5,7 @@ import 'package:xml/xml.dart';
 import '../parser/css_parser.dart';
 import 'style.dart';
 
-enum VerticalAlignment { none, baseline, middle }
+enum VerticalAlignment { none, baseline, middle, top }
 
 class ElementStyle extends Style {
   late CssParser _parser;
@@ -61,9 +61,10 @@ class ElementStyle extends Style {
   void getAlignment(XmlNode element) {
     String? alignment = _parser.getStringAttribute(element, this, "vertical-align");
     verticalAlignment = switch (alignment) {
-      "baseline" => VerticalAlignment.baseline,
-      "middle"   => VerticalAlignment.middle,
-      _          => VerticalAlignment.none,
+      "baseline"       => VerticalAlignment.baseline,
+      "middle"         => VerticalAlignment.middle,
+      "super" || "top" => VerticalAlignment.top,
+      _                => VerticalAlignment.none,
     };
   }
 
