@@ -14,6 +14,7 @@ import 'extensions.dart';
 class EpubParser {
   Archive? bookArchive;
   XmlDocument? opf;
+  int currentChapterIndex = -1;
 
   EpubParser();
 
@@ -98,9 +99,29 @@ class EpubParser {
   }
 
   Future<EpubChapter> parseChapter(int index, String href) async {
+    currentChapterIndex = index;
     EpubChapter chapter = EpubChapter(chapterNumber: index);
 
     return await parseChapterFromString(chapter, bookArchive!.getContentAsString(href));
+  }
+
+  // Returns the spine position of the given filename, or null if not found or the OPF is unavailable.
+  int? spineIndexForFile(String filename) {
+    try {
+      final opfDoc = getOPF();
+      final manifest = opfDoc.manifest;
+      final spine = opfDoc.spine;
+
+      final entry = manifest.entries.firstWhereOrNull(
+        (e) => e.value.href.endsWith(filename) || e.value.href == filename,
+      );
+      if (entry == null) return null;
+
+      final idx = spine.indexOf(entry.key);
+      return idx >= 0 ? idx : null;
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<EpubChapter> parseChapterFromString(EpubChapter chapter, String chapterText) async {

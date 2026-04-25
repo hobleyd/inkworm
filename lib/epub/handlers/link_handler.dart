@@ -60,16 +60,32 @@ class LinkHandler extends HtmlHandler {
 
           // Process Footnotes, if required.
           if (child is TextContent) {
-            if (child.text.isFootnote || element.getAttribute('vertical-align') == "super") {
+            var (fnFile, fnRef) = href.splitReference;
+            EpubParser parser = GetIt.instance.get<EpubParser>();
+
+            bool treatedAsFootnote = child.text.isFootnote || element.getAttribute('vertical-align') == "super";
+
+            // A cross-file link to a chapter that appears before the current one in the spine is a
+            // back-reference (e.g. table of contents), not a footnote.
+            if (treatedAsFootnote && fnFile.isNotEmpty && parser.bookArchive != null) {
+              if (fnFile.startsWith('contents')) {
+                treatedAsFootnote = false;
+              } else {
+                final linkedIndex = parser.spineIndexForFile(fnFile);
+                if (linkedIndex != null && linkedIndex < parser.currentChapterIndex) {
+                  treatedAsFootnote = false;
+                }
+              }
+            }
+
+            if (treatedAsFootnote) {
               child.elementStyle.setTextStyle(weight: FontWeight.w500, decoration: TextDecoration.none);
-              
+
               if (!cache.contains(id)) {
                 cache.add(id);
               }
 
-              var (fnFile, fnRef) = href.splitReference;
               if (!cache.contains(fnRef)) {
-                EpubParser parser = GetIt.instance.get<EpubParser>();
                 XmlNode? footnote = parser.getFootnote(fnFile, fnRef);
                 if (footnote != null) {
                   List<HtmlContent>? fnElements = await footnote.handler?.processElement(node: footnote,);
