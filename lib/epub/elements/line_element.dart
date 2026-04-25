@@ -10,7 +10,8 @@ abstract class LineElement {
   HtmlContent get element;
 
   VerticalAlignment get verticalAlignment => element.elementStyle.verticalAlignment;
-  bool get isDropCaps => element.elementStyle.isDropCaps ?? false;
+  bool    get isDropCaps      => element.elementStyle.isDropCaps ?? false;
+  double  get ascent          => 0;
   double  get marginLeft      => element.blockStyle.marginLeft;
   double  get marginRight     => element.blockStyle.marginRight;
 

@@ -53,6 +53,7 @@ class BuildLine {
     }
 
     currentLine.maxHeight = e.height;
+    currentLine.ascent = e.ascent;
     if (!e.isDropCaps) {
       // Only adjust the line height if this is not a dropcaps element. For obvious reasons. Given the use of dropcaps I can't
       // imagine it will be possible that this is the only thing on the line. On the other hand. HTML. Sigh.
@@ -75,6 +76,7 @@ class BuildLine {
       // it can't be a dropcaps as that would fit on the line given they are always at the start of a sentence.
       currentLine.height = e.height;
       currentLine.maxHeight = e.height;
+      currentLine.ascent = e.ascent;
     }
 
     currentLine.add(e);

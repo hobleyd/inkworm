@@ -16,6 +16,7 @@ class Line {
   double baselineAdjust = 0;
   double dropCapsIndent = 0;
   double lineHeight     = 0;
+  double maxAscent      = 0;
   double maxLineHeight  = 0;
   double leftIndent     = 0;
   double rightIndent    = 0;
@@ -33,6 +34,7 @@ class Line {
   double get width              => leftIndents + elementsWidth;
 
   set height(double height)     => lineHeight = max(height, lineHeight);
+  set ascent(double a)          => maxAscent  = max(a, maxAscent);
   set maxHeight(double height)  => maxLineHeight = max(height, maxLineHeight);
   set yPos(double pos)          => yPosOnPage = pos;
 

@@ -26,6 +26,8 @@ class PageRenderer extends CustomPainter {
         yPos += (el.element as TextContent).descent;
       } else if (middleAlign) {
         yPos += (line.lineHeight - el.height) / 2;
+      } else if (el.ascent > 0 && line.maxAscent > el.ascent) {
+        yPos += line.maxAscent - el.ascent;
       }
       el.paint(canvas, el.verticalAlignment == VerticalAlignment.baseline ? line.lineHeight : line.lineHeight - line.baselineAdjust, xPos, yPos);
       xPos += el.width;

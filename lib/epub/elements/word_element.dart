@@ -10,6 +10,9 @@ class WordElement extends LineElement {
   @override
   get element => word;
 
+  @override
+  double get ascent => word.ascent;
+
   WordElement({required this.word, required super.height, required super.width}) {
     // TODO: this is completely fucked. Flutter literally doesn't return the correct width and everything else I have
     // tried: getBoxesForSelection, computeLineMetrics, getOffsetForCaret and even PictureRecorder don't work.
