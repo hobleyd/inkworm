@@ -21,9 +21,9 @@ class PageRenderer extends CustomPainter {
     double xPos = line.leftIndent + line.textIndent + line.dropCapsIndent;
     for (LineElement el in line.elements) {
       double yPos = line.yPosOnPage;
-      if (el.verticalAlignment == VerticalAlignment.baseline && line.baselineAdjust > 0) {
+      if (el.verticalAlignment == VerticalAlignment.baseline && line.baselineAdjust > 0 && el.ascent == 0) {
+        // Non-text element (e.g. image) with explicit baseline alignment: shift so its bottom sits on the baseline.
         yPos -= line.baselineAdjust;
-        yPos += (el.element as TextContent).descent;
       } else if (middleAlign) {
         yPos += (line.lineHeight - el.height) / 2;
       } else if (el.ascent > 0 && line.maxAscent > el.ascent) {

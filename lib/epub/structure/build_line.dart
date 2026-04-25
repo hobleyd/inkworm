@@ -47,8 +47,10 @@ class BuildLine {
     if (alignmentToBaselineRequired) {
       currentLine.baselineAdjust = currentLine.lineHeight - e.height;
       alignmentToBaselineRequired = false;
-    } else if (e.verticalAlignment == VerticalAlignment.baseline) {
-      // We need to adjust the yPos of both the element and the line if we are aligning to the baseline.
+    } else if (e.verticalAlignment == VerticalAlignment.baseline && e.ascent == 0) {
+      // Only non-text elements (images) need the two-pass baselineAdjust system. Text elements use
+      // the maxAscent path in the renderer, so setting baselineAdjust for them would cause
+      // Page.addLine to incorrectly shorten the gap to the next line.
       alignmentToBaselineRequired = true;
     }
 
