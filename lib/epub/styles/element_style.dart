@@ -5,12 +5,14 @@ import 'package:xml/xml.dart';
 import '../parser/css_parser.dart';
 import 'style.dart';
 
+enum VerticalAlignment { none, baseline, middle }
+
 class ElementStyle extends Style {
   late CssParser _parser;
   late TextStyle textStyle;
   ElementStyle? parentStyle;
 
-  bool? alignToBaseline;
+  VerticalAlignment verticalAlignment = VerticalAlignment.none;
   bool? isDropCaps;
 
   static double defaultFontSize = 12;
@@ -57,11 +59,12 @@ class ElementStyle extends Style {
   }
 
   void getAlignment(XmlNode element) {
-    // Tested on Babel.
     String? alignment = _parser.getStringAttribute(element, this, "vertical-align");
-    if (alignment == "baseline") {
-      alignToBaseline = true;
-    }
+    verticalAlignment = switch (alignment) {
+      "baseline" => VerticalAlignment.baseline,
+      "middle"   => VerticalAlignment.middle,
+      _          => VerticalAlignment.none,
+    };
   }
 
   void getDropCaps(XmlNode element) {

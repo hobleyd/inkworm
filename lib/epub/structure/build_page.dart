@@ -1,3 +1,5 @@
+import 'dart:ui' show Rect hide Page, TableRow;
+
 import 'package:get_it/get_it.dart';
 import 'package:injectable/injectable.dart';
 
@@ -182,7 +184,6 @@ class BuildPage implements LineListener {
     // element to do.)
     for (final row in content.rows) {
       Map<int, List<Line>> rowLines = {};
-
       double leftYPos = size.leftIndent + content.marginLeft;
       for (final MapEntry(:key, :value) in row.entries) {
         // Wrap within the cell's own content box, not the table's running X position.
@@ -191,7 +192,7 @@ class BuildPage implements LineListener {
         tablePage.addContents(value.contents, tableLine);
         rowLines[key] = tablePage.lines;
         for (final line in rowLines[key]!) {
-          line.leftIndent = leftYPos + value.paddingLeft;
+          line.leftIndent += leftYPos + value.paddingLeft;
         }
         leftYPos += value.width;
       }
@@ -215,6 +216,20 @@ class BuildPage implements LineListener {
         addPage();
         yPosOnPage = 0;
       }
+
+      if (content.tableStyle.backgroundColor != null && row.backgroundColor == null) {
+        currentPage.addBackground(PageBackground(
+          color: content.tableStyle.backgroundColor!,
+          rect: Rect.fromLTWH(
+            size.leftIndent + content.marginLeft,
+            yPosOnPage,
+            content.width,
+            maxColumnHeight,
+          ),
+        ));
+      }
+
+      row.addBackgrounds(currentPage, size.leftIndent + content.marginLeft, yPosOnPage, maxColumnHeight);
 
       for (final MapEntry(:key, :value) in rowLines.entries) {
         currentPage.currentBottomYPos = yPosOnPage + (yPosAdjust[key] ?? 0); // Reset this as each column needs to start from the same position on the page.

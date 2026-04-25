@@ -590,6 +590,129 @@ void main() {
         expect(secondRowIndex, greaterThan(wrappedRowLastIndex));
       });
 
+      test('applies zebra row background colors to table cells', () async {
+        const String tableCss = '''
+.recipe-table tbody tr:nth-child(odd) td {
+  background-color: #f4fff7;
+}
+.recipe-table tbody tr:nth-child(even) td {
+  background-color: #dbffe5;
+}
+.recipe-table {
+  table-layout: fixed;
+  width: 80%;
+}
+.col-ingredients {
+  width: 30%;
+}
+.col-measure {
+  width: 15%;
+}
+''';
+
+        const String chapterHtml = '''
+<html><body>
+  <table class="recipe-table">
+    <tbody>
+      <tr>
+        <td class="col-ingredients">Row one</td>
+        <td class="col-measure">1</td>
+        <td></td>
+        <td class="col-ingredients">A</td>
+        <td class="col-measure">2</td>
+        <td></td>
+      </tr>
+      <tr>
+        <td class="col-ingredients">Row two</td>
+        <td class="col-measure">3</td>
+        <td></td>
+        <td class="col-ingredients">B</td>
+        <td class="col-measure">4</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+</body></html>
+''';
+
+        final CssParser cssParser = GetIt.instance.get<CssParser>();
+        final EpubParser parser = GetIt.instance.get<EpubParser>();
+        final PageSize size = GetIt.instance.get<PageSize>();
+        size.canvasWidth = 800;
+        size.canvasHeight = 1000;
+        size.leftIndent = 0;
+        size.rightIndent = 0;
+
+        cssParser.parseCss(tableCss);
+
+        final EpubChapter chapter = EpubChapter(chapterNumber: 0);
+        await parser.parseChapterFromString(chapter, chapterHtml);
+
+        final page = chapter.pages.single;
+        expect(page.backgrounds, isNotEmpty);
+        expect(page.backgrounds.where((bg) => bg.color == const Color(0xFFF4FFF7)).length, 1);
+        expect(page.backgrounds.where((bg) => bg.color == const Color(0xFFDBFFE5)).length, 1);
+      });
+
+      test('applies table background color when rows do not override it', () async {
+        const String tableCss = '''
+.recipe-table {
+  table-layout: fixed;
+  width: 80%;
+  background-color: #dbffe5;
+}
+.col-ingredients {
+  width: 30%;
+}
+.col-measure {
+  width: 15%;
+}
+''';
+
+        const String chapterHtml = '''
+<html><body>
+  <table class="recipe-table">
+    <tbody>
+      <tr>
+        <td class="col-ingredients">Row one</td>
+        <td class="col-measure">1</td>
+        <td></td>
+        <td class="col-ingredients">A</td>
+        <td class="col-measure">2</td>
+        <td></td>
+      </tr>
+      <tr>
+        <td class="col-ingredients">Row two</td>
+        <td class="col-measure">3</td>
+        <td></td>
+        <td class="col-ingredients">B</td>
+        <td class="col-measure">4</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+</body></html>
+''';
+
+        final CssParser cssParser = GetIt.instance.get<CssParser>();
+        final EpubParser parser = GetIt.instance.get<EpubParser>();
+        final PageSize size = GetIt.instance.get<PageSize>();
+        size.canvasWidth = 800;
+        size.canvasHeight = 1000;
+        size.leftIndent = 0;
+        size.rightIndent = 0;
+
+        cssParser.parseCss(tableCss);
+
+        final EpubChapter chapter = EpubChapter(chapterNumber: 0);
+        await parser.parseChapterFromString(chapter, chapterHtml);
+
+        final page = chapter.pages.single;
+        final backgrounds = page.backgrounds.where((bg) => bg.color == const Color(0xFFDBFFE5)).toList();
+        expect(backgrounds.length, 2);
+        expect(backgrounds.every((bg) => bg.rect.width == 640), isTrue);
+      });
+
       test('flows body text around a drop caps element before returning to normal width', () {
         final PageSize size = GetIt.instance.get<PageSize>();
         size.canvasWidth = 180;

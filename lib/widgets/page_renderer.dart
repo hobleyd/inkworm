@@ -1,25 +1,33 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 
 import '../epub/content/text_content.dart';
 import '../epub/structure/line.dart';
+import '../epub/styles/element_style.dart';
+import '../epub/structure/page.dart';
 import '../epub/elements/line_element.dart';
 
 class PageRenderer extends CustomPainter {
   List<Line> lines = [];
   List<Line> footnotes = [];
+  List<PageBackground> backgrounds = [];
   bool needsRepaint = false;
 
-  PageRenderer({required this.lines, required this.footnotes});
+  PageRenderer({required this.lines, required this.footnotes, required this.backgrounds});
 
   void paintLine(Canvas canvas, Line line) {
+    final bool middleAlign = line.elements.any((el) => el.verticalAlignment == VerticalAlignment.middle);
     double xPos = line.leftIndent + line.textIndent + line.dropCapsIndent;
     for (LineElement el in line.elements) {
       double yPos = line.yPosOnPage;
-      if (el.alignToBaseline && line.baselineAdjust > 0) {
+      if (el.verticalAlignment == VerticalAlignment.baseline && line.baselineAdjust > 0) {
         yPos -= line.baselineAdjust;
         yPos += (el.element as TextContent).descent;
+      } else if (middleAlign) {
+        yPos += (line.lineHeight - el.height) / 2;
       }
-      el.paint(canvas, el.alignToBaseline ? line.lineHeight : line.lineHeight - line.baselineAdjust, xPos, yPos);
+      el.paint(canvas, el.verticalAlignment == VerticalAlignment.baseline ? line.lineHeight : line.lineHeight - line.baselineAdjust, xPos, yPos);
       xPos += el.width;
     }
   }
@@ -27,6 +35,10 @@ class PageRenderer extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     canvas.clipRect(Offset(0, 0) & size);
+
+    for (final background in backgrounds) {
+      canvas.drawRect(background.rect, Paint()..color = background.color);
+    }
 
     for (Line line in lines) {
       paintLine(canvas, line);

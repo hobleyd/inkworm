@@ -9,6 +9,7 @@ import '../parser/extensions.dart';
 import '../styles/block_style.dart';
 import '../styles/element_style.dart';
 import '../styles/table_cell_style.dart';
+import '../styles/table_row_style.dart';
 import '../styles/table_style.dart';
 import 'html_handler.dart';
 
@@ -36,12 +37,17 @@ class TableHandler extends HtmlHandler {
     // We need to get the table contents first, then use this to set with column widths and any other relevant styling.
     TableContent contents = TableContent(blockStyle: blockStyle, elementStyle: elementStyle, tableStyle: tableStyle, width: tableStyle.tableWidth, height: 0);
     for (var row in node.findAllElements('tr').toList()) {
-      TableRow tableRow = TableRow(blockStyle: blockStyle, elementStyle: elementStyle, height: 0, width: 0);
+      final ElementStyle rowElementStyle = await ElementStyle.getElementStyle(row, elementStyle);
+      final TableRowStyle rowBlockStyle = await TableRowStyle.getTableRowStyle(row, elementStyle: rowElementStyle, parentStyle: blockStyle);
+      TableRow tableRow = TableRow(blockStyle: rowBlockStyle, elementStyle: rowElementStyle, height: 0, width: 0);
 
       final List<XmlElement> columns = row.children.whereType<XmlElement>().where((child) => child.localName == 'td' || child.localName == 'th').toList();
       for (int i = 0; i < columns.length; i++) {
         final ElementStyle cellElementStyle = await   ElementStyle.getElementStyle(columns[i], elementStyle);
         final TableCellStyle cellBlockStyle = await TableCellStyle.getTableCellStyle(columns[i], elementStyle: cellElementStyle, parentStyle: blockStyle,);
+        if (rowBlockStyle.backgroundColor == null) {
+          rowBlockStyle.getBackgroundColor(columns[i]);
+        }
 
         if (!tableStyle.dynamicTableColumns) {
           cellBlockStyle.getWidth(columns[i], tableStyle);

@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:xml/xml.dart';
 
@@ -12,6 +13,7 @@ class TableStyle extends Style {
   late CssParser _parser;
 
   // Table properties
+  Color?      backgroundColor;
   TableLayout tableLayout = TableLayout.auto;
   double      tableWidth  = 100;
 
@@ -43,6 +45,28 @@ class TableStyle extends Style {
     };
   }
 
+  void getBackgroundColor(XmlNode element) {
+    final String? backgroundColorValue = _parser.getStringAttribute(element, this, 'background-color');
+    if (backgroundColorValue == null) {
+      return;
+    }
+
+    final String hex = backgroundColorValue.trim();
+    if (!hex.startsWith('#')) {
+      return;
+    }
+
+    final String normalizedHex = switch (hex.length) {
+      4 => hex.split('').map((char) => char == '#' ? '' : '$char$char').join(),
+      7 => hex.substring(1),
+      _ => '',
+    };
+
+    if (normalizedHex.isNotEmpty) {
+      backgroundColor = Color(int.parse('FF$normalizedHex', radix: 16));
+    }
+  }
+
   @override
   Future<Style> parseElement({required XmlNode element}) async {
     addSelectors(element);
@@ -50,6 +74,7 @@ class TableStyle extends Style {
 
     getTableLayout(element);
     getTableWidth(element);
+    getBackgroundColor(element);
 
     return this;
   }

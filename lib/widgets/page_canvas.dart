@@ -52,8 +52,9 @@ class _PageCanvas extends ConsumerState<PageCanvas> {
           final page = chapter == null || chapter.pages.isEmpty ? null : chapter[pageNumber];
           final List<Line> lines = page?.lines ?? [];
           final List<Line> foots = page?.footnotes ?? [];
+          final backgrounds = page?.backgrounds ?? [];
 
-          PageRenderer renderer = PageRenderer(lines: lines, footnotes: foots);
+          PageRenderer renderer = PageRenderer(lines: lines, footnotes: foots, backgrounds: backgrounds);
           if (lastPageNumber != progress.pageNumber && lines.isNotEmpty) {
             renderer.needsRepaint = true;
             setState(() {

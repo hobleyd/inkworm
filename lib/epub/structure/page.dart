@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 
 import '../../models/page_size.dart';
@@ -5,10 +6,10 @@ import '../styles/block_style.dart';
 import 'build_page.dart';
 import 'line.dart';
 
-
 class Page {
   List<Line> lines = [];
   List<Line> footnotes = [];
+  List<PageBackground> backgrounds = [];
 
   double dropCapsXPosition = 0;
   double dropCapsYPosition = 0;
@@ -21,6 +22,10 @@ class Page {
   bool   get isCurrentLineEmpty => currentLine?.isEmpty ?? true;
 
   set alignment(LineAlignment alignment) => currentLine!.alignment = alignment;
+
+  void addBackground(PageBackground background) {
+    backgrounds.add(background);
+  }
 
   void addFootnote(Line line) {
     footnotes.add(line);
@@ -42,4 +47,11 @@ class Page {
   bool willFitHeight(Line line) {
     return (currentBottomYPos + line.maxLineHeight) <= pageHeight;
   }
+}
+
+class PageBackground {
+  final Color color;
+  final Rect rect;
+
+  PageBackground({required this.color, required this.rect});
 }

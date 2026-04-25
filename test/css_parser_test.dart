@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get_it/get_it.dart';
 import 'package:inkworm/models/page_size.dart';
@@ -15,6 +16,7 @@ import 'package:inkworm/epub/parser/isolates/worker_slot.dart';
 import 'package:inkworm/epub/styles/block_style.dart';
 import 'package:inkworm/epub/styles/element_style.dart';
 import 'package:inkworm/epub/styles/table_cell_style.dart';
+import 'package:inkworm/epub/styles/table_row_style.dart';
 import 'package:inkworm/epub/styles/table_style.dart';
 
 @GenerateMocks([EpubParser, FontManagement])
@@ -606,8 +608,19 @@ void main() {
       final table = XmlElement(XmlName('table'));
       final TableStyle tableStyle = await TableStyle.getTableStyle(table);
 
-      expect(tableStyle.tableWidth, 0.75);
+      expect(tableStyle.tableWidth, GetIt.instance.get<PageSize>().actualWidth * 0.75);
       expect(tableStyle.tableLayout, TableLayout.fixed);
+    });
+
+    test('should parse table background color', () async {
+      cssParser.css['table'] = {
+        'background-color': '#dbffe5',
+      };
+
+      final table = XmlElement(XmlName('table'));
+      final TableStyle tableStyle = await TableStyle.getTableStyle(table);
+
+      expect(tableStyle.backgroundColor, const Color(0xFFDBFFE5));
     });
   });
 
@@ -639,6 +652,37 @@ void main() {
   });
 
   group('Integration tests', () {
+    test('should match nth-child selectors in table descendant CSS', () async {
+      cssParser.parseCss('''
+        .recipe-table tbody tr:nth-child(odd) td { background-color: #f4fff7; }
+        .recipe-table tbody tr:nth-child(even) td { background-color: #dbffe5; }
+      ''');
+
+      final table = XmlElement(XmlName('table'))..setAttribute('class', 'recipe-table');
+      final tbody = XmlElement(XmlName('tbody'));
+      final oddRow = XmlElement(XmlName('tr'));
+      final evenRow = XmlElement(XmlName('tr'));
+      final oddCell = XmlElement(XmlName('td'));
+      final evenCell = XmlElement(XmlName('td'));
+
+      oddRow.children.add(oddCell);
+      evenRow.children.add(evenCell);
+      tbody.children.add(oddRow);
+      tbody.children.add(evenRow);
+      table.children.add(tbody);
+
+      final oddRowElementStyle = await ElementStyle.getElementStyle(oddRow, null);
+      final evenRowElementStyle = await ElementStyle.getElementStyle(evenRow, null);
+      final oddRowStyle = await TableRowStyle.getTableRowStyle(oddRow, elementStyle: oddRowElementStyle);
+      final evenRowStyle = await TableRowStyle.getTableRowStyle(evenRow, elementStyle: evenRowElementStyle);
+
+      oddRowStyle.getBackgroundColor(oddCell);
+      evenRowStyle.getBackgroundColor(evenCell);
+
+      expect(oddRowStyle.backgroundColor, const Color(0xFFF4FFF7));
+      expect(evenRowStyle.backgroundColor, const Color(0xFFDBFFE5));
+    });
+
     test('should handle complete CSS hierarchy', () {
       cssParser.parseCss('''
         h2 { color: black; font-size: 18px; }

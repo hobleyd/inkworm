@@ -206,7 +206,7 @@ class CssParser {
 
     for (String cssKey in css.keys) {
       if (cssKey.contains(' ')) {
-        if (isMatchedMultiLevelSelectors(element, cssKey.split(' ').toSet())) {
+        if (isMatchedMultiLevelSelectors(element, cssKey.split(RegExp(r'\s+')).where((part) => part.isNotEmpty).toList())) {
           declarations = declarations.combine(css[cssKey]);
         }
       }
@@ -237,35 +237,84 @@ class CssParser {
    * Needs to match the selector:
    * .element-container-single.element-bodymatter p.first-in-chapter.first-full-width span.first-letter
    */
-  bool isMatchedMultiLevelSelectors(XmlElement element, Set<String> selectors) {
-    if (element.getAttribute("class") != null) {
-      Set<String> matchedSelectors = element.getAttribute("class")!.split(" ").toSet();
-      for (String matchedSelector in matchedSelectors) {
-        selectors.remove(matchedSelector);
-        selectors.remove('.$matchedSelector');
-        selectors.remove('${element.localName}.$matchedSelector');
+  bool isMatchedMultiLevelSelectors(XmlElement element, List<String> selectors) {
+    if (selectors.isEmpty) {
+      return true;
+    }
+
+    XmlElement? current = element;
+    for (int i = selectors.length - 1; i >= 0; i--) {
+      final String selector = selectors[i];
+      while (current != null && !_matchesSelectorToken(current, selector)) {
+        current = current.parentElement;
       }
 
-      if (selectors.isNotEmpty) {
-        String lastSelector = selectors.last;
-        if (lastSelector.startsWith(element.localName)) {
-          lastSelector = lastSelector.replaceFirst('${element.localName}.', '');
-        }
-        if (isMatchedSingleLevelSelectors(lastSelector, matchedSelectors)) {
-          selectors.remove(selectors.last);
-        }
+      if (current == null) {
+        return false;
+      }
+
+      current = current.parentElement;
+    }
+
+    return true;
+  }
+
+  bool _matchesSelectorToken(XmlElement element, String selector) {
+    final RegExp nthChildRegex = RegExp(r':nth-child\((odd|even|\d+)\)');
+    final RegExpMatch? nthChildMatch = nthChildRegex.firstMatch(selector);
+    final String baseSelector = selector.replaceAll(nthChildRegex, '');
+
+    String? tagName;
+    List<String> classNames = [];
+
+    if (baseSelector.isNotEmpty) {
+      if (baseSelector.startsWith('.')) {
+        classNames = baseSelector.split('.').where((part) => part.isNotEmpty).toList();
+      } else if (baseSelector.contains('.')) {
+        final List<String> parts = baseSelector.split('.');
+        tagName = parts.first;
+        classNames = parts.skip(1).where((part) => part.isNotEmpty).toList();
+      } else {
+        tagName = baseSelector;
       }
     }
 
-    if (selectors.isEmpty) {
-      return true;
-    } else {
-      if (element.parentElement != null) {
-        return isMatchedMultiLevelSelectors(element.parentElement!, selectors);
-      } else {
+    if (tagName != null && element.localName != tagName) {
+      return false;
+    }
+
+    final Set<String> elementClasses = (element.getAttribute('class') ?? '')
+        .split(' ')
+        .where((part) => part.isNotEmpty)
+        .toSet();
+    for (final className in classNames) {
+      if (!elementClasses.contains(className)) {
         return false;
       }
     }
+
+    if (nthChildMatch != null) {
+      final XmlElement? parent = element.parentElement;
+      if (parent == null) {
+        return false;
+      }
+
+      final List<XmlElement> siblings = parent.children.whereType<XmlElement>().toList();
+      final int index = siblings.indexOf(element) + 1;
+      final String nthValue = nthChildMatch.group(1)!;
+
+      final bool nthMatches = switch (nthValue) {
+        'odd' => index.isOdd,
+        'even' => index.isEven,
+        _ => index == int.parse(nthValue),
+      };
+
+      if (!nthMatches) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   void parseCss(String cssContent) {

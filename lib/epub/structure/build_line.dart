@@ -5,6 +5,7 @@ import '../elements/separators/space_separator.dart';
 import '../elements/word_element.dart';
 import '../interfaces/line_listener.dart';
 import '../styles/block_style.dart';
+import '../styles/element_style.dart';
 import 'line.dart';
 
 @LazySingleton()
@@ -46,7 +47,7 @@ class BuildLine {
     if (alignmentToBaselineRequired) {
       currentLine.baselineAdjust = currentLine.lineHeight - e.height;
       alignmentToBaselineRequired = false;
-    } else if (e.alignToBaseline) {
+    } else if (e.verticalAlignment == VerticalAlignment.baseline) {
       // We need to adjust the yPos of both the element and the line if we are aligning to the baseline.
       alignmentToBaselineRequired = true;
     }

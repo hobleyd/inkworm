@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:get_it/get_it.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -45,6 +46,7 @@ class Epub extends _$Epub implements IsolateListener {
   void onBookDetails(String author, String title, int spineLength) {
     ref.read(bookStateManagementProvider.notifier).set(BookState.details);
 
+    debugPrint('onBookDetails()');
     state = state.copyWith(author: author, title: title);
     _spineLength = spineLength;
 
@@ -67,6 +69,7 @@ class Epub extends _$Epub implements IsolateListener {
   @override
   Future<void> onIsolatesInitialised() async {
     ref.read(bookStateManagementProvider.notifier).set(BookState.initialised);
+    debugPrint('onIsolatesInitialised()');
 
     _worker!.getBookDetails(state.uri);
   }
@@ -88,6 +91,7 @@ class Epub extends _$Epub implements IsolateListener {
   @override
   void onSizeChanged(PageSize size) async {
     var bookState = ref.read(bookStateManagementProvider);
+    debugPrint('onSizeChanged()');
 
     _epubRequest.update(pageSize: size);
     if (bookState.hasNone(BookState.details) && _worker == null) {
@@ -113,6 +117,7 @@ class Epub extends _$Epub implements IsolateListener {
   }
 
   void openBookInIsolate() {
+    debugPrint('openBookInIsolate()');
     // Due to the async nature of Riverpod updates, this can get called more than once; ignore subsequent calls unless we have tweaked state
     // to pay attention.
     if (ref.read(bookStateManagementProvider).hasNone(BookState.parsing|BookState.complete)) {
@@ -124,6 +129,7 @@ class Epub extends _$Epub implements IsolateListener {
 
   // Called when we open a new book
   void resetBook(String book) async {
+    debugPrint('resetBook($book)');
     ImageCache cache = GetIt.instance.get<ImageCache>();
     cache.clear();
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../content/html_content.dart';
+import '../styles/element_style.dart';
 
 abstract class LineElement {
   double height;
@@ -8,8 +9,8 @@ abstract class LineElement {
 
   HtmlContent get element;
 
-  bool    get alignToBaseline => element.elementStyle.alignToBaseline ?? false;
-  bool    get isDropCaps      => element.elementStyle.isDropCaps ?? false;
+  VerticalAlignment get verticalAlignment => element.elementStyle.verticalAlignment;
+  bool get isDropCaps => element.elementStyle.isDropCaps ?? false;
   double  get marginLeft      => element.blockStyle.marginLeft;
   double  get marginRight     => element.blockStyle.marginRight;
 

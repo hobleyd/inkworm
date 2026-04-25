@@ -23,6 +23,7 @@ class Line {
   double yPosOnPage     = 0; // Should only be used when rendering the line. Otherwise, the calculations should be off the Page.
 
   List<LineElement> elements = [];
+  bool _alignmentCalculated = false;
 
   bool   get isEmpty            => elements.isEmpty;
   bool   get lastElementIsSpace => elements.isNotEmpty && (elements.last is SpaceSeparator || elements.last is NonBreakingSpaceSeparator);
@@ -72,12 +73,13 @@ class Line {
   }
 
   void completeLine() {
-    if (elements.isNotEmpty) {
+    if (elements.isNotEmpty && !_alignmentCalculated) {
       while (elements.last is SpaceSeparator) {
         elements.removeLast();
       }
 
       calculateSeparatorWidth();
+      _alignmentCalculated = true;
     }
   }
 
