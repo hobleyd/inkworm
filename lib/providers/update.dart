@@ -17,27 +17,26 @@ class Update extends _$Update {
   }
 
   Future<void> checkVersion() async {
-    state = AsyncValue.data(await _checkGithub());
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(_checkGithub);
   }
 
   Future<VersionCheck?> _checkGithub() async {
-    if (Platform.isAndroid) {
-      try {
-        final response = await Dio().get('https://api.github.com/repos/hobleyd/inkworm/releases/latest');
-        if (response.statusCode == 200) {
-          final Version githubVersion = Version.parse(response.data['tag_name']);
-          final String url = response.data['assets'].first['browser_download_url'];
+    if (!Platform.isAndroid) return null;
 
-          final pubspec = await rootBundle.loadString("pubspec.yaml");
-          final Version buildVersion = Version.parse(pubspec.split("version: ")[1].split("\n")[0]);
+    final response = await Dio().get('https://api.github.com/repos/hobleyd/inkworm/releases/latest');
+    if (response.statusCode != 200) return null;
 
-          return VersionCheck(currentVersion: buildVersion, newVersion: githubVersion, downloadUrl: url, downloadPackage: response.data['assets'].first['name']);
-        }
-      } catch (e) {
-        return null;
-      }
-    }
+    final List<dynamic> assets = response.data['assets'] as List<dynamic>;
+    if (assets.isEmpty) return null;
 
-    return null;
+    final Version githubVersion = Version.parse(response.data['tag_name'] as String);
+    final String url   = assets.first['browser_download_url'] as String;
+    final String name  = assets.first['name'] as String;
+
+    final pubspec = await rootBundle.loadString("pubspec.yaml");
+    final Version buildVersion = Version.parse(pubspec.split("version: ")[1].split("\n")[0].trim());
+
+    return VersionCheck(currentVersion: buildVersion, newVersion: githubVersion, downloadUrl: url, downloadPackage: name);
   }
 }

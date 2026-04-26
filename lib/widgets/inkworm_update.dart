@@ -20,12 +20,11 @@ class InkwormUpdate extends ConsumerStatefulWidget {
 
 class _InkwormUpdate extends ConsumerState<InkwormUpdate> {
   bool downloading = false;
-  bool checkingVersion = false;
   double? downloadProgress;
 
   @override
   Widget build(BuildContext context) {
-    VersionCheck? versions = ref.watch(updateProvider).value;
+    final updateState = ref.watch(updateProvider);
 
     if (downloading) {
       final int progressPercentage = ((downloadProgress ?? 0) * 100).round();
@@ -43,15 +42,48 @@ class _InkwormUpdate extends ConsumerState<InkwormUpdate> {
           ),
         ]
       );
-    } else if (versions == null) {
+    }
+
+    if (updateState.isLoading) {
+      return const Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircularProgressIndicator(),
+          Padding(
+            padding: EdgeInsets.only(top: 12),
+            child: Text('Checking for updates...'),
+          ),
+        ],
+      );
+    }
+
+    if (updateState.hasError) {
+      return Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 30),
+            child: Text('Update check failed: ${updateState.error}', style: Theme.of(context).textTheme.labelMedium),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(top: 10),
+            child: _buildCheckVersionAction(),
+          ),
+        ],
+      );
+    }
+
+    final VersionCheck? versions = updateState.value;
+
+    if (versions == null) {
       final String noUpdateLabel = Platform.isAndroid
-          ? 'There are no updates for Inkworm as at this time.'
+          ? 'There are no updates for Inkworm at this time.'
           : 'Only Android is supported for in-application updates at this time.';
 
       return Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Padding(padding: EdgeInsetsGeometry.only(top: 30), child: Text(noUpdateLabel, style: Theme.of(context).textTheme.labelMedium)),
+          Padding(padding: const EdgeInsets.only(top: 30), child: Text(noUpdateLabel, style: Theme.of(context).textTheme.labelMedium)),
           Padding(
             padding: const EdgeInsets.only(top: 10),
             child: _buildCheckVersionAction(),
@@ -83,35 +115,11 @@ class _InkwormUpdate extends ConsumerState<InkwormUpdate> {
   }
 
   Widget _buildCheckVersionAction() {
-    if (checkingVersion) {
-      return Column(
-        children: [
-          const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2),),
-          Padding(
-            padding: const EdgeInsets.only(top: 12),
-            child: Text('Checking for updates...', style: Theme.of(context).textTheme.bodyMedium,),
-          ),
-        ],
-      );
-    }
-
     return IconButton(icon: const Icon(Icons.refresh), onPressed: _checkVersion,);
   }
 
   Future<void> _checkVersion() async {
-    setState(() {
-      checkingVersion = true;
-    });
-
-    try {
-      await ref.read(updateProvider.notifier).checkVersion();
-    } finally {
-      if (mounted) {
-        setState(() {
-          checkingVersion = false;
-        });
-      }
-    }
+    await ref.read(updateProvider.notifier).checkVersion();
   }
 
   Future<void> _download(WidgetRef ref, String url, String package) async {
