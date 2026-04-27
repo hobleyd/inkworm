@@ -902,6 +902,67 @@ i, cite, em, var, dfn {
         expect(lines[5].dropCapsIndent, 0);
         expect(lines[6].dropCapsIndent, 0);
       });
+
+      test('dropcaps nested inside a strong tag is detected and does not inflate maxAscent', () async {
+        const String dropcapsCss = '''
+.dropcaps {
+  float: left;
+  font-size: 2em;
+}
+''';
+
+        // Real-world pattern: dropcaps span wrapping a strong element.
+        // Before the strong handler was added, the "A" was silently dropped.
+        // After adding it, the dropcaps must still be detected, and the large dropcaps
+        // ascent must NOT inflate line.maxAscent — otherwise normal text on the same
+        // line gets shifted down past the line boundary, causing overlap with the next line.
+        const String chapterHtml = '''
+<html><body>
+<p class="nonindent1"><span class="dropcaps"><strong class="calibre7">A</strong></span>LARMS SING A VARIETY OF MELODIES.</p>
+<p>Second paragraph to confirm lines do not overlap.</p>
+</body></html>
+''';
+
+        final CssParser cssParser = GetIt.instance.get<CssParser>();
+        final EpubParser parser = GetIt.instance.get<EpubParser>();
+        final PageSize size = GetIt.instance.get<PageSize>();
+
+        size.canvasWidth = 800;
+        size.canvasHeight = 2000;
+        size.leftIndent = 0;
+        size.rightIndent = 0;
+
+        cssParser.parseCss(dropcapsCss);
+
+        final EpubChapter chapter = EpubChapter(chapterNumber: 0);
+        await parser.parseChapterFromString(chapter, chapterHtml);
+
+        expect(chapter.pages, hasLength(1));
+
+        final List<Line> lines = chapter.pages.single.lines.where((l) => l.elements.isNotEmpty).toList();
+        expect(lines.length, greaterThanOrEqualTo(2));
+
+        // The first word element must be the dropcaps "A".
+        final WordElement dropCapsWord = lines.first.elements.firstWhere((e) => e is WordElement) as WordElement;
+        expect(dropCapsWord.word.text, 'A');
+        expect(dropCapsWord.word.isDropCaps, isTrue);
+
+        // dropCapsAdjust is only set when normal text follows on the same line.
+        expect(dropCapsWord.dropCapsAdjust, greaterThan(0));
+
+        // The dropcaps large ascent must NOT be part of the line's maxAscent.
+        // If it were, normal text would be shifted down past the line height, overlapping the next line.
+        expect(lines.first.maxAscent, lessThan(dropCapsWord.ascent));
+
+        // Lines must not overlap: each line starts at or after the previous line ends.
+        for (int i = 1; i < lines.length; i++) {
+          expect(
+            lines[i].yPosOnPage,
+            greaterThanOrEqualTo(lines[i - 1].yPosOnPage + lines[i - 1].lineHeight),
+            reason: 'Line $i overlaps line ${i - 1}',
+          );
+        }
+      });
     });
 
     group('blank paragraph', () {

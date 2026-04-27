@@ -55,8 +55,10 @@ class BuildLine {
     }
 
     currentLine.maxHeight = e.height;
-    currentLine.ascent = e.ascent;
     if (!e.isDropCaps) {
+      // Dropcaps use dropCapsAdjust for their own positioning; excluding them from maxAscent
+      // prevents normal text on the same line from being shifted down by the dropcaps' large ascent.
+      currentLine.ascent = e.ascent;
       // Only adjust the line height if this is not a dropcaps element. For obvious reasons. Given the use of dropcaps I can't
       // imagine it will be possible that this is the only thing on the line. On the other hand. HTML. Sigh.
       currentLine.height = e.height;
