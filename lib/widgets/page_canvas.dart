@@ -83,7 +83,7 @@ class _PageCanvas extends ConsumerState<PageCanvas> {
                           ref.read(progressProvider.notifier).setProgress(book.uri, progress.fontSize, chapter, book[chapter].lastPageIndex);
                         }
                       } else if (tapX > screenWidth * 0.66) {
-                        if (progress.pageNumber == book[progress.chapterNumber].lastPageIndex) {
+                        if (progress.pageNumber >= book[progress.chapterNumber].lastPageIndex) {
                           if (progress.chapterNumber < book.lastChapterIndex) {
                             ref.read(progressProvider.notifier).setProgress(book.uri, progress.fontSize, progress.chapterNumber + 1, 0);
                           } else {
