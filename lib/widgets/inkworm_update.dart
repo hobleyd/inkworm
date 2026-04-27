@@ -123,7 +123,7 @@ class _InkwormUpdate extends ConsumerState<InkwormUpdate> {
   }
 
   Future<void> _download(WidgetRef ref, String url, String package) async {
-    setState(() {
+    setState( () {
       downloading = true;
       downloadProgress = 0;
     });

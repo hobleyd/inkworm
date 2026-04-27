@@ -30,9 +30,15 @@ class Update extends _$Update {
     final List<dynamic> assets = response.data['assets'] as List<dynamic>;
     if (assets.isEmpty) return null;
 
+    final apkAsset = assets.firstWhere(
+      (a) => (a['name'] as String).endsWith('.apk'),
+      orElse: () => null,
+    );
+    if (apkAsset == null) return null;
+
     final Version githubVersion = Version.parse(response.data['tag_name'] as String);
-    final String url   = assets.first['browser_download_url'] as String;
-    final String name  = assets.first['name'] as String;
+    final String url   = apkAsset['browser_download_url'] as String;
+    final String name  = apkAsset['name'] as String;
 
     final pubspec = await rootBundle.loadString("pubspec.yaml");
     final Version buildVersion = Version.parse(pubspec.split("version: ")[1].split("\n")[0].trim());
