@@ -58,12 +58,14 @@ flutter:
   uses-material-design: true
   assets:
     - assets/inkworm.png
+    - assets/inkworm-eink.png
     - assets/default.css
     - assets/google_fonts/
     - pubspec.yaml
 
 flutter_launcher_icons:
   image_path: 'assets/inkworm.png'
+  image_path_android: 'assets/inkworm-eink.png'
   android: true
   ios: true
   remove_alpha_ios: true

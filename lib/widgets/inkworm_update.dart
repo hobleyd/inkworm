@@ -4,11 +4,11 @@ import 'package:android_package_installer/android_package_installer.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:inkworm/providers/epub.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 
 import '../../models/version_check.dart';
+import '../../providers/epub.dart';
 import '../../providers/update.dart';
 
 class InkwormUpdate extends ConsumerStatefulWidget {

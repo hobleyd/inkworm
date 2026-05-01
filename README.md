@@ -1,1 +1,1 @@
-An ePub reader, written in Flutter that supports pagination. Built to support Paladin.
+An ePub reader, written in Flutter that supports pagination. Built to support Paladin, but will work on any desktop.
