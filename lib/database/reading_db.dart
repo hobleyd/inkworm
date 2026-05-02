@@ -23,7 +23,7 @@ class ReadingDB extends _$ReadingDB {
 
     _inkworm = await databaseFactoryFfi.openDatabase(await _getDatabasePath(),
         options: OpenDatabaseOptions(
-            version: 1,
+            version: 2,
             onConfigure: (db) {
               _inkworm = db;
               _enableForeignKeys(db);
@@ -42,6 +42,7 @@ class ReadingDB extends _$ReadingDB {
 
   static const String _settings = '''
         create table if not exists settings(
+          id integer not null primary key,
           fontSize int not null
         );
         ''';
@@ -58,11 +59,18 @@ class ReadingDB extends _$ReadingDB {
   static const String _indexReadingHistory = 'create index reading_history_idx on reading_history(path);';
 
   void _createTables(Database db, int oldVersion, int newVersion) {
-    //_enableForeignKeys(db);
     if (oldVersion < 1) {
       db.execute(_readingHistory);
       db.execute(_settings);
       db.execute(_indexReadingHistory);
+    }
+
+    if (oldVersion < 2) {
+      // settings had no primary key, so ConflictAlgorithm.replace inserted new rows
+      // rather than replacing, causing the saved default font size to be ignored.
+      // Recreate with a fixed id=1 row so REPLACE works correctly.
+      db.execute('drop table if exists settings');
+      db.execute(_settings);
     }
 
     return;
@@ -123,7 +131,7 @@ class ReadingDB extends _$ReadingDB {
   }
 
   Future<void> setDefaultFontSize(int fontSize) async {
-    await _inkworm.insert('settings', { 'fontSize' : fontSize }, conflictAlgorithm: ConflictAlgorithm.replace);
+    await _inkworm.insert('settings', { 'id': 1, 'fontSize' : fontSize }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
   Future<void> setProgress(ReadingProgress progress) async {
