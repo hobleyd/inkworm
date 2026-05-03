@@ -20,6 +20,25 @@
       "mandatory": false,
       "url": "https://hobleyd.github.io/inkworm/releases/0.6.8+1-windows",
       "platform": "windows"
+    },
+    {
+      "version": "0.6.8",
+      "shortVersion": 1,
+      "changes": [
+        {
+          "message": "more progress on the journey for proper deployment notes"
+        },
+        {
+          "message": "add support for updates on the desktop versions"
+        },
+        {
+          "message": "fix a bug with the default font size not being stored correctly."
+        }
+      ],
+      "date": "2026-05-03",
+      "mandatory": false,
+      "url": "https://hobleyd.github.io/inkworm/releases/0.6.8+1-macos",
+      "platform": "macos"
     }
   ]
 }
