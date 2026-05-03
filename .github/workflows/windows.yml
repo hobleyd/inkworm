@@ -4,35 +4,137 @@ on:
   push:
     branches:
       - main
+
 permissions:
   contents: write
 
 jobs:
   build:
     runs-on: windows-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      build_number: ${{ steps.version.outputs.build_number }}
+
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+
+      - name: Get version info
+        id: version
+        shell: bash
+        run: |
+          VERSION_FULL=$(grep '^version:' pubspec.yaml | awk '{print $2}')
+          BUILD_NAME=${VERSION_FULL%%+*}
+          BUILD_NUMBER=$(git rev-list --count HEAD)
+          echo "version=$BUILD_NAME" >> $GITHUB_OUTPUT
+          echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+
+      - name: Push version tag from pubspec.yaml
+        uses: EndBug/latest-tag@latest
+        with:
+          tag-name: ${{ steps.version.outputs.version }}
+
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
           architecture: x64
-      - run: choco install yq innosetup --no-progress -y
-      - run: echo "VERSION=$(yq .version pubspec.yaml)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-      - name: "Push version tag from pubspec.yaml"
-        uses: EndBug/latest-tag@latest
-        with:
-          tag-name: ${{ env.VERSION }}
+
+      - run: choco install innosetup --no-progress -y
       - run: flutter config --enable-windows-desktop
       - run: flutter create --platforms=windows .
       - run: dart run build_runner build --delete-conflicting-outputs
       - run: flutter test test/css_parser_test.dart
       - run: flutter test test/epub_page_test.dart
       - run: dart run flutter_launcher_icons
-      - run: flutter build windows --release --no-tree-shake-icons
+      - run: flutter build windows --release --no-tree-shake-icons --build-number ${{ steps.version.outputs.build_number }}
       - run: dart run windows.dart
-      - name: Create Release
+
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v0.1.15
         with:
-          name: 'inkworm-${{ env.VERSION }}'
-          files: 'build/windows/inkworm-${{ env.VERSION }}.exe'
-          tag_name: ${{ env.VERSION }}
+          name: 'inkworm-${{ steps.version.outputs.version }}'
+          files: 'build/windows/inkworm-${{ steps.version.outputs.version }}.exe'
+          tag_name: ${{ steps.version.outputs.version }}
+
+      - name: Create dist structure for desktop_updater
+        shell: bash
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          BUILD_NUMBER="${{ steps.version.outputs.build_number }}"
+          mkdir -p "dist/${BUILD_NUMBER}/inkworm-${VERSION}+${BUILD_NUMBER}-windows"
+          cp -r build/windows/x64/runner/Release/. \
+            "dist/${BUILD_NUMBER}/inkworm-${VERSION}+${BUILD_NUMBER}-windows/"
+
+      - name: Generate file hashes
+        run: dart run desktop_updater:archive windows
+
+      - name: Upload distribution artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-dist
+          path: dist/${{ steps.version.outputs.build_number }}/${{ steps.version.outputs.version }}+${{ steps.version.outputs.build_number }}-windows/
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download Windows distribution
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-dist
+          path: deploy/releases/${{ needs.build.outputs.version }}+${{ needs.build.outputs.build_number }}-windows/
+
+      - name: Update app-archive.json
+        run: |
+          VERSION="${{ needs.build.outputs.version }}"
+          BUILD_NUMBER="${{ needs.build.outputs.build_number }}"
+          DATE=$(date +%Y-%m-%d)
+          URL="https://hobleyd.github.io/inkworm/releases/${VERSION}+${BUILD_NUMBER}-windows"
+
+          PREV_TAG=$(git tag --sort=-version:refname | grep -v "^${VERSION}$" | head -1)
+          if [ -n "$PREV_TAG" ]; then
+            RAW_COMMITS=$(git log "${PREV_TAG}..HEAD" --pretty=format:"%s" --no-merges)
+          else
+            RAW_COMMITS=$(git log --pretty=format:"%s" --no-merges | head -30)
+          fi
+          if [ -n "$RAW_COMMITS" ]; then
+            CHANGES=$(echo "$RAW_COMMITS" | jq -R '{"message": .}' | jq -s '.')
+          else
+            CHANGES='[{"message": "Release '"$VERSION"'"}]'
+          fi
+
+          git fetch origin gh-pages 2>/dev/null || true
+          git show origin/gh-pages:app-archive.json > current-archive.json 2>/dev/null \
+            || echo '{"appName":"Inkworm","description":"An paginated ePub reader.","items":[]}' > current-archive.json
+
+          jq --arg version "$VERSION" \
+             --argjson short_version "$BUILD_NUMBER" \
+             --arg date "$DATE" \
+             --arg url "$URL" \
+             --argjson changes "$CHANGES" \
+             '.items = (
+               [.items[] | select(not (.platform == "windows" and .shortVersion == $short_version))]
+               + [{
+                 "version": $version,
+                 "shortVersion": $short_version,
+                 "changes": $changes,
+                 "date": $date,
+                 "mandatory": false,
+                 "url": $url,
+                 "platform": "windows"
+               }]
+             )' current-archive.json > deploy/app-archive.json
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./deploy
+          keep_files: true
