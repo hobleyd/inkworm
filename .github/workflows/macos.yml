@@ -13,7 +13,7 @@ jobs:
     runs-on: macos-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
-      build_number: ${{ steps.version.outputs.build_number }}
+      build_number: ${{ github.run_number }}
 
     steps:
       - uses: actions/checkout@v4
@@ -23,9 +23,7 @@ jobs:
         run: |
           VERSION_FULL=$(grep '^version:' pubspec.yaml | awk '{print $2}')
           BUILD_NAME=${VERSION_FULL%%+*}
-          BUILD_NUMBER=$(git rev-list --count HEAD)
           echo "version=$BUILD_NAME" >> $GITHUB_OUTPUT
-          echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
 
       - name: Push version tag from pubspec.yaml
         uses: EndBug/latest-tag@latest
@@ -39,11 +37,12 @@ jobs:
 
       - run: flutter config --enable-macos-desktop
       - run: flutter create --platforms=macos .
+      - run: flutter pub get
       - run: dart run build_runner build --delete-conflicting-outputs
       - run: flutter test test/css_parser_test.dart
       - run: flutter test test/epub_page_test.dart
       - run: dart run flutter_launcher_icons
-      - run: flutter build macos --release --no-tree-shake-icons --build-number ${{ steps.version.outputs.build_number }}
+      - run: flutter build macos --release --no-tree-shake-icons --build-number ${{ github.run_number }}
 
       - name: Create DMG release
         uses: lethja/create-dmg-action@v0.0.2
@@ -61,7 +60,7 @@ jobs:
       - name: Create dist structure for desktop_updater
         run: |
           VERSION="${{ steps.version.outputs.version }}"
-          BUILD_NUMBER="${{ steps.version.outputs.build_number }}"
+          BUILD_NUMBER="${{ github.run_number }}"
           mkdir -p "dist/${BUILD_NUMBER}/inkworm-${VERSION}+${BUILD_NUMBER}-macos"
           cp -r "build/macos/Build/Products/Release/inkworm.app" \
             "dist/${BUILD_NUMBER}/inkworm-${VERSION}+${BUILD_NUMBER}-macos/inkworm.app"
@@ -73,7 +72,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: macos-dist
-          path: dist/${{ steps.version.outputs.build_number }}/${{ steps.version.outputs.version }}+${{ steps.version.outputs.build_number }}-macos/
+          path: dist/${{ github.run_number }}/${{ steps.version.outputs.version }}+${{ github.run_number }}-macos/
 
   deploy:
     needs: build
