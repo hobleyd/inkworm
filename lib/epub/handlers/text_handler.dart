@@ -28,7 +28,7 @@ class TextHandler extends HtmlHandler {
   }
 
   List<String> _splitString(String span) {
-    List<String> result = [];
+    List<String> tokens = [];
     String current = "";
 
     for (int i = 0; i < span.length; i++) {
@@ -36,19 +36,48 @@ class TextHandler extends HtmlHandler {
 
       if (char == '-' || char == '\u{2014}' || char == ' ' || char == '\u{00A0}') {
         if (current.isNotEmpty) {
-          result.add(current);
+          tokens.add(current);
           current = "";
         }
-        result.add(char);
+        tokens.add(char);
       } else {
         current += char;
       }
     }
 
     if (current.isNotEmpty) {
-      result.add(current);
+      tokens.add(current);
     }
 
+    return _mergeSpacedEllipsis(tokens);
+  }
+
+  // Collapses "word ( |&nbsp;).(  |&nbsp;)." patterns into "word..." so that
+  // typewriter-style spaced ellipses are kept together with their preceding word.
+  List<String> _mergeSpacedEllipsis(List<String> tokens) {
+    List<String> result = [];
+    int i = 0;
+    while (i < tokens.length) {
+      final token = tokens[i];
+      final isSeparator = token == ' ' || token == '\u{00A0}' || token == '-' || token == '\u{2014}';
+      if (!isSeparator) {
+        int j = i + 1;
+        String dots = '';
+        while (j + 1 < tokens.length &&
+               (tokens[j] == ' ' || tokens[j] == '\u{00A0}') &&
+               tokens[j + 1] == '.') {
+          dots += '.';
+          j += 2;
+        }
+        if (dots.isNotEmpty) {
+          result.add(token + dots);
+          i = j;
+          continue;
+        }
+      }
+      result.add(token);
+      i++;
+    }
     return result;
   }
 
