@@ -89,7 +89,8 @@ class BuildPage implements LineListener {
     // from what I have seen). The latter can be dealt with by addElements, not this function which is more designed for
     // footnotes.
     if (content.footnotes.isEmpty) {
-      return addElements(content.src, buildLine);
+      // Use content (not content.src) so that navigable links emit LinkElement wrappers for hit-testing.
+      return addElements(content, buildLine);
     }
 
     // Create a temp space to build the footnotes. While I use GetIt to provide a singleton generally for page & line builds,

@@ -49,6 +49,8 @@ class LinkHandler extends HtmlHandler {
       id ??= element.parent?.getAttribute('id');
 
       if (childElements != null && childElements.isNotEmpty) {
+        EpubParser parser = GetIt.instance.get<EpubParser>();
+
         for (var child in childElements) {
           ElementSize size = switch (child) {
             ImageContent ic => await WorkerSlot.measureImageInMainThread(ic.image, ic.bytes),
@@ -56,12 +58,12 @@ class LinkHandler extends HtmlHandler {
                           _ => ElementSize(ascent: 0, descent: 0, width: 50, height: 50) // Just to stop analysis warnings; should never be hit!
           };
 
-          LinkContent lc = LinkContent(blockStyle: blockStyle, elementStyle: elementStyle, src: child, href: href!, width: size.width, height: size.height);
+          int? navigableChapter;
+          List<HtmlContent>? footnoteElements;
 
           // Process Footnotes, if required.
           if (child is TextContent) {
-            var (fnFile, fnRef) = href.splitReference;
-            EpubParser parser = GetIt.instance.get<EpubParser>();
+            var (fnFile, fnRef) = (href ?? '').splitReference;
 
             bool treatedAsFootnote = child.text.isFootnote || element.getAttribute('vertical-align') == "super";
 
@@ -88,13 +90,18 @@ class LinkHandler extends HtmlHandler {
               if (!cache.contains(fnRef)) {
                 XmlNode? footnote = parser.getFootnote(fnFile, fnRef);
                 if (footnote != null) {
-                  List<HtmlContent>? fnElements = await footnote.handler?.processElement(node: footnote,);
-                  if (fnElements?.isNotEmpty ?? false) {
-                    lc.addFootnotes(fnElements!);
-                  }
+                  footnoteElements = await footnote.handler?.processElement(node: footnote,);
                 }
               }
+            } else if (fnFile.isNotEmpty && !(href?.contains('://') ?? true)) {
+              // Internal cross-file link: resolve the chapter index for tap navigation.
+              navigableChapter = parser.spineIndexForFile(fnFile);
             }
+          }
+
+          LinkContent lc = LinkContent(blockStyle: blockStyle, elementStyle: elementStyle, src: child, href: href!, width: size.width, height: size.height, navigableChapter: navigableChapter);
+          if (footnoteElements?.isNotEmpty ?? false) {
+            lc.addFootnotes(footnoteElements!);
           }
 
           elements.add(lc);

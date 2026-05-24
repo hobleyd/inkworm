@@ -5,6 +5,7 @@ import 'package:get_it/get_it.dart';
 
 import '../epub/structure/epub_chapter.dart';
 import '../epub/structure/line.dart';
+import '../epub/structure/page.dart';
 import '../models/page_size.dart';
 import '../providers/epub.dart';
 import '../models/epub_book.dart';
@@ -53,6 +54,7 @@ class _PageCanvas extends ConsumerState<PageCanvas> {
           final List<Line> lines = page?.lines ?? [];
           final List<Line> foots = page?.footnotes ?? [];
           final backgrounds = page?.backgrounds ?? [];
+          final List<LinkHitArea> links = page?.links ?? [];
 
           PageRenderer renderer = PageRenderer(lines: lines, footnotes: foots, backgrounds: backgrounds);
           if (lastPageNumber != progress.pageNumber && lines.isNotEmpty) {
@@ -72,6 +74,14 @@ class _PageCanvas extends ConsumerState<PageCanvas> {
                   padding: _pagePadding,
                   child: GestureDetector(
                     onTapUp: (TapUpDetails details) {
+                      // Check link hit areas first; localPosition maps to canvas coordinates.
+                      for (final link in links) {
+                        if (link.rect.contains(details.localPosition)) {
+                          ref.read(progressProvider.notifier).setProgress(book.uri, progress.fontSize, link.chapterIndex, 0);
+                          return;
+                        }
+                      }
+
                       double screenWidth = MediaQuery.of(context).size.width;
                       double tapX = details.globalPosition.dx;
 

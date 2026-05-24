@@ -5,11 +5,12 @@ import 'line_element.dart';
 class LinkElement extends LineElement {
   final LineElement src;
   final String href;
+  final int chapterIndex;
 
   @override
   get element => src.element;
 
-  LinkElement({required super.height, required super.width, required this.src, required this.href,});
+  LinkElement({required super.height, required super.width, required this.src, required this.href, required this.chapterIndex});
 
   @override
   void paint(Canvas c, double height, double xPos, double yPos) {
