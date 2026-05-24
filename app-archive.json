@@ -39,6 +39,19 @@
       "mandatory": false,
       "url": "https://hobleyd.github.io/inkworm/releases/0.6.8+1-macos",
       "platform": "macos"
+    },
+    {
+      "version": "0.7.1",
+      "shortVersion": 42,
+      "changes": [
+        {
+          "message": "Release 0.7.1"
+        }
+      ],
+      "date": "2026-05-24",
+      "mandatory": false,
+      "url": "https://hobleyd.github.io/inkworm/releases/0.7.1+42-macos",
+      "platform": "macos"
     }
   ]
 }
