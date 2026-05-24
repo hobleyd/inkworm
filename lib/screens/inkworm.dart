@@ -8,6 +8,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get_it/get_it.dart';
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 
+import '../widgets/clock_bar.dart';
+
 import '../database/reading_db.dart';
 import '../models/epub_book.dart';
 import '../models/page_size.dart';
@@ -47,25 +49,22 @@ class _Inkworm extends ConsumerState<Inkworm> {
       if (!_startupResolved) {
         return const Scaffold(
           appBar: null,
-          body: SafeArea(
-            child: Center(child: CircularProgressIndicator()),
-          ),
+          body: Center(child: CircularProgressIndicator()),
         );
       }
 
       EpubBook book = ref.watch(epubProvider);
       return Scaffold(
         appBar: null,
-        body: SafeArea(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(
-                child: book.error != null || book.errorDescription != null ? FatalError() : PageCanvas(),
-              ),
-              ProgressBar(),
-            ],
-          ),
+        body: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (Platform.isAndroid) ClockBar(),
+            Expanded(
+              child: book.error != null || book.errorDescription != null ? FatalError() : PageCanvas(),
+            ),
+            ProgressBar(),
+          ],
         ),
       );
     });
@@ -82,6 +81,9 @@ class _Inkworm extends ConsumerState<Inkworm> {
   @override
   void initState() {
     super.initState();
+    if (Platform.isAndroid) {
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    }
     _resolveStartupBook();
   }
 
