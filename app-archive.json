@@ -120,6 +120,19 @@
       "mandatory": false,
       "url": "https://hobleyd.github.io/inkworm/releases/0.7.2+44-windows",
       "platform": "windows"
+    },
+    {
+      "version": "0.7.2",
+      "shortVersion": 45,
+      "changes": [
+        {
+          "message": "Bump share_plus from 10.1.4 to 13.1.0"
+        }
+      ],
+      "date": "2026-05-26",
+      "mandatory": false,
+      "url": "https://hobleyd.github.io/inkworm/releases/0.7.2+45-macos",
+      "platform": "macos"
     }
   ]
 }
