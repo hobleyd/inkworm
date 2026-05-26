@@ -91,6 +91,22 @@
       "mandatory": false,
       "url": "https://hobleyd.github.io/inkworm/releases/0.7.1+43-macos",
       "platform": "macos"
+    },
+    {
+      "version": "0.7.2",
+      "shortVersion": 44,
+      "changes": [
+        {
+          "message": "version bump to allow upgrade from previous version (bug)"
+        },
+        {
+          "message": "fix android CI APK upload by stripping build number from version"
+        }
+      ],
+      "date": "2026-05-26",
+      "mandatory": false,
+      "url": "https://hobleyd.github.io/inkworm/releases/0.7.2+44-macos",
+      "platform": "macos"
     }
   ]
 }
