@@ -15,7 +15,7 @@ jobs:
       - name: Get App version
         uses: mikefarah/yq@master
         with:
-          cmd: echo "VERSION=$(yq .version pubspec.yaml)" >> $GITHUB_ENV
+          cmd: echo "VERSION=$(yq .version pubspec.yaml | cut -d'+' -f1)" >> $GITHUB_ENV
       - name: "Push version tag from pubspec.yaml"
         uses: EndBug/latest-tag@latest
         with:
