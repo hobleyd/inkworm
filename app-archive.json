@@ -78,6 +78,19 @@
       "mandatory": false,
       "url": "https://hobleyd.github.io/inkworm/releases/0.7.1+43-windows",
       "platform": "windows"
+    },
+    {
+      "version": "0.7.1",
+      "shortVersion": 43,
+      "changes": [
+        {
+          "message": "fix android CI APK upload by stripping build number from version"
+        }
+      ],
+      "date": "2026-05-26",
+      "mandatory": false,
+      "url": "https://hobleyd.github.io/inkworm/releases/0.7.1+43-macos",
+      "platform": "macos"
     }
   ]
 }
