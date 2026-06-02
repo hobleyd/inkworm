@@ -162,6 +162,22 @@
       "mandatory": false,
       "url": "https://hobleyd.github.io/inkworm/releases/0.7.3+46-macos",
       "platform": "macos"
+    },
+    {
+      "version": "0.7.3",
+      "shortVersion": 46,
+      "changes": [
+        {
+          "message": "fix linux CI release tag including build number"
+        },
+        {
+          "message": "Bump share_plus from 10.1.4 to 13.1.0"
+        }
+      ],
+      "date": "2026-06-02",
+      "mandatory": false,
+      "url": "https://hobleyd.github.io/inkworm/releases/0.7.3+46-windows",
+      "platform": "windows"
     }
   ]
 }
