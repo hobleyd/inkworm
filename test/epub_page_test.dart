@@ -274,6 +274,27 @@ void main() {
         expect(buildPage.currentPage.dropCapsXPosition, 18);
         expect(buildPage.currentPage.dropCapsYPosition, 24);
       });
+
+      test('does not emit a blank page when only empty lines have accumulated from paragraph margins', () {
+        final EpubChapter chapter = EpubChapter(chapterNumber: 0);
+        buildPage.currentPage.pageHeight = 80;
+        buildPage.pageListener = chapter;
+
+        // Simulate what happens when ParagraphBreaks fire on a fresh page before any real content:
+        // each break adds an empty Line (height=0) but advances currentBottomYPos via its margin.
+        // Once the accumulated margin exceeds pageHeight, addPage() is triggered with a page that
+        // has only empty lines — it should not be emitted.
+        buildPage.currentPage.lines.add(Line()); // empty line from first ParagraphBreak
+        buildPage.currentPage.lines.add(Line()); // empty line from second ParagraphBreak
+        buildPage.currentPage.currentBottomYPos = 85; // margins pushed past pageHeight
+
+        buildPage.addPage();
+
+        expect(chapter.pages, isEmpty,
+            reason: 'A page containing only empty lines should not be emitted');
+
+        buildPage.pageListener = null;
+      });
     });
 
     group('addText', () {

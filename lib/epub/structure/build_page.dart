@@ -146,7 +146,11 @@ class BuildPage implements LineListener {
   }
 
   void addPage() {
-    _pageListener?.addPage(currentPage);
+    final bool hasContent = currentPage.lines.any((l) => l.elements.isNotEmpty) ||
+        currentPage.footnotes.any((l) => l.elements.isNotEmpty);
+    if (hasContent) {
+      _pageListener?.addPage(currentPage);
+    }
 
     PageSize size = GetIt.instance.get<PageSize>();
     final double remainingDropCapsHeight = currentPage.dropCapsYPosition > currentPage.currentBottomYPos
