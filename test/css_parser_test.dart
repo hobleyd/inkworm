@@ -232,21 +232,21 @@ void main() {
 
   group('getInlineStyle', () {
     test('should return null when element has no style attribute', () {
-      final element = XmlElement(XmlName('div'));
+      final element = XmlElement(XmlName.parts('div'));
       cssParser.getInlineStyle(element);
 
       expect(cssParser.css['color'], isNull);
     });
 
     test('should parse inline style and return attribute value', () {
-      final element = XmlElement(XmlName('div'));
+      final element = XmlElement(XmlName.parts('div'));
       element.setAttribute('style', 'color: red; font-size: 16px;');
       var result = cssParser.getInlineStyle(element);
       expect(result?['color'], 'red');
     });
 
     test('should return null for non-existent attribute in inline style', () {
-      final element = XmlElement(XmlName('div'));
+      final element = XmlElement(XmlName.parts('div'));
       element.setAttribute('style', 'color: red;');
       cssParser.getInlineStyle(element);
       expect(cssParser.css['font-size'], isNull);
@@ -256,7 +256,7 @@ void main() {
   group('getCSSValue', () {
     test('should return inline style value first', () {
       cssParser.css['div'] = {'color': 'blue'};
-      final element = XmlElement(XmlName('div'));
+      final element = XmlElement(XmlName.parts('div'));
       element.setAttribute('style', 'color: red;');
 
       ElementStyle style = ElementStyle();
@@ -270,7 +270,7 @@ void main() {
       cssParser.css['.title'] = {'color': 'blue'};
       cssParser.css['h2'] = {'color': 'green'};
 
-      final element = XmlElement(XmlName('h2'));
+      final element = XmlElement(XmlName.parts('h2'));
       element.setAttribute('class', 'title');
 
       ElementStyle style = ElementStyle();
@@ -283,7 +283,7 @@ void main() {
       cssParser.css['.title'] = {'color': 'blue'};
       cssParser.css['h2'] = {'color': 'green'};
 
-      final element = XmlElement(XmlName('h2'));
+      final element = XmlElement(XmlName.parts('h2'));
       element.setAttribute('class', 'title');
 
       ElementStyle style = ElementStyle();
@@ -296,7 +296,7 @@ void main() {
       cssParser.css['title'] = {'color': 'yellow'};
       cssParser.css['h2'] = {'color': 'green'};
 
-      final element = XmlElement(XmlName('h2'));
+      final element = XmlElement(XmlName.parts('h2'));
       element.setAttribute('class', 'title');
 
       ElementStyle style = ElementStyle();
@@ -308,7 +308,7 @@ void main() {
     test('should fallback to element selector', () {
       cssParser.css['h2'] = {'color': 'green'};
 
-      final element = XmlElement(XmlName('h2'));
+      final element = XmlElement(XmlName.parts('h2'));
 
       ElementStyle style = ElementStyle();
       style.parseElement(element: element);
@@ -317,7 +317,7 @@ void main() {
     });
 
     test('should return null when no matching selector found', () {
-      final element = XmlElement(XmlName('h2'));
+      final element = XmlElement(XmlName.parts('h2'));
 
       ElementStyle style = ElementStyle();
       style.parseElement(element: element);
@@ -329,7 +329,7 @@ void main() {
       cssParser.css['div.class1'] = {'color': 'red'};
       cssParser.css['div.class2'] = {'font-size': '16px'};
 
-      final element = XmlElement(XmlName('div'));
+      final element = XmlElement(XmlName.parts('div'));
       element.setAttribute('class', 'class1 class2');
 
       ElementStyle style = ElementStyle();
@@ -345,7 +345,7 @@ void main() {
       cssParser.css['div.class1'] = {'color': 'red'};
       cssParser.css['div.class2'] = {'color': 'blue'};
 
-      final element = XmlElement(XmlName('div'));
+      final element = XmlElement(XmlName.parts('div'));
       element.setAttribute('class', 'class1 class2');
 
       ElementStyle style = ElementStyle();
@@ -359,8 +359,8 @@ void main() {
     test('should inherit from parent when child has no value', () {
       cssParser.css['div'] = {'color': 'red'};
 
-      final parent = XmlElement(XmlName('div'));
-      final child = XmlElement(XmlName('span'));
+      final parent = XmlElement(XmlName.parts('div'));
+      final child = XmlElement(XmlName.parts('span'));
       parent.children.add(child);
 
       ElementStyle parentStyle = ElementStyle();
@@ -376,8 +376,8 @@ void main() {
       cssParser.css['div'] = {'color': 'red'};
       cssParser.css['span'] = {'color': 'inherit'};
 
-      final parent = XmlElement(XmlName('div'));
-      final child = XmlElement(XmlName('span'));
+      final parent = XmlElement(XmlName.parts('div'));
+      final child = XmlElement(XmlName.parts('span'));
       parent.children.add(child);
 
       ElementStyle parentStyle = ElementStyle();
@@ -393,8 +393,8 @@ void main() {
       cssParser.css['div'] = {'color': 'red'};
       cssParser.css['span'] = {'color': 'blue'};
 
-      final parent = XmlElement(XmlName('div'));
-      final child = XmlElement(XmlName('span'));
+      final parent = XmlElement(XmlName.parts('div'));
+      final child = XmlElement(XmlName.parts('span'));
       parent.children.add(child);
 
       ElementStyle parentStyle = ElementStyle();
@@ -409,9 +409,9 @@ void main() {
     test('should inherit through multiple levels', () {
       cssParser.css['div'] = {'color': 'red'};
 
-      final grandparent = XmlElement(XmlName('div'));
-      final parent = XmlElement(XmlName('p'));
-      final child = XmlElement(XmlName('span'));
+      final grandparent = XmlElement(XmlName.parts('div'));
+      final parent = XmlElement(XmlName.parts('p'));
+      final child = XmlElement(XmlName.parts('span'));
 
       grandparent.children.add(parent);
       parent.children.add(child);
@@ -432,9 +432,9 @@ void main() {
       cssParser.css['div'] = {'color': 'red'};
       cssParser.css['p'] = {'color': 'blue'};
 
-      final grandparent = XmlElement(XmlName('div'));
-      final parent = XmlElement(XmlName('p'));
-      final child = XmlElement(XmlName('span'));
+      final grandparent = XmlElement(XmlName.parts('div'));
+      final parent = XmlElement(XmlName.parts('p'));
+      final child = XmlElement(XmlName.parts('span'));
 
       grandparent.children.add(parent);
       parent.children.add(child);
@@ -452,8 +452,8 @@ void main() {
     });
 
     test('should return null when no value found in entire hierarchy', () {
-      final parent = XmlElement(XmlName('div'));
-      final child = XmlElement(XmlName('span'));
+      final parent = XmlElement(XmlName.parts('div'));
+      final child = XmlElement(XmlName.parts('span'));
       parent.children.add(child);
 
       ElementStyle parentStyle = ElementStyle();
@@ -468,8 +468,8 @@ void main() {
     test('should prioritize inline style over inheritance', () {
       cssParser.css['div'] = {'color': 'red'};
 
-      final parent = XmlElement(XmlName('div'));
-      final child = XmlElement(XmlName('span'));
+      final parent = XmlElement(XmlName.parts('div'));
+      final child = XmlElement(XmlName.parts('span'));
       child.setAttribute('style', 'color: blue;');
       parent.children.add(child);
 
@@ -485,8 +485,8 @@ void main() {
     test('should inherit when inline style has inherit value', () {
       cssParser.css['div'] = {'color': 'red'};
 
-      final parent = XmlElement(XmlName('div'));
-      final child = XmlElement(XmlName('span'));
+      final parent = XmlElement(XmlName.parts('div'));
+      final child = XmlElement(XmlName.parts('span'));
       child.setAttribute('style', 'color: inherit;');
       parent.children.add(child);
 
@@ -502,9 +502,9 @@ void main() {
     test('should handle inheritance with class selectors', () {
       cssParser.css['.parent'] = {'color': 'red'};
 
-      final parent = XmlElement(XmlName('div'));
+      final parent = XmlElement(XmlName.parts('div'));
       parent.setAttribute('class', 'parent');
-      final child = XmlElement(XmlName('span'));
+      final child = XmlElement(XmlName.parts('span'));
       parent.children.add(child);
 
       ElementStyle parentStyle = ElementStyle();
@@ -521,9 +521,9 @@ void main() {
       cssParser.css['p'] = {'color': 'inherit'};
       cssParser.css['span'] = {'color': 'inherit'};
 
-      final grandparent = XmlElement(XmlName('div'));
-      final parent = XmlElement(XmlName('p'));
-      final child = XmlElement(XmlName('span'));
+      final grandparent = XmlElement(XmlName.parts('div'));
+      final parent = XmlElement(XmlName.parts('p'));
+      final child = XmlElement(XmlName.parts('span'));
 
       grandparent.children.add(parent);
       parent.children.add(child);
@@ -544,7 +544,7 @@ void main() {
   group('getAttribute', () {
     test('should return CSS value when available', () {
       cssParser.css['h2'] = {'color': 'red'};
-      final element = XmlElement(XmlName('h2'));
+      final element = XmlElement(XmlName.parts('h2'));
 
       ElementStyle style = ElementStyle();
       style.parseElement(element: element);
@@ -559,8 +559,8 @@ void main() {
       cssParser.css['div'] = {'color': 'red'};
       cssParser.css['span'] = {'font-size': '18px'};
 
-      final parent = XmlElement(XmlName('div'));
-      final child = XmlElement(XmlName('span'));
+      final parent = XmlElement(XmlName.parts('div'));
+      final child = XmlElement(XmlName.parts('span'));
       parent.children.add(child);
 
       final ElementStyle parentStyle = await ElementStyle.getElementStyle(parent, null);
@@ -576,8 +576,8 @@ void main() {
       cssParser.css['div'] = {'text-align': 'center'};
       cssParser.css['p'] = {'display': 'none'};
 
-      final parent = XmlElement(XmlName('div'));
-      final child = XmlElement(XmlName('p'));
+      final parent = XmlElement(XmlName.parts('div'));
+      final child = XmlElement(XmlName.parts('p'));
       parent.children.add(child);
 
       final ElementStyle parentElementStyle = await ElementStyle.getElementStyle(parent, null);
@@ -605,7 +605,7 @@ void main() {
         'table-layout': 'fixed',
       };
 
-      final table = XmlElement(XmlName('table'));
+      final table = XmlElement(XmlName.parts('table'));
       final TableStyle tableStyle = await TableStyle.getTableStyle(table);
 
       expect(tableStyle.tableWidth, GetIt.instance.get<PageSize>().actualWidth * 0.75);
@@ -617,7 +617,7 @@ void main() {
         'background-color': '#dbffe5',
       };
 
-      final table = XmlElement(XmlName('table'));
+      final table = XmlElement(XmlName.parts('table'));
       final TableStyle tableStyle = await TableStyle.getTableStyle(table);
 
       expect(tableStyle.backgroundColor, const Color(0xFFDBFFE5));
@@ -635,7 +635,7 @@ void main() {
         'padding-right': '4px',
       };
 
-      final XmlElement cell = XmlElement(XmlName('td'));
+      final XmlElement cell = XmlElement(XmlName.parts('td'));
       final ElementStyle elementStyle = await ElementStyle.getElementStyle(cell, null);
       final TableCellStyle tableCellStyle = await TableCellStyle.getTableCellStyle(
         cell,
@@ -658,12 +658,12 @@ void main() {
         .recipe-table tbody tr:nth-child(even) td { background-color: #dbffe5; }
       ''');
 
-      final table = XmlElement(XmlName('table'))..setAttribute('class', 'recipe-table');
-      final tbody = XmlElement(XmlName('tbody'));
-      final oddRow = XmlElement(XmlName('tr'));
-      final evenRow = XmlElement(XmlName('tr'));
-      final oddCell = XmlElement(XmlName('td'));
-      final evenCell = XmlElement(XmlName('td'));
+      final table = XmlElement(XmlName.parts('table'))..setAttribute('class', 'recipe-table');
+      final tbody = XmlElement(XmlName.parts('tbody'));
+      final oddRow = XmlElement(XmlName.parts('tr'));
+      final evenRow = XmlElement(XmlName.parts('tr'));
+      final oddCell = XmlElement(XmlName.parts('td'));
+      final evenCell = XmlElement(XmlName.parts('td'));
 
       oddRow.children.add(oddCell);
       evenRow.children.add(evenCell);
@@ -690,7 +690,7 @@ void main() {
         h2.title { color: red; }
       ''');
 
-      final element = XmlElement(XmlName('h2'));
+      final element = XmlElement(XmlName.parts('h2'));
       element.setAttribute('class', 'title');
 
       ElementStyle style = ElementStyle();
@@ -709,7 +709,7 @@ void main() {
         h2.title { color: green; }
       ''');
 
-      final element = XmlElement(XmlName('h2'));
+      final element = XmlElement(XmlName.parts('h2'));
       element.setAttribute('class', 'title');
       element.setAttribute('style', 'color: red;');
 

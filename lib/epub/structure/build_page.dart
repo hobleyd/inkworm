@@ -1,4 +1,4 @@
-import 'dart:ui' show Rect hide Page, TableRow;
+import 'dart:ui' show Rect;
 
 import 'package:get_it/get_it.dart';
 import 'package:injectable/injectable.dart';

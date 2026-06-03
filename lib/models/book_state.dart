@@ -14,7 +14,6 @@ class BookState {
 
   int state;
 
-  @override
   BookState({required this.state});
 
   // ── Core operations ──────────────────────────────────────────

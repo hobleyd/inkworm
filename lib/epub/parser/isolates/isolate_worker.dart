@@ -6,7 +6,6 @@ import 'package:inkworm/epub/parser/isolates/requests/book_details_request.dart'
 import 'package:inkworm/epub/parser/isolates/responses/opened_response.dart';
 import 'package:xml/xml.dart';
 
-import '../../cache/image_cache.dart';
 import '../../interfaces/isolate_listener.dart';
 import '../../interfaces/isolate_parse_response.dart';
 import '../epub_parser.dart';

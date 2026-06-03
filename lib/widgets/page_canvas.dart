@@ -317,7 +317,7 @@ class _PageCanvas extends ConsumerState<PageCanvas> {
   }
 
   Future<void> _shareText(String text) async {
-    await Share.share(text.trim());
+    await SharePlus.instance.share(ShareParams(text: text.trim()));
   }
 
   Widget _buildHandle({
