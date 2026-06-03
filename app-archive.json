@@ -216,6 +216,22 @@
       "mandatory": false,
       "url": "https://hobleyd.github.io/inkworm/releases/0.7.3+47-windows",
       "platform": "windows"
+    },
+    {
+      "version": "0.7.4",
+      "shortVersion": 48,
+      "changes": [
+        {
+          "message": "Fix occasional blank pages caused by accumulated paragraph margins"
+        },
+        {
+          "message": "Bump dependencies to latest supported versions"
+        }
+      ],
+      "date": "2026-06-03",
+      "mandatory": false,
+      "url": "https://hobleyd.github.io/inkworm/releases/0.7.4+48-macos",
+      "platform": "macos"
     }
   ]
 }
