@@ -1,0 +1,324 @@
+name: inkworm-release
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      build_number: ${{ github.run_number }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get version from pubspec.yaml
+        id: version
+        run: |
+          VERSION_FULL=$(grep '^version:' pubspec.yaml | awk '{print $2}')
+          echo "version=${VERSION_FULL%%+*}" >> $GITHUB_OUTPUT
+
+      - name: Push version tag
+        uses: EndBug/latest-tag@latest
+        with:
+          tag-name: ${{ steps.version.outputs.version }}
+
+  build-android:
+    needs: prepare
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          architecture: x64
+          cache: false
+
+      - run: dart run build_runner build --delete-conflicting-outputs
+      - run: flutter test test/css_parser_test.dart
+      - run: flutter test test/epub_page_test.dart
+      - run: dart run flutter_launcher_icons
+
+      - name: Create key.properties
+        run: |
+          echo "keyAlias=${{ secrets.KEY_ALIAS }}" > android/key.properties
+          echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> android/key.properties
+          echo "storePassword=${{ secrets.KEY_PASSWORD }}" >> android/key.properties
+          echo "storeFile=keystore.jks" >> android/key.properties
+
+      - name: Decode keystore
+        env:
+          ENCODED_STRING: ${{ secrets.KEY_BASE_64 }}
+        run: printf '%s' "$ENCODED_STRING" | base64 -di > android/app/keystore.jks
+
+      - run: flutter build apk --release --no-tree-shake-icons --build-number ${{ needs.prepare.outputs.build_number }}
+
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v0.1.15
+        with:
+          name: 'inkworm-${{ needs.prepare.outputs.version }}'
+          tag_name: ${{ needs.prepare.outputs.version }}
+          files: 'build/app/outputs/apk/release/inkworm-${{ needs.prepare.outputs.version }}-release.apk'
+          generate_release_notes: true
+
+  build-linux:
+    needs: prepare
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          architecture: x64
+          cache: false
+
+      - run: sudo apt-get update -y
+      - run: sudo apt-get install -y ninja-build libgtk-3-dev libmpv-dev libmpv2 binutils coreutils desktop-file-utils fakeroot fuse libgdk-pixbuf2.0-dev patchelf python3-pip python3-setuptools squashfs-tools strace util-linux zsync flatpak flatpak-builder
+
+      - run: flutter config --enable-linux-desktop
+      - run: flutter create --platforms=linux .
+      - run: dart run build_runner build --delete-conflicting-outputs
+      - run: flutter test test/css_parser_test.dart
+      - run: flutter test test/epub_page_test.dart
+      - run: flutter build linux --release
+
+      - name: Prepare bundle assets
+        run: cp assets/inkworm-512x512.png build/linux/x64/release/bundle/inkworm.png
+
+      - name: Configure Flatpak runtime
+        run: |
+          sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+          sudo flatpak install -y flathub org.freedesktop.Platform//24.08 org.freedesktop.Sdk//24.08
+
+      - name: Create Flatpak bundle
+        run: |
+          cat > au.com.sharpblue.inkworm.yaml <<'EOF'
+          app-id: au.com.sharpblue.inkworm
+          runtime: org.freedesktop.Platform
+          runtime-version: '24.08'
+          sdk: org.freedesktop.Sdk
+          command: inkworm
+          finish-args:
+            - --share=ipc
+            - --socket=fallback-x11
+            - --socket=wayland
+            - --device=dri
+            - --filesystem=home
+          modules:
+            - name: inkworm
+              buildsystem: simple
+              build-commands:
+                - install -Dm755 inkworm /app/bin/inkworm
+                - cp -r lib /app/lib
+                - cp -r data /app/data
+                - install -Dm644 au.com.sharpblue.inkworm.desktop /app/share/applications/au.com.sharpblue.inkworm.desktop
+                - install -Dm644 inkworm.png /app/share/icons/hicolor/512x512/apps/au.com.sharpblue.inkworm.png
+              sources:
+                - type: dir
+                  path: build/linux/x64/release/bundle
+                - type: file
+                  path: au.com.sharpblue.inkworm.desktop
+          EOF
+
+          cat > au.com.sharpblue.inkworm.desktop <<'EOF'
+          [Desktop Entry]
+          Name=Inkworm
+          Exec=inkworm
+          Type=Application
+          Categories=Office;Education;
+          Icon=au.com.sharpblue.inkworm
+          Terminal=false
+          EOF
+
+          flatpak-builder --force-clean --repo=repo build-dir au.com.sharpblue.inkworm.yaml
+          flatpak build-bundle repo inkworm-${{ needs.prepare.outputs.version }}-linux-x86_64.flatpak au.com.sharpblue.inkworm
+
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v0.1.15
+        with:
+          name: 'inkworm-${{ needs.prepare.outputs.version }}'
+          tag_name: ${{ needs.prepare.outputs.version }}
+          files: 'inkworm-${{ needs.prepare.outputs.version }}-linux-x86_64.flatpak'
+
+  build-macos:
+    needs: prepare
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: false
+
+      - run: flutter config --enable-macos-desktop
+      - run: flutter create --platforms=macos .
+      - run: flutter pub get
+      - run: dart run build_runner build --delete-conflicting-outputs
+      - run: flutter test test/css_parser_test.dart
+      - run: flutter test test/epub_page_test.dart
+      - run: dart run flutter_launcher_icons
+      - run: flutter build macos --release --no-tree-shake-icons --build-number ${{ needs.prepare.outputs.build_number }}
+
+      - name: Create DMG release
+        uses: lethja/create-dmg-action@v0.0.2
+        with:
+          name: 'inkworm'
+          srcdir: 'build/macos/Build/Products/Release/inkworm.app'
+
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v0.1.15
+        with:
+          name: 'inkworm-${{ needs.prepare.outputs.version }}'
+          tag_name: ${{ needs.prepare.outputs.version }}
+          files: 'inkworm.dmg'
+
+      - name: Create dist structure for desktop_updater
+        run: |
+          VERSION="${{ needs.prepare.outputs.version }}"
+          BUILD_NUMBER="${{ needs.prepare.outputs.build_number }}"
+          mkdir -p "dist/${BUILD_NUMBER}/inkworm-${VERSION}+${BUILD_NUMBER}-macos"
+          cp -r "build/macos/Build/Products/Release/inkworm.app" \
+            "dist/${BUILD_NUMBER}/inkworm-${VERSION}+${BUILD_NUMBER}-macos/inkworm.app"
+
+      - name: Generate file hashes
+        run: dart run desktop_updater:archive macos
+
+      - name: Upload distribution artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-dist
+          path: dist/${{ needs.prepare.outputs.build_number }}/inkworm-${{ needs.prepare.outputs.version }}+${{ needs.prepare.outputs.build_number }}-macos/
+
+  build-windows:
+    needs: prepare
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          architecture: x64
+
+      - run: choco install innosetup --no-progress -y
+      - run: flutter config --enable-windows-desktop
+      - run: flutter create --platforms=windows .
+      - run: flutter pub get
+      - run: dart run build_runner build --delete-conflicting-outputs
+      - run: flutter test test/css_parser_test.dart
+      - run: flutter test test/epub_page_test.dart
+      - run: dart run flutter_launcher_icons
+      - run: flutter build windows --release --no-tree-shake-icons --build-number ${{ needs.prepare.outputs.build_number }}
+      - run: dart run windows.dart
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v0.1.15
+        with:
+          name: 'inkworm-${{ needs.prepare.outputs.version }}'
+          tag_name: ${{ needs.prepare.outputs.version }}
+          files: 'build/windows/inkworm-${{ needs.prepare.outputs.version }}.exe'
+
+      - name: Create dist structure for desktop_updater
+        shell: bash
+        run: |
+          VERSION="${{ needs.prepare.outputs.version }}"
+          BUILD_NUMBER="${{ needs.prepare.outputs.build_number }}"
+          mkdir -p "dist/${BUILD_NUMBER}/inkworm-${VERSION}+${BUILD_NUMBER}-windows"
+          cp -r build/windows/x64/runner/Release/. \
+            "dist/${BUILD_NUMBER}/inkworm-${VERSION}+${BUILD_NUMBER}-windows/"
+
+      - name: Generate file hashes
+        run: dart run desktop_updater:archive windows
+
+      - name: Upload distribution artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-dist
+          path: dist/${{ needs.prepare.outputs.build_number }}/inkworm-${{ needs.prepare.outputs.version }}+${{ needs.prepare.outputs.build_number }}-windows/
+
+  deploy:
+    needs: [prepare, build-macos, build-windows]
+    runs-on: ubuntu-latest
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download macOS distribution
+        uses: actions/download-artifact@v4
+        with:
+          name: macos-dist
+          path: deploy/releases/${{ needs.prepare.outputs.version }}+${{ needs.prepare.outputs.build_number }}-macos/
+
+      - name: Download Windows distribution
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-dist
+          path: deploy/releases/${{ needs.prepare.outputs.version }}+${{ needs.prepare.outputs.build_number }}-windows/
+
+      - name: Update app-archive.json
+        run: |
+          VERSION="${{ needs.prepare.outputs.version }}"
+          BUILD_NUMBER="${{ needs.prepare.outputs.build_number }}"
+          DATE=$(date +%Y-%m-%d)
+
+          PREV_TAG=$(git tag --sort=-version:refname | grep -v "^${VERSION}$" | head -1)
+          if [ -n "$PREV_TAG" ]; then
+            RAW_COMMITS=$(git log "${PREV_TAG}..HEAD" --pretty=format:"%s" --no-merges)
+          else
+            RAW_COMMITS=$(git log --pretty=format:"%s" --no-merges | head -30)
+          fi
+          if [ -n "$RAW_COMMITS" ]; then
+            CHANGES=$(echo "$RAW_COMMITS" | jq -R '{"message": .}' | jq -s '.')
+          else
+            CHANGES='[{"message": "Release '"$VERSION"'"}]'
+          fi
+
+          git fetch origin gh-pages 2>/dev/null || true
+          git show origin/gh-pages:app-archive.json > current-archive.json 2>/dev/null \
+            || echo '{"appName":"Inkworm","description":"An paginated ePub reader.","items":[]}' > current-archive.json
+
+          for PLATFORM in macos windows; do
+            URL="https://hobleyd.github.io/inkworm/releases/${VERSION}+${BUILD_NUMBER}-${PLATFORM}"
+            jq --arg version "$VERSION" \
+               --argjson short_version "$BUILD_NUMBER" \
+               --arg date "$DATE" \
+               --arg url "$URL" \
+               --argjson changes "$CHANGES" \
+               --arg platform "$PLATFORM" \
+               '.items = (
+                 [.items[] | select((.platform == $platform and .shortVersion == $short_version) | not)]
+                 + [{
+                   "version": $version,
+                   "shortVersion": $short_version,
+                   "changes": $changes,
+                   "date": $date,
+                   "mandatory": false,
+                   "url": $url,
+                   "platform": $platform
+                 }]
+               )' current-archive.json > updated-archive.json
+            mv updated-archive.json current-archive.json
+          done
+          mv current-archive.json deploy/app-archive.json
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./deploy
+          keep_files: true
