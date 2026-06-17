@@ -292,6 +292,56 @@
       "mandatory": false,
       "url": "https://hobleyd.github.io/inkworm/releases/0.7.4+1-windows",
       "platform": "windows"
+    },
+    {
+      "version": "0.7.4",
+      "shortVersion": 2,
+      "changes": [
+        {
+          "message": "replace flatpak with snap packaging for Linux build"
+        },
+        {
+          "message": "consolidate CI into a single release workflow with parallel builds"
+        },
+        {
+          "message": "add the licence to the repo"
+        },
+        {
+          "message": "Fix occasional blank pages caused by accumulated paragraph margins"
+        },
+        {
+          "message": "Bump dependencies to latest supported versions"
+        }
+      ],
+      "date": "2026-06-17",
+      "mandatory": false,
+      "url": "https://hobleyd.github.io/inkworm/releases/0.7.4+2-macos",
+      "platform": "macos"
+    },
+    {
+      "version": "0.7.4",
+      "shortVersion": 2,
+      "changes": [
+        {
+          "message": "replace flatpak with snap packaging for Linux build"
+        },
+        {
+          "message": "consolidate CI into a single release workflow with parallel builds"
+        },
+        {
+          "message": "add the licence to the repo"
+        },
+        {
+          "message": "Fix occasional blank pages caused by accumulated paragraph margins"
+        },
+        {
+          "message": "Bump dependencies to latest supported versions"
+        }
+      ],
+      "date": "2026-06-17",
+      "mandatory": false,
+      "url": "https://hobleyd.github.io/inkworm/releases/0.7.4+2-windows",
+      "platform": "windows"
     }
   ]
 }
