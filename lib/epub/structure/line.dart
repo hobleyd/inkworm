@@ -61,10 +61,13 @@ class Line {
         }
       }
     } else if (alignment == LineAlignment.centre) {
-      // Adjust left margin now we know the width of the words in the line.
-      double margin = (availableWidth - elementsWidth - elements.first.marginRight) / 2;
-      leftIndent = margin;
-      rightIndent = availableWidth - margin;
+      // Adjust left margin now we know the width of the words in the line. leftIndent/rightIndent
+      // already hold the page's base insets, and textIndent already holds any CSS margin-left, so
+      // both need to be excluded from the box width or they end up applied twice (once here, once
+      // again when textIndent is added back on top during painting).
+      double margin = (availableWidth - leftIndent - rightIndent - textIndent - elementsWidth - elements.first.marginRight) / 2;
+      leftIndent = leftIndent + margin;
+      rightIndent = rightIndent + elements.first.marginRight + margin;
     } else {
       if (alignment == LineAlignment.right) {
         leftIndent = availableWidth - width;

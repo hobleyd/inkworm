@@ -486,6 +486,112 @@ void main() {
         expect(renderedLines.any((line) => line.contains('Large flat mushrooms') && line.contains('Mozzarella strips')), isFalse);
       });
 
+      test('centres a paragraph symmetrically even when it also has margin-left/margin-right', () async {
+        // Regression test for the Simon & Schuster sign-up page in "Machine" by Elizabeth Bear, where
+        // .signup-head (text-align: center plus margin-left/margin-right: 18%) rendered visibly
+        // off-centre because the centring maths in Line.calculateSeparatorWidth() ignored textIndent
+        // (which already carries margin-left) and double counted it against leftIndent.
+        const String signupCss = '''
+.signup-head
+{
+  text-align: center;
+  margin-left: 18%;
+  margin-right: 18%;
+}
+.signup-texttop
+{
+  text-align: center;
+}
+''';
+
+        const String chapterHtml = '''
+<html><body>
+<div class="signup-top">
+<p class="signup-head">Thank you.</p>
+<p class="signup-texttop">Get a free ebook.</p>
+</div>
+</body></html>
+''';
+
+        final CssParser cssParser = GetIt.instance.get<CssParser>();
+        final EpubParser parser = GetIt.instance.get<EpubParser>();
+        final PageSize size = GetIt.instance.get<PageSize>();
+        size.canvasWidth = 378;
+        size.canvasHeight = 800;
+        size.leftIndent = 12;
+        size.rightIndent = 12;
+
+        cssParser.parseCss(signupCss);
+
+        final EpubChapter chapter = EpubChapter(chapterNumber: 0);
+        await parser.parseChapterFromString(chapter, chapterHtml);
+
+        final List<Line> lines = chapter.pages.expand((page) => page.lines).where((line) => line.elements.isNotEmpty).toList();
+        expect(lines, isNotEmpty);
+
+        for (final line in lines) {
+          expect(line.alignment, LineAlignment.centre);
+          // The gap reserved to the left of the text (leftIndent + textIndent) should match the gap
+          // reserved to the right (rightIndent), regardless of any asymmetric margin already folded
+          // into textIndent.
+          expect(line.leftIndent + line.textIndent, closeTo(line.rightIndent, 0.01));
+        }
+      });
+
+      test('does not leak margin-left/text-indent into the next paragraph when margins collapse', () async {
+        // Regression test for the Simon & Schuster sign-up page in "Machine" by Elizabeth Bear: when the
+        // previous paragraph's bottom margin and the next paragraph's top margin collapse (both > 0),
+        // BlockHandler used to keep the *previous* paragraph's trailing ParagraphBreak and discard the
+        // next paragraph's own leading one — silently dropping the next paragraph's block style (e.g. its
+        // margin-left/text-indent) and leaking the previous paragraph's textIndent into it instead.
+        const String signupCss = '''
+.signup-head
+{
+  text-align: center;
+  margin-top: .2em;
+  margin-bottom: .6em;
+  margin-left: 18%;
+  margin-right: 18%;
+}
+.signup-texttop
+{
+  text-align: center;
+  margin-top: 1em;
+  margin-bottom: 0em;
+}
+''';
+
+        const String chapterHtml = '''
+<html><body>
+<div class="signup-top">
+<p class="signup-head">Thank you.</p>
+<p class="signup-texttop">Get a free ebook.</p>
+</div>
+</body></html>
+''';
+
+        final CssParser cssParser = GetIt.instance.get<CssParser>();
+        final EpubParser parser = GetIt.instance.get<EpubParser>();
+        final PageSize size = GetIt.instance.get<PageSize>();
+        size.canvasWidth = 378;
+        size.canvasHeight = 800;
+        size.leftIndent = 12;
+        size.rightIndent = 12;
+
+        cssParser.parseCss(signupCss);
+
+        final EpubChapter chapter = EpubChapter(chapterNumber: 0);
+        await parser.parseChapterFromString(chapter, chapterHtml);
+
+        final List<Line> lines = chapter.pages.expand((page) => page.lines).where((line) => line.elements.isNotEmpty).toList();
+        expect(lines, isNotEmpty);
+
+        final Line secondParagraphFirstLine = lines.firstWhere((line) => lineText(line).contains('Get'));
+        expect(secondParagraphFirstLine.textIndent, 0,
+            reason: '.signup-texttop has no margin-left, so it must not inherit .signup-head\'s textIndent');
+        expect(secondParagraphFirstLine.leftIndent, closeTo(secondParagraphFirstLine.rightIndent, 0.01));
+      });
+
       test('wraps long text within a table cell instead of overflowing into the next column', () async {
         const String tableCss = '''
 .recipe-table {

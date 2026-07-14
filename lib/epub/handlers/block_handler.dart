@@ -63,10 +63,12 @@ class BlockHandler extends HtmlHandler {
         if (childElements?.isNotEmpty ?? false) {
           for (var el in childElements!) {
             if (el is ParagraphBreak && elements.last is ParagraphBreak) {
-              // support margin collapsing if required.
+              // Support margin collapsing if required. Keep `el`, not the previous break: `el` carries
+              // the block style for the paragraph that's about to start (e.g. its own text-indent /
+              // margin-left), which must not be discarded just because the two spacer breaks collapse.
               if (el.marginTop > 0 && elements.last.marginBottom > 0) {
-                elements.last.blockStyle.bottomMargin = max(elements.last.marginBottom, el.marginTop);
-                continue;
+                el.blockStyle.topMargin = max(elements.last.marginBottom, el.marginTop);
+                elements.removeLast();
               }
             }
             elements.add(el);
