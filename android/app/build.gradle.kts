@@ -15,7 +15,7 @@ val keystoreProperties = Properties().apply {
 
 android {
     namespace = "au.com.sharpblue.inkworm"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 37
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
