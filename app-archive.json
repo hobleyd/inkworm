@@ -342,6 +342,50 @@
       "mandatory": false,
       "url": "https://hobleyd.github.io/inkworm/releases/0.7.4+2-windows",
       "platform": "windows"
+    },
+    {
+      "version": "0.7.5",
+      "shortVersion": 3,
+      "changes": [
+        {
+          "message": "Migrate macOS Xcode project to reference FlutterGeneratedPluginSwiftPackage"
+        },
+        {
+          "message": "chore(version): bump to 0.7.5+2 (patch)"
+        },
+        {
+          "message": "Fix text rendering italic when a font family has multiple @font-face variants"
+        },
+        {
+          "message": "Fix centred paragraphs rendering off-axis with side margins or adjacent margin collapse"
+        }
+      ],
+      "date": "2026-07-14",
+      "mandatory": false,
+      "url": "https://hobleyd.github.io/inkworm/releases/0.7.5+3-macos",
+      "platform": "macos"
+    },
+    {
+      "version": "0.7.5",
+      "shortVersion": 3,
+      "changes": [
+        {
+          "message": "Migrate macOS Xcode project to reference FlutterGeneratedPluginSwiftPackage"
+        },
+        {
+          "message": "chore(version): bump to 0.7.5+2 (patch)"
+        },
+        {
+          "message": "Fix text rendering italic when a font family has multiple @font-face variants"
+        },
+        {
+          "message": "Fix centred paragraphs rendering off-axis with side margins or adjacent margin collapse"
+        }
+      ],
+      "date": "2026-07-14",
+      "mandatory": false,
+      "url": "https://hobleyd.github.io/inkworm/releases/0.7.5+3-windows",
+      "platform": "windows"
     }
   ]
 }
