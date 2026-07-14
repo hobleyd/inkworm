@@ -29,7 +29,7 @@ class LoadFontRequest extends IsolateParseRequest {
 
   @override
   Future<IsolateParseResponse> process(_) async {
-    GetIt.instance.get<FontManagement>().loadFontFromEpub(fontFamily, fontBytes);
+    GetIt.instance.get<FontManagement>().loadFontFromEpub(fontFamily, href, fontBytes);
 
     // Not used; just for the interface definition.
     return IsolateParseResponse();
