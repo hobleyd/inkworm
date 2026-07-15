@@ -56,6 +56,12 @@ android {
             signingConfig = signingConfigs["release"]
         }
     }
+
+    lint {
+        // CommentDetector (backing EasterEgg/StopShip) throws NoSuchMethodError parsing javadoc
+        // comments under this AGP/lint version; disabling is Google's own suggested workaround.
+        disable += setOf("EasterEgg", "StopShip")
+    }
 }
 
 flutter {
