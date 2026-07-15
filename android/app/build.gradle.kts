@@ -23,8 +23,10 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_17.toString()
+    kotlin {
+        compilerOptions {
+            jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+        }
     }
 
     defaultConfig {
@@ -36,8 +38,6 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
-
-        setProperty("archivesBaseName", "inkworm-$versionName")
     }
 
     signingConfigs {
@@ -60,4 +60,8 @@ android {
 
 flutter {
     source = "../.."
+}
+
+base {
+    archivesName.set("inkworm-${flutter.versionName}")
 }
