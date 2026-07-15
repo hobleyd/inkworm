@@ -572,6 +572,80 @@
       "mandatory": false,
       "url": "https://hobleyd.github.io/inkworm/releases/0.7.5+6-windows",
       "platform": "windows"
+    },
+    {
+      "version": "0.7.5",
+      "shortVersion": 7,
+      "changes": [
+        {
+          "message": "Disable vital-lint tasks in plugin subprojects to avoid CommentDetector crash"
+        },
+        {
+          "message": "Disable EasterEgg/StopShip lint checks to avoid CommentDetector crash"
+        },
+        {
+          "message": "Upgrade Android toolchain to Gradle 9.6.1, AGP 9.3.0, Kotlin 2.4.10"
+        },
+        {
+          "message": "Apply Flutter Kotlin/DSL gradle migrator flags"
+        },
+        {
+          "message": "Bump Android compileSdk to 37 for receive_sharing_intent"
+        },
+        {
+          "message": "Migrate macOS Xcode project to reference FlutterGeneratedPluginSwiftPackage"
+        },
+        {
+          "message": "chore(version): bump to 0.7.5+2 (patch)"
+        },
+        {
+          "message": "Fix text rendering italic when a font family has multiple @font-face variants"
+        },
+        {
+          "message": "Fix centred paragraphs rendering off-axis with side margins or adjacent margin collapse"
+        }
+      ],
+      "date": "2026-07-15",
+      "mandatory": false,
+      "url": "https://hobleyd.github.io/inkworm/releases/0.7.5+7-macos",
+      "platform": "macos"
+    },
+    {
+      "version": "0.7.5",
+      "shortVersion": 7,
+      "changes": [
+        {
+          "message": "Disable vital-lint tasks in plugin subprojects to avoid CommentDetector crash"
+        },
+        {
+          "message": "Disable EasterEgg/StopShip lint checks to avoid CommentDetector crash"
+        },
+        {
+          "message": "Upgrade Android toolchain to Gradle 9.6.1, AGP 9.3.0, Kotlin 2.4.10"
+        },
+        {
+          "message": "Apply Flutter Kotlin/DSL gradle migrator flags"
+        },
+        {
+          "message": "Bump Android compileSdk to 37 for receive_sharing_intent"
+        },
+        {
+          "message": "Migrate macOS Xcode project to reference FlutterGeneratedPluginSwiftPackage"
+        },
+        {
+          "message": "chore(version): bump to 0.7.5+2 (patch)"
+        },
+        {
+          "message": "Fix text rendering italic when a font family has multiple @font-face variants"
+        },
+        {
+          "message": "Fix centred paragraphs rendering off-axis with side margins or adjacent margin collapse"
+        }
+      ],
+      "date": "2026-07-15",
+      "mandatory": false,
+      "url": "https://hobleyd.github.io/inkworm/releases/0.7.5+7-windows",
+      "platform": "windows"
     }
   ]
 }
