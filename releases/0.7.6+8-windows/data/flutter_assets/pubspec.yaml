@@ -1,0 +1,80 @@
+name: inkworm
+description: "An paginated ePub reader"
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+
+version: 0.7.6+3
+
+environment:
+  sdk: ^3.9.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  android_package_installer: ^0.0.3
+  desktop_updater: ^1.4.0
+  archive: ^4.0.7
+  collection: ^1.19.1
+  csslib: ^1.0.2
+  dio: ^5.9.0
+  get_it: ^9.2.0
+  json_annotation: ^4.12.0
+  file_open: ^0.1.0
+  flutter_riverpod: ^3.3.1
+  freezed: ^3.2.5
+  freezed_annotation: ^3.1.0
+  google_fonts: ^8.0.0
+  html: ^0.15.6
+  injectable: ^3.0.0
+  logger: ^2.6.1
+  mockito: ^5.6.4
+  ordered_set: ^8.0.0
+  path: ^1.9.1
+  path_provider: ^2.1.5
+  receive_sharing_intent: ^1.8.1
+  riverpod_annotation: ^4.0.2
+  shared_preferences: ^2.5.4
+  sqflite_common_ffi: ^2.4.0+1
+  sqlite3_flutter_libs: ^0.6.0+eol
+  version: ^3.0.2
+  window_manager: ^0.5.1
+  share_plus: ^13.1.0
+  url_launcher: ^6.3.0
+  xml: ^7.0.1
+
+  # The following adds the Cupertino Icons font to your application.
+  # Use with the CupertinoIcons class for iOS style icons.
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  build_runner: ^2.7.1
+  json_serializable: ^6.14.0
+  flutter_launcher_icons: ^0.14.4
+  flutter_lints: ^6.0.0
+  injectable_generator: ^3.0.2
+  innosetup: ^0.1.3
+  riverpod_lint: ^3.1.3
+  riverpod_generator: ^4.0.3
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/inkworm.png
+    - assets/inkworm-eink.png
+    - assets/default.css
+    - assets/google_fonts/
+    - pubspec.yaml
+
+flutter_launcher_icons:
+  image_path: 'assets/inkworm.png'
+  image_path_android: 'assets/inkworm-eink.png'
+  android: true
+  ios: true
+  remove_alpha_ios: true
+  macos:
+    generate: true
+  web:
+    generate: false
+  windows:
+    generate: true
