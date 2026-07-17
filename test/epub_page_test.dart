@@ -1090,6 +1090,52 @@ i, cite, em, var, dfn {
           );
         }
       });
+
+      test('unitless "line-height: 0" is recognised as a drop caps hint just like "0em"', () async {
+        // Real-world pattern from Elizabeth Bear's "Machine": a large stick-up initial
+        // styled with a unitless zero line-height rather than "0em". Before parsing this
+        // as a numeric zero, the huge font-size span was treated as ordinary text and
+        // inflated the first line's height, leaving a large gap before the next paragraph.
+        const String stickupCss = '''
+.stickup {
+  font-size: 3em;
+  line-height: 0;
+}
+''';
+
+        const String chapterHtml = '''
+<html><body>
+<p class="noindent"><span class="stickup">I</span> STOOD IN THE DOOR AND looked down.</p>
+<p class="indent">Down wasn't the right word, exactly.</p>
+</body></html>
+''';
+
+        final CssParser cssParser = GetIt.instance.get<CssParser>();
+        final EpubParser parser = GetIt.instance.get<EpubParser>();
+        final PageSize size = GetIt.instance.get<PageSize>();
+
+        size.canvasWidth = 800;
+        size.canvasHeight = 2000;
+        size.leftIndent = 0;
+        size.rightIndent = 0;
+
+        cssParser.parseCss(stickupCss);
+
+        final EpubChapter chapter = EpubChapter(chapterNumber: 0);
+        await parser.parseChapterFromString(chapter, chapterHtml);
+
+        final List<Line> lines = chapter.pages.single.lines.where((l) => l.elements.isNotEmpty).toList();
+        expect(lines.length, greaterThanOrEqualTo(2));
+
+        final WordElement dropCapsWord = lines.first.elements.firstWhere((e) => e is WordElement) as WordElement;
+        expect(dropCapsWord.word.text, 'I');
+        expect(dropCapsWord.word.isDropCaps, isTrue);
+
+        // The first line's height must reflect normal body text, not the 3em stick-up glyph,
+        // otherwise a large gap appears before the second paragraph.
+        final double bodyFontSize = style.fontSize ?? ElementStyle.defaultFontSize;
+        expect(lines.first.lineHeight, lessThan(bodyFontSize * 2));
+      });
     });
 
     group('blank paragraph', () {

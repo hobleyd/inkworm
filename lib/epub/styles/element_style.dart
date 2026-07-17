@@ -70,10 +70,14 @@ class ElementStyle extends Style {
 
   void getDropCaps(XmlNode element) {
     // The check for line-height is a hack; but makes the chapter starts look better in The Strange Case of the Alchemist's Daughter.
+    // line-height can be expressed unitless ("0") or with a unit ("0em", "0px", ...), so strip any trailing unit before comparing.
     String? floatValue = _parser.getStringAttribute(element, this, "float");
     String? lineHeight = _parser.getStringAttribute(element, this, "line-height");
+    double? lineHeightValue = lineHeight != null
+        ? double.tryParse(lineHeight.replaceAll(RegExp(r'[a-z%]+$', caseSensitive: false), '').trim())
+        : null;
 
-    if ((floatValue != null && floatValue == "left") || (lineHeight != null && lineHeight == "0em")) {
+    if ((floatValue != null && floatValue == "left") || lineHeightValue == 0) {
       isDropCaps = true;
     }
   }
