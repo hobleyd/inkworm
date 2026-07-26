@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/services.dart';
 import 'package:get_it/get_it.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -25,6 +27,12 @@ class Epub extends _$Epub implements IsolateListener {
 
   late List<EpubChapter> _chapters;
   late int _spineLength;
+
+  // Resolved once the reopen triggered by repaginate() finishes parsing. Unlike
+  // BookState's bits (which latch permanently once set and so can't tell "a
+  // reopen is currently running" from "a reopen has ever run"), this is scoped
+  // to a single reopen and is the reliable signal callers need to wait on.
+  Completer<void>? _repaginationDone;
 
   bool get    parsed => _chapters.where((chapter) => chapter.pages.isEmpty).isEmpty;
   int  get remaining => _chapters.where((chapter) => chapter.pages.isEmpty).length;
@@ -80,11 +88,24 @@ class Epub extends _$Epub implements IsolateListener {
       ref.read(bookStateManagementProvider.notifier).set(BookState.complete);
       _worker?.close();
       _worker = null;
+
+      _repaginationDone?.complete();
+      _repaginationDone = null;
     }
   }
 
   // This gets called twice - once when the UI is created and again once the Book Details have been returned and we have the correct size.
   // The first time we trigger Isolate creation; the second we'll trigger book parsing.
+  //
+  // Once the book has completed its initial parse, later calls (from ordinary
+  // window resizes) only need to keep _epubRequest.pageSize current — actually
+  // triggering a reflow at the new size is repaginate()'s job. That matters
+  // because this method is async: without the complete-bit guard below, its
+  // continuation after `await openBook(...)` can still be pending when a
+  // repagination-triggered resetBook() runs and clears BookState, and it would
+  // then stomp BookState.sized back on for the *new* reopen cycle, fooling
+  // onBookDetails's fallback into thinking sizing already happened and
+  // skipping the real openBookInIsolate() call.
   @override
   void onSizeChanged(PageSize size) async {
     var bookState = ref.read(bookStateManagementProvider);
@@ -94,7 +115,7 @@ class Epub extends _$Epub implements IsolateListener {
       _worker ??= IsolateWorker(listener: this);
     }
 
-    if (bookState.hasAll(BookState.initialised|BookState.details)){
+    if (bookState.hasAll(BookState.initialised|BookState.details) && bookState.hasNone(BookState.complete)){
       Future(() => ref.read(bookStateManagementProvider.notifier).set(BookState.sized));
 
       await openBook(state.uri);
@@ -137,6 +158,19 @@ class Epub extends _$Epub implements IsolateListener {
 
     _worker = IsolateWorker(listener: this);
     openBook(book);
+  }
+
+  // Reopens and reparses the book at the current PageSize (e.g. after a window
+  // resize), returning a Future that resolves once the new pagination is
+  // complete. Only one repagination can be in flight at a time — if one is
+  // already running, its Future is returned instead of starting another,
+  // since resetBook doesn't close the previous worker before replacing it.
+  Future<void> repaginate(String book) {
+    if (_repaginationDone != null) return _repaginationDone!.future;
+
+    _repaginationDone = Completer<void>();
+    resetBook(book);
+    return _repaginationDone!.future;
   }
 
   void setError(String description, StackTrace stackTrace) {

@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart' hide Page;
@@ -6,11 +8,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get_it/get_it.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:window_manager/window_manager.dart';
 
 import '../epub/structure/epub_chapter.dart';
 import '../epub/structure/line.dart';
 import '../epub/structure/page.dart';
+import '../models/book_state.dart';
 import '../models/page_size.dart';
+import '../providers/book_state_management.dart';
 import '../providers/epub.dart';
 import '../models/epub_book.dart';
 import '../models/reading_progress.dart';
@@ -26,13 +31,44 @@ class PageCanvas extends ConsumerStatefulWidget {
   ConsumerState<PageCanvas> createState() => _PageCanvas();
 }
 
-class _PageCanvas extends ConsumerState<PageCanvas> {
+class _PageCanvas extends ConsumerState<PageCanvas> with WindowListener {
   static const EdgeInsets _pagePadding = EdgeInsets.only(top: 6, bottom: 6);
   static const double _handleRadius = 8;
   static const double _handleTouchRadius = 22; // larger hit target for handles
 
+  static bool get _isDesktop => Platform.isMacOS || Platform.isLinux || Platform.isWindows;
+
+  // Linux-only fallback: how long the window size must be stable before we
+  // repaginate there. On macOS/Windows, WindowListener.onWindowResized() below
+  // is the authoritative "resize finished" signal; Linux doesn't emit that
+  // event, so for it we infer settling from a quiet period between
+  // LayoutBuilder rebuilds instead. That inference is noisier than the native
+  // signal — repagination's own CPU load can delay a rebuild long enough to
+  // look like a settle mid-drag — which is why it isn't used on macOS/Windows.
+  static const Duration _resizeSettleDelay = Duration(milliseconds: 400);
+
   final pageSize = GetIt.instance.get<PageSize>();
   int lastPageNumber = -1;
+
+  Timer? _resizeDebounce;
+
+  // True while a resize-triggered repagination is running. Guards against
+  // starting a second one on top of it (Epub.repaginate/resetBook doesn't
+  // close the previous isolate worker before replacing it).
+  bool _repaginationInFlight = false;
+
+  // Set when a resize settles while a repagination triggered by an earlier
+  // resize is still running; retried once that one finishes so the book ends
+  // up laid out for the final size rather than a stale intermediate one.
+  bool _repaginatePending = false;
+
+  // The PageSize the book is currently paginated for. Starts at 0x0 so the
+  // first real resize still triggers; afterwards it makes repeated resize
+  // triggers at the same final size (e.g. if a native "resize finished" event
+  // ever fires more than once per gesture) collapse into a single reparse
+  // instead of one per firing.
+  double _repaginatedWidth = 0;
+  double _repaginatedHeight = 0;
 
   // Selection state — null means no active selection.
   int? _selectionAnchor; // word index where long-press started
@@ -61,6 +97,61 @@ class _PageCanvas extends ConsumerState<PageCanvas> {
     _menuAbove = false;
     _leftDragPos = null;
     _rightDragPos = null;
+  }
+
+  // Repaginates the book at the just-updated PageSize once a window resize has
+  // settled. Reuses the same reopen-and-reparse path as a font size change
+  // (resetBook), since both are a reflow at new layout metrics.
+  void _repaginateForNewSize(String bookUri) {
+    if (pageSize.canvasWidth == _repaginatedWidth && pageSize.canvasHeight == _repaginatedHeight) {
+      return; // already paginated for this size — e.g. a duplicate resize-finished firing
+    }
+
+    if (_repaginationInFlight) {
+      // A previous resize's repagination is still running; retry once it
+      // finishes rather than starting a second one on top of it.
+      _repaginatePending = true;
+      return;
+    }
+
+    final BookState bookState = ref.read(bookStateManagementProvider);
+    if (bookState.hasNone(BookState.complete)) return; // still on the initial open/parse
+
+    _repaginationInFlight = true;
+    final double targetWidth = pageSize.canvasWidth;
+    final double targetHeight = pageSize.canvasHeight;
+    ref.read(epubProvider.notifier).repaginate(bookUri).then((_) {
+      _repaginationInFlight = false;
+      _repaginatedWidth = targetWidth;
+      _repaginatedHeight = targetHeight;
+      if (!mounted) return;
+      if (_repaginatePending) {
+        _repaginatePending = false;
+        _repaginateForNewSize(bookUri);
+      }
+    });
+  }
+
+  // Authoritative "resize finished" signal on macOS/Windows — see the class-level
+  // comment on _resizeSettleDelay for why this is preferred over the debounce
+  // there.
+  @override
+  void onWindowResized() {
+    if (!mounted) return;
+    _repaginateForNewSize(ref.read(epubProvider).uri);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    if (_isDesktop) windowManager.addListener(this);
+  }
+
+  @override
+  void dispose() {
+    if (_isDesktop) windowManager.removeListener(this);
+    _resizeDebounce?.cancel();
+    super.dispose();
   }
 
   @override
@@ -116,8 +207,22 @@ class _PageCanvas extends ConsumerState<PageCanvas> {
 
           return LayoutBuilder(
               builder: (context, constraints) {
-                if (constraints.maxWidth != pageSize.canvasWidth || constraints.maxHeight - _pagePadding.vertical != pageSize.canvasHeight) {
-                  pageSize.update(canvasWidth: constraints.maxWidth, canvasHeight: constraints.maxHeight - _pagePadding.vertical);
+                final double newWidth  = constraints.maxWidth;
+                final double newHeight = constraints.maxHeight - _pagePadding.vertical;
+
+                if (newWidth != pageSize.canvasWidth || newHeight != pageSize.canvasHeight) {
+                  final bool isFirstLayout = pageSize.canvasWidth == 0 || pageSize.canvasHeight == 0;
+                  pageSize.update(canvasWidth: newWidth, canvasHeight: newHeight);
+
+                  // Linux fallback only — macOS/Windows repaginate from
+                  // onWindowResized() instead (see its override above).
+                  if (!isFirstLayout && Platform.isLinux) {
+                    _resizeDebounce?.cancel();
+                    _resizeDebounce = Timer(_resizeSettleDelay, () {
+                      if (!mounted) return;
+                      _repaginateForNewSize(book.uri);
+                    });
+                  }
                 }
 
                 return Container(
