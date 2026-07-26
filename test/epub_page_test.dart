@@ -1136,6 +1136,49 @@ i, cite, em, var, dfn {
         final double bodyFontSize = style.fontSize ?? ElementStyle.defaultFontSize;
         expect(lines.first.lineHeight, lessThan(bodyFontSize * 2));
       });
+
+      test('embedded raw newlines mid-paragraph are collapsed to spaces instead of corrupting layout', () async {
+        // Real-world pattern from a "Chicken Korma" recipe epub: the source text has literal
+        // \n between sentences instead of <br/> or spaces. Left unhandled, the newline gets
+        // glued onto the following word (e.g. "oil.\nPut") and TextPainter treats it as a hard
+        // line break, producing a mismeasured "word" whose height spans two lines while its
+        // ascent/descent reflect only the first — corrupting pagination around that point.
+        const String chapterHtml = '''
+<html><body>
+<p>Put a large casserole-type pan on a high heat and add a couple of lugs of oil.
+Put the chicken thighs into the pan, stir around and brown lightly on all sides for 5 minutes.
+Push the chicken to one side of the pan.</p>
+</body></html>
+''';
+
+        final PageSize size = GetIt.instance.get<PageSize>();
+        size.canvasWidth = 800;
+        size.canvasHeight = 2000;
+
+        final EpubParser parser = GetIt.instance.get<EpubParser>();
+        final EpubChapter chapter = EpubChapter(chapterNumber: 0);
+
+        await parser.parseChapterFromString(chapter, chapterHtml);
+
+        final List<Line> lines = chapter.pages.single.lines.where((l) => l.elements.isNotEmpty).toList();
+        expect(lines, isNotEmpty);
+
+        for (final line in lines) {
+          for (final element in line.elements) {
+            if (element is WordElement) {
+              expect(element.word.text, isNot(contains('\n')));
+            }
+          }
+        }
+
+        final double bodyFontSize = style.fontSize ?? ElementStyle.defaultFontSize;
+        for (final line in lines) {
+          expect(line.lineHeight, lessThan(bodyFontSize * 3));
+        }
+
+        final String fullText = lines.map(lineText).join(' ');
+        expect(fullText, contains('oil. Put the chicken'));
+      });
     });
 
     group('blank paragraph', () {

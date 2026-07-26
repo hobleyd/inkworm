@@ -19,13 +19,17 @@ class TextHandler extends HtmlHandler {
 
     List<HtmlContent> elements = [];
 
-    for (String word in _splitString(element.value)) {
+    for (String word in _splitString(_collapseNewlines(element.value))) {
       ElementSize size = await WorkerSlot.measureTextInMainThread(word, parentElementStyle!.textStyle);
       elements.add(TextContent(blockStyle: parentBlockStyle!, elementStyle: parentElementStyle, text: word, ascent: size.ascent, descent: size.descent, height: size.height, width: size.width));
     }
 
     return elements;
   }
+
+  // Embedded newlines/tabs get glued onto the adjacent word and mismeasured by TextPainter
+  // (which treats \n as a hard break); collapse them to a space per HTML whitespace rules.
+  String _collapseNewlines(String span) => span.replaceAll(RegExp(r'[\t\n\r]+'), ' ');
 
   List<String> _splitString(String span) {
     List<String> tokens = [];
