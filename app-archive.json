@@ -684,6 +684,38 @@
       "mandatory": false,
       "url": "https://hobleyd.github.io/inkworm/releases/0.7.6+8-windows",
       "platform": "windows"
+    },
+    {
+      "version": "0.7.7",
+      "shortVersion": 9,
+      "changes": [
+        {
+          "message": "chore(version): bump to 0.7.7+4 (patch)"
+        },
+        {
+          "message": "Collapse embedded newlines in text nodes to spaces"
+        }
+      ],
+      "date": "2026-07-26",
+      "mandatory": false,
+      "url": "https://hobleyd.github.io/inkworm/releases/0.7.7+9-macos",
+      "platform": "macos"
+    },
+    {
+      "version": "0.7.7",
+      "shortVersion": 9,
+      "changes": [
+        {
+          "message": "chore(version): bump to 0.7.7+4 (patch)"
+        },
+        {
+          "message": "Collapse embedded newlines in text nodes to spaces"
+        }
+      ],
+      "date": "2026-07-26",
+      "mandatory": false,
+      "url": "https://hobleyd.github.io/inkworm/releases/0.7.7+9-windows",
+      "platform": "windows"
     }
   ]
 }
