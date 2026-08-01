@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:android_package_installer/android_package_installer.dart';
 import 'package:desktop_updater/desktop_updater.dart';
-import 'package:desktop_updater/updater_controller.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -43,7 +42,7 @@ class _InkwormUpdate extends ConsumerState<InkwormUpdate> {
       return ListenableBuilder(
         listenable: _desktopController!,
         builder: (context, _) {
-          if (_desktopController!.needUpdate) {
+          if (_desktopController!.state is UpdateAvailable || _desktopController!.state is UpdateReadyToInstall) {
             return DesktopUpdateDirectCard(
               controller: _desktopController!,
               child: const SizedBox.shrink(),
