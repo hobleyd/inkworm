@@ -2,6 +2,8 @@
 
 An ePub reader, written in Flutter, that supports pagination. Built to support Paladin, but will work on any desktop.
 
+> **Upgrading from before v1.0.0?** The in-app updater's underlying library changed in a way that breaks auto-update for versions older than v1.0.0 — those installs won't be able to detect or fetch v1.0.0 automatically. Download and install v1.0.0 manually; auto-update will work again for all versions from here on.
+
 ## Features
 
 - **Paginated reading** — books are laid out as fixed pages rather than a continuous scroll, like a physical e-reader. Tap the left/right edge of the screen to turn pages; tap the middle to open Settings.
