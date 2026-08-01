@@ -20,6 +20,7 @@ import 'package:inkworm/epub/handlers/image_handler.dart';
 import 'package:inkworm/epub/handlers/inline_handler.dart';
 import 'package:inkworm/epub/handlers/line_break_handler.dart';
 import 'package:inkworm/epub/handlers/link_handler.dart';
+import 'package:inkworm/epub/handlers/list_handler.dart';
 import 'package:inkworm/epub/handlers/superscript_handler.dart';
 import 'package:inkworm/epub/handlers/table_handler.dart';
 import 'package:inkworm/epub/handlers/text_handler.dart';
@@ -166,6 +167,7 @@ void main() {
       GetIt.instance.registerSingleton<LineBreakHandler>(LineBreakHandler());
       GetIt.instance.registerSingleton<InlineHandler>(InlineHandler());
       GetIt.instance.registerSingleton<LinkHandler>(LinkHandler());
+      GetIt.instance.registerSingleton<ListHandler>(ListHandler());
       GetIt.instance.registerSingleton<ImageHandler>(ImageHandler());
       GetIt.instance.registerSingleton<SuperscriptHandler>(SuperscriptHandler());
       GetIt.instance.registerSingleton<TableHandler>(TableHandler());
@@ -1178,6 +1180,256 @@ Push the chicken to one side of the pan.</p>
 
         final String fullText = lines.map(lineText).join(' ');
         expect(fullText, contains('oil. Put the chicken'));
+      });
+    });
+
+    group('lists', () {
+      test('renders unordered list items with bullet markers', () async {
+        const String chapterHtml = '''
+<html><body>
+<ul>
+  <li>First point.</li>
+  <li>Second point.</li>
+</ul>
+</body></html>
+''';
+
+        final PageSize size = GetIt.instance.get<PageSize>();
+        size.canvasWidth = 800;
+        size.canvasHeight = 1000;
+
+        final EpubParser parser = GetIt.instance.get<EpubParser>();
+        final EpubChapter chapter = EpubChapter(chapterNumber: 0);
+
+        await parser.parseChapterFromString(chapter, chapterHtml);
+
+        final List<String> renderedLines = groupedRenderedLines(chapter.pages.single.lines);
+
+        expect(renderedLines, contains('\u{2022} First point.'));
+        expect(renderedLines, contains('\u{2022} Second point.'));
+      });
+
+      test('renders ordered list items with sequential numbering honouring start', () async {
+        const String chapterHtml = '''
+<html><body>
+<ol start="3">
+  <li>Third.</li>
+  <li>Fourth.</li>
+</ol>
+</body></html>
+''';
+
+        final PageSize size = GetIt.instance.get<PageSize>();
+        size.canvasWidth = 800;
+        size.canvasHeight = 1000;
+
+        final EpubParser parser = GetIt.instance.get<EpubParser>();
+        final EpubChapter chapter = EpubChapter(chapterNumber: 0);
+
+        await parser.parseChapterFromString(chapter, chapterHtml);
+
+        final List<String> renderedLines = groupedRenderedLines(chapter.pages.single.lines);
+
+        expect(renderedLines, contains('3. Third.'));
+        expect(renderedLines, contains('4. Fourth.'));
+      });
+
+      test('honours ol type attribute for alphabetic and roman numbering', () async {
+        const String chapterHtml = '''
+<html><body>
+<ol type="a">
+  <li>First.</li>
+  <li>Second.</li>
+</ol>
+<ol type="I">
+  <li>First.</li>
+  <li>Second.</li>
+</ol>
+</body></html>
+''';
+
+        final PageSize size = GetIt.instance.get<PageSize>();
+        size.canvasWidth = 800;
+        size.canvasHeight = 1000;
+
+        final EpubParser parser = GetIt.instance.get<EpubParser>();
+        final EpubChapter chapter = EpubChapter(chapterNumber: 0);
+
+        await parser.parseChapterFromString(chapter, chapterHtml);
+
+        final List<String> renderedLines = groupedRenderedLines(chapter.pages.single.lines);
+
+        expect(renderedLines, contains('a. First.'));
+        expect(renderedLines, contains('b. Second.'));
+        expect(renderedLines, contains('I. First.'));
+        expect(renderedLines, contains('II. Second.'));
+      });
+
+      test('nested unordered lists switch marker style and indent further than their parent', () async {
+        const String listCss = '''
+ul { list-style-type: disc; }
+ul ul { list-style-type: circle; }
+''';
+
+        const String chapterHtml = '''
+<html><body>
+<ul>
+  <li>Outer item
+    <ul>
+      <li>Inner item</li>
+    </ul>
+  </li>
+</ul>
+</body></html>
+''';
+
+        final PageSize size = GetIt.instance.get<PageSize>();
+        size.canvasWidth = 800;
+        size.canvasHeight = 1000;
+
+        final CssParser cssParser = GetIt.instance.get<CssParser>();
+        cssParser.parseCss(listCss);
+
+        final EpubParser parser = GetIt.instance.get<EpubParser>();
+        final EpubChapter chapter = EpubChapter(chapterNumber: 0);
+
+        await parser.parseChapterFromString(chapter, chapterHtml);
+
+        final List<Line> lines = chapter.pages.single.lines.where((l) => l.elements.isNotEmpty).toList();
+
+        final Line outerLine = lines.firstWhere((l) => lineText(l).contains('Outer item'));
+        final Line innerLine = lines.firstWhere((l) => lineText(l).contains('Inner item'));
+
+        expect(lineText(outerLine), contains('\u{2022} Outer item'));
+        expect(lineText(innerLine), contains('\u{25E6} Inner item'));
+        expect(innerLine.leftIndents, greaterThan(outerLine.leftIndents));
+      });
+
+      test('wraps long list items with a hanging indent so continuation lines align with the text, not the marker', () async {
+        const String chapterHtml = '''
+<html><body>
+<ol>
+  <li>This is a sufficiently long list item that it will need to wrap onto a second line within the narrow test canvas width provided here.</li>
+</ol>
+</body></html>
+''';
+
+        final PageSize size = GetIt.instance.get<PageSize>();
+        size.canvasWidth = 250;
+        size.canvasHeight = 1000;
+        size.leftIndent = 12;
+        size.rightIndent = 12;
+
+        final EpubParser parser = GetIt.instance.get<EpubParser>();
+        final EpubChapter chapter = EpubChapter(chapterNumber: 0);
+
+        await parser.parseChapterFromString(chapter, chapterHtml);
+
+        final List<Line> lines = chapter.pages.single.lines.where((l) => l.elements.isNotEmpty).toList();
+        expect(lines.length, greaterThan(1));
+
+        expect(lineText(lines.first), startsWith('1. '));
+        expect(lines[1].leftIndents, greaterThan(lines.first.leftIndents));
+
+        // The marker (elements[0]) is now a single fixed-width WordElement carrying its own trailing gap, so
+        // it can't be inflated by line 1's own justification the way a separate space-Separator would be -
+        // otherwise line 1's real text would start further right than the static indent baked into line 2.
+        final double wordStartOnLine1 = lines.first.leftIndents + lines.first.elements[0].width;
+        expect(lines[1].leftIndents, closeTo(wordStartOnLine1, 0.01));
+      });
+
+      test('a <li> wrapping a block-level <p> keeps the paragraph on the page instead of leaking a negative indent', () async {
+        const String chapterHtml = '''
+<html><body>
+<ol>
+  <li><p>Some paragraph text inside the item.</p></li>
+</ol>
+</body></html>
+''';
+
+        final PageSize size = GetIt.instance.get<PageSize>();
+        size.canvasWidth = 800;
+        size.canvasHeight = 1000;
+
+        final EpubParser parser = GetIt.instance.get<EpubParser>();
+        final EpubChapter chapter = EpubChapter(chapterNumber: 0);
+
+        await parser.parseChapterFromString(chapter, chapterHtml);
+
+        final List<Line> lines = chapter.pages.single.lines.where((l) => l.elements.isNotEmpty).toList();
+
+        for (final line in lines) {
+          expect(line.leftIndents, greaterThanOrEqualTo(size.leftIndent));
+        }
+
+        final String fullText = lines.map(lineText).join(' ');
+        expect(fullText, contains('1.'));
+        expect(fullText, contains('Some paragraph text inside the item.'));
+      });
+
+      test('every item in an ordered list starts its text at the same x position, even when marker length varies', () async {
+        // start="26" makes the first marker "z." (2 chars) and the second "aa." (3 chars) - a marker-length
+        // difference that's guaranteed regardless of font metrics, unlike relying on a specific digit (e.g.
+        // "1") happening to render narrower than others in the test font.
+        const String chapterHtml = '''
+<html><body>
+<ol type="a" start="26">
+  <li>Last single-letter item.</li>
+  <li>First double-letter item.</li>
+</ol>
+</body></html>
+''';
+
+        final PageSize size = GetIt.instance.get<PageSize>();
+        size.canvasWidth = 800;
+        size.canvasHeight = 1000;
+
+        final EpubParser parser = GetIt.instance.get<EpubParser>();
+        final EpubChapter chapter = EpubChapter(chapterNumber: 0);
+
+        await parser.parseChapterFromString(chapter, chapterHtml);
+
+        final List<Line> lines = chapter.pages.single.lines.where((l) => l.elements.isNotEmpty).toList();
+        expect(lineText(lines[0]), startsWith('z. '));
+        expect(lineText(lines[1]), startsWith('aa. '));
+
+        // Every item is a single line here (short text, wide canvas), so each line's marker element
+        // (elements[0]) is followed immediately by that item's own text - both must reserve the same
+        // gutter width even though "z." and "aa." are different lengths.
+        final List<double> textStartPositions = lines.map((l) => l.leftIndents + l.elements[0].width).toList();
+
+        expect(textStartPositions.toSet().length, 1, reason: 'text start positions were: $textStartPositions');
+      });
+
+      test('reserves the same amount of space on the right as the list indents on the left', () async {
+        const String chapterHtml = '''
+<html><body>
+<ul>
+  <li>This item has enough text in it to wrap onto more than one line within the narrow canvas used by this test.</li>
+</ul>
+</body></html>
+''';
+
+        final PageSize size = GetIt.instance.get<PageSize>();
+        size.canvasWidth = 200;
+        size.canvasHeight = 1000;
+        size.leftIndent = 12;
+        size.rightIndent = 12;
+
+        final EpubParser parser = GetIt.instance.get<EpubParser>();
+        final EpubChapter chapter = EpubChapter(chapterNumber: 0);
+
+        await parser.parseChapterFromString(chapter, chapterHtml);
+
+        final List<Line> lines = chapter.pages.single.lines.where((l) => l.elements.isNotEmpty).toList();
+        expect(lines.length, greaterThan(1));
+
+        const double listIndent = 20; // half of the 40px default.css indent, per _defaultIndent
+        final double rightBound = size.canvasWidth - size.rightIndent - listIndent;
+
+        for (final line in lines) {
+          expect(line.leftIndents + line.elementsWidth, lessThanOrEqualTo(rightBound + 0.5));
+        }
       });
     });
 

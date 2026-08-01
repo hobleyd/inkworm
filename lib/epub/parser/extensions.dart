@@ -60,6 +60,30 @@ extension NodeExtension on XmlNode {
   bool get shouldProcess => !(this is XmlText && RegExp(r'^[\r\n ]*[\r\n][\r\n ]*$').hasMatch(value!));
 }
 
+// A <p> with no text and no child elements is just HTML source formatting whitespace, not a real paragraph.
+bool isEmptyParagraph(XmlNode node) {
+  if (node is XmlElement && node.localName == 'p') {
+    // If there are child elements (not just text nodes), it's not empty
+    if (node.children.any((child) => child is XmlElement)) {
+      return false;
+    }
+
+    // Check if there's any text content or entities
+    for (var child in node.children) {
+      if (child is XmlText) {
+        // Check the raw text (before entity decoding)
+        if (child.value.trimPreservingNbsp().isNotEmpty) {
+          return false;
+        }
+      }
+    }
+
+    return true;
+  }
+
+  return false;
+}
+
 extension SelectorSetExtension on XmlElement {
   OrderedSet<String> get selectorSet {
     OrderedSet<String> selectors = OrderedSet.simple<String>();

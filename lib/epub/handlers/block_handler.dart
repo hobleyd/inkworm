@@ -23,8 +23,6 @@ class BlockHandler extends HtmlHandler {
     HtmlHandler.registerHandler('h5', this);
     HtmlHandler.registerHandler('h6', this);
     HtmlHandler.registerHandler('div', this);
-    HtmlHandler.registerHandler('ol', this);
-    HtmlHandler.registerHandler('li', this);
     HtmlHandler.registerHandler('blockquote', this);
     HtmlHandler.registerHandler('section', this);
     HtmlHandler.registerHandler('figure', this);
@@ -58,7 +56,7 @@ class BlockHandler extends HtmlHandler {
     ];
 
     for (var child in node.children) {
-      if (child.shouldProcess && !_isParagraphEmpty(child)) {
+      if (child.shouldProcess && !isEmptyParagraph(child)) {
         List<HtmlContent>? childElements = await child.handler?.processElement(node: child, parentBlockStyle: blockStyle, parentElementStyle: elementStyle);
         if (childElements?.isNotEmpty ?? false) {
           for (var el in childElements!) {
@@ -84,28 +82,5 @@ class BlockHandler extends HtmlHandler {
     }
 
     return elements;
-  }
-
-  bool _isParagraphEmpty(XmlNode node) {
-    if (node is XmlElement && node.localName == 'p') {
-      // If there are child elements (not just text nodes), it's not empty
-      if (node.children.any((child) => child is XmlElement)) {
-        return false;
-      }
-
-      // Check if there's any text content or entities
-      for (var child in node.children) {
-        if (child is XmlText) {
-          // Check the raw text (before entity decoding)
-          if (child.value.trimPreservingNbsp().isNotEmpty) {
-            return false;
-          }
-        }
-      }
-
-      return true;
-    }
-
-    return false;
   }
 }

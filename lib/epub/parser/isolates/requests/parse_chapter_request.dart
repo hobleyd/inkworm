@@ -12,6 +12,7 @@ import '../../../handlers/image_handler.dart';
 import '../../../handlers/inline_handler.dart';
 import '../../../handlers/line_break_handler.dart';
 import '../../../handlers/link_handler.dart';
+import '../../../handlers/list_handler.dart';
 import '../../../handlers/superscript_handler.dart';
 import '../../../handlers/table_handler.dart';
 import '../../../handlers/text_handler.dart';
@@ -51,6 +52,7 @@ class ParseChapterRequest extends IsolateParseRequest {
       GetIt.instance.registerSingleton<InlineHandler>(InlineHandler());
       GetIt.instance.registerSingleton<LineBreakHandler>(LineBreakHandler());
       GetIt.instance.registerSingleton<LinkHandler>(LinkHandler());
+      GetIt.instance.registerSingleton<ListHandler>(ListHandler());
       GetIt.instance.registerSingleton<SuperscriptHandler>(SuperscriptHandler());
       GetIt.instance.registerSingleton<TableHandler>(TableHandler());
       GetIt.instance.registerSingleton<TextHandler>(TextHandler());
