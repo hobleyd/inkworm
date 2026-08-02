@@ -32,6 +32,7 @@ class _InkwormUpdate extends ConsumerState<InkwormUpdate> {
     if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
       _desktopController = DesktopUpdaterController(
         appArchiveUrl: Uri.parse(_appArchiveUrl),
+        allowUnsignedMacOSUpdates: true,
       );
     }
   }
