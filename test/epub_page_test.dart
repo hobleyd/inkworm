@@ -1454,6 +1454,88 @@ ul ul { list-style-type: circle; }
         );
         expect(hasNbspLine, isTrue);
       });
+
+      test('a whitespace-only spacer div with an explicit CSS height renders at that height, not the font line height', () async {
+        // Regression test: some (older, Calibre-converted) epubs use a pair of empty divs - one after
+        // each paragraph and one before the next - containing only &nbsp;, sized with a small explicit
+        // `height` (e.g. 6px) instead of paragraph margins. Previously `height` was ignored entirely, so
+        // each spacer rendered at the surrounding font's full line height, turning the intended small
+        // gap into what looked like a whole extra blank line between every paragraph.
+        const String css = '''
+.spacer { display: block; height: 6px; margin: 0 }
+.para   { display: block; margin: 0 }
+''';
+
+        const String chapterHtml = '''
+<html><body>
+<div class="para">First paragraph text goes here for testing.</div><div class="spacer">&#160;</div>
+<div class="spacer">&#160;</div><div class="para">Second paragraph text goes here for testing.</div>
+</body></html>
+''';
+
+        final CssParser cssParser = GetIt.instance.get<CssParser>();
+        cssParser.parseCss(css);
+
+        final PageSize size = GetIt.instance.get<PageSize>();
+        size.canvasWidth = 800;
+        size.canvasHeight = 600;
+
+        final EpubParser parser = GetIt.instance.get<EpubParser>();
+        final EpubChapter chapter = EpubChapter(chapterNumber: 0);
+        await parser.parseChapterFromString(chapter, chapterHtml);
+
+        final List<Line> spacerLines = chapter.pages
+            .expand((page) => page.lines)
+            .where((line) => line.elements.whereType<NonBreakingSpaceSeparator>().isNotEmpty)
+            .toList();
+
+        expect(spacerLines.length, 2);
+        for (final line in spacerLines) {
+          expect(line.lineHeight, 6);
+        }
+      });
+
+      test('a whitespace-only spacer div keeps its declared px height on a HiDPI display', () async {
+        // Regression test: CssParser.parseFloatCssValue scales absolute px/pt CSS lengths by
+        // PageSize.pixelDensity (== devicePixelRatio, ~2 on a Retina display), but the canvas itself -
+        // page size, text metrics, everything else - is laid out in logical pixels throughout. Reusing
+        // that scaling for the spacer `height` above silently turned "6px" back into ~12 on a Retina
+        // display, i.e. right back to the surrounding font's line height, cancelling the fix out
+        // exactly on the hardware most users read on.
+        const String css = '''
+.spacer { display: block; height: 6px; margin: 0 }
+.para   { display: block; margin: 0 }
+''';
+
+        const String chapterHtml = '''
+<html><body>
+<div class="para">First paragraph text goes here for testing.</div><div class="spacer">&#160;</div>
+<div class="spacer">&#160;</div><div class="para">Second paragraph text goes here for testing.</div>
+</body></html>
+''';
+
+        final CssParser cssParser = GetIt.instance.get<CssParser>();
+        cssParser.parseCss(css);
+
+        final PageSize size = GetIt.instance.get<PageSize>();
+        size.canvasWidth = 800;
+        size.canvasHeight = 600;
+        size.pixelDensity = 2;
+
+        final EpubParser parser = GetIt.instance.get<EpubParser>();
+        final EpubChapter chapter = EpubChapter(chapterNumber: 0);
+        await parser.parseChapterFromString(chapter, chapterHtml);
+
+        final List<Line> spacerLines = chapter.pages
+            .expand((page) => page.lines)
+            .where((line) => line.elements.whereType<NonBreakingSpaceSeparator>().isNotEmpty)
+            .toList();
+
+        expect(spacerLines.length, 2);
+        for (final line in spacerLines) {
+          expect(line.lineHeight, 6, reason: 'declared px height must not be scaled by pixelDensity');
+        }
+      });
     });
 
     group('blank paragraph', () {

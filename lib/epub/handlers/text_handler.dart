@@ -19,9 +19,19 @@ class TextHandler extends HtmlHandler {
 
     List<HtmlContent> elements = [];
 
-    for (String word in _splitString(_collapseNewlines(element.value))) {
+    final List<String> words = _splitString(_collapseNewlines(element.value));
+
+    // Some (older, Calibre-converted) epubs use a block containing nothing but a &nbsp; as a paragraph
+    // spacer, sized with an explicit CSS `height` (e.g. `height: 6px`), instead of paragraph margins.
+    // Without this, that &nbsp; is measured at the surrounding font's normal line height, turning what
+    // should be a small spacer into a full extra blank line. Only apply the block's height when the
+    // node is nothing but whitespace filler - real text must keep its measured height.
+    final bool isWhitespaceFiller = words.every((word) => word == ' ' || word == '\u{00A0}');
+    final double? fillerHeight = isWhitespaceFiller ? parentBlockStyle?.height : null;
+
+    for (String word in words) {
       ElementSize size = await WorkerSlot.measureTextInMainThread(word, parentElementStyle!.textStyle);
-      elements.add(TextContent(blockStyle: parentBlockStyle!, elementStyle: parentElementStyle, text: word, ascent: size.ascent, descent: size.descent, height: size.height, width: size.width));
+      elements.add(TextContent(blockStyle: parentBlockStyle!, elementStyle: parentElementStyle, text: word, ascent: size.ascent, descent: size.descent, height: fillerHeight ?? size.height, width: size.width));
     }
 
     return elements;

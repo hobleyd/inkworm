@@ -26,6 +26,7 @@ class CssParser {
     nonInheritableProperties.add("margin-right");
     nonInheritableProperties.add("margin-top");
     nonInheritableProperties.add("margin-bottom");
+    nonInheritableProperties.add("height");
   }
 
   // TODO: test out support for @media elements if ever required.

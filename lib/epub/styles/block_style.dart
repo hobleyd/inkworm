@@ -35,6 +35,7 @@ class BlockStyle extends Style {
 
   double? maxHeight;
   double? maxWidth;
+  double? height;
 
   bool ignoreVerticalMargins = false;
 
@@ -234,6 +235,33 @@ class BlockStyle extends Style {
     maxWidth  ??= _parser.getPercentAttribute(element, this, "max-width");
   }
 
+  // Some (older, Calibre-converted) epubs use empty divs with an explicit small `height` (containing
+  // only a &nbsp;) as paragraph spacers, rather than paragraph margins. We only honour this for such
+  // whitespace-only blocks (see TextHandler) - a `height` on a block with real text content is treated
+  // as a no-op, matching how most readers ignore height as a hard clip for flowing text.
+  Future<void> getHeight(XmlNode element) async {
+    String? heightString = _parser.getStringAttribute(element, this, "height");
+    if (heightString == null) return;
+
+    final RegExp absoluteUnit = RegExp(r'^(-?\d+\.?\d*)(px|pt)$', caseSensitive: false);
+    final Match? absoluteMatch = absoluteUnit.firstMatch(heightString.trim());
+    if (absoluteMatch != null) {
+      // The whole canvas (page size, text metrics, etc.) is laid out in logical pixels. Unlike
+      // CssParser.parseFloatCssValue, don't scale by devicePixelRatio here - on a HiDPI display that
+      // would inflate a small spacer back up to roughly the surrounding font's line height, silently
+      // undoing the point of an explicit small height.
+      height = double.parse(absoluteMatch.group(1)!);
+      return;
+    }
+
+    if (heightString.endsWith('%')) {
+      PageSize size = GetIt.instance.get<PageSize>();
+      height = _parser.parseFloatCssValue(heightString, size.canvasHeight);
+    } else {
+      height = await _parser.getFloatFromString(elementStyle.textStyle, heightString, false);
+    }
+  }
+
   @override
   Future <Style> parseElement({required XmlNode element}) async {
     addSelectors(element);
@@ -249,6 +277,7 @@ class BlockStyle extends Style {
     getLineHeightMultiplier(element);
     await getMargins(element);
     getMax(element);
+    await getHeight(element);
 
     return this;
   }
