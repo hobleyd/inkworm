@@ -144,6 +144,11 @@ void main() {
         throwsFormatException,
       );
     });
+
+    test('should return empty declarations for an @supports block instead of trying to parse it', () {
+      final result = cssParser.parseDeclarations('@supports (display: grid) { display: grid; }');
+      expect(result, isEmpty);
+    });
   });
 
   group('parseCss', () {
@@ -718,6 +723,271 @@ void main() {
       style.parseElement(element: element);
       final color = cssParser.getStringAttribute(element, style, 'color');
       expect(color, 'red');
+    });
+  });
+
+  group('@media blocks', () {
+    test('drops rules inside an @media block whose type has not been enabled', () {
+      cssParser.parseCss('@media amzn-mobi { p { color: red; } }');
+      expect(cssParser.css['p'], isNull);
+    });
+
+    test('inlines rules inside an @media block once its type is enabled', () {
+      cssParser.enableMedia('amzn-mobi');
+      cssParser.parseCss('@media amzn-mobi { p { color: red; } }');
+      expect(cssParser.css['p'], {'color': 'red'});
+    });
+
+    test('inlines every rule inside an enabled @media block, not just the first', () {
+      cssParser.enableMedia('amzn-mobi');
+      cssParser.parseCss('@media amzn-mobi { p { color: red; } h1 { color: blue; } }');
+      expect(cssParser.css['p'], {'color': 'red'});
+      expect(cssParser.css['h1'], {'color': 'blue'});
+    });
+
+    test('matches "type and (...)"-style media queries by their leading type name', () {
+      cssParser.enableMedia('screen');
+      cssParser.parseCss('@media screen and (max-width: 600px) { p { color: green; } }');
+      expect(cssParser.css['p'], {'color': 'green'});
+    });
+
+    test('leaves rules outside the @media block untouched either way', () {
+      cssParser.parseCss('@media amzn-mobi { p { color: red; } } h1 { color: gold; }');
+      expect(cssParser.css['h1'], {'color': 'gold'});
+      expect(cssParser.css['p'], isNull);
+    });
+  });
+
+  group('parseFloatCssValue', () {
+    test('should ignore a recognised unit outside px/pt/em/%, returning the raw numeric value', () {
+      final result = cssParser.parseFloatCssValue('3vh', 100);
+      expect(result, 3);
+    });
+  });
+
+  group('getFontAttribute', () {
+    test('should return only the first font in a comma-separated font-family list', () {
+      cssParser.css['p'] = {'font-family': 'Georgia, serif'};
+      final element = XmlElement(XmlName.parts('p'));
+
+      ElementStyle style = ElementStyle();
+      style.parseElement(element: element);
+      final result = cssParser.getFontAttribute(element, style, 'font-family');
+      expect(result, 'Georgia');
+    });
+  });
+
+  group('getPercentAttribute', () {
+    test('should return the fractional value of a percentage attribute', () {
+      cssParser.css['div'] = {'max-width': '50%'};
+      final element = XmlElement(XmlName.parts('div'));
+
+      ElementStyle style = ElementStyle();
+      style.parseElement(element: element);
+      final result = cssParser.getPercentAttribute(element, style, 'max-width');
+      expect(result, 0.5);
+    });
+
+    test('should return null when the attribute value is not a percentage', () {
+      cssParser.css['div'] = {'max-width': '200px'};
+      final element = XmlElement(XmlName.parts('div'));
+
+      ElementStyle style = ElementStyle();
+      style.parseElement(element: element);
+      final result = cssParser.getPercentAttribute(element, style, 'max-width');
+      expect(result, isNull);
+    });
+  });
+
+  group('getFloatAttribute', () {
+    test('strips a trailing !important from text-indent before parsing it as a length', () async {
+      cssParser.css['p'] = {'text-indent': '20px !important'};
+      final element = XmlElement(XmlName.parts('p'));
+
+      ElementStyle style = ElementStyle();
+      style.parseElement(element: element);
+      final result = await cssParser.getFloatAttribute(element, 'text-indent', style, true);
+      expect(result, 20);
+    });
+  });
+
+  group('getFontWeight', () {
+    test('should map every named numeric weight to its FontWeight', () {
+      expect(cssParser.getFontWeight('500'), FontWeight.w500);
+      expect(cssParser.getFontWeight('600'), FontWeight.w600);
+      expect(cssParser.getFontWeight('800'), FontWeight.w800);
+    });
+  });
+
+  group('nth-child selector matching', () {
+    test('matches a numeric :nth-child(n), not just odd/even', () async {
+      cssParser.parseCss('.list li:nth-child(2) { color: purple; }');
+
+      final ul = XmlElement(XmlName.parts('ul'))..setAttribute('class', 'list');
+      final li1 = XmlElement(XmlName.parts('li'));
+      final li2 = XmlElement(XmlName.parts('li'));
+      ul.children.addAll([li1, li2]);
+
+      final li1Style = await ElementStyle.getElementStyle(li1, null);
+      final li2Style = await ElementStyle.getElementStyle(li2, null);
+
+      expect(cssParser.getStringAttribute(li1, li1Style, 'color'), isNull);
+      expect(cssParser.getStringAttribute(li2, li2Style, 'color'), 'purple');
+    });
+  });
+
+  group('BlockStyle margins and alignment', () {
+    test('resolves explicit text-align values to their LineAlignment', () async {
+      cssParser.css['p.left'] = {'text-align': 'left'};
+      cssParser.css['p.right'] = {'text-align': 'right'};
+      cssParser.css['p.justify'] = {'text-align': 'justify'};
+
+      Future<LineAlignment?> alignmentFor(String className) async {
+        final element = XmlElement(XmlName.parts('p'))..setAttribute('class', className);
+        final elementStyle = await ElementStyle.getElementStyle(element, null);
+        final blockStyle = await BlockStyle.getBlockStyle(element, elementStyle: elementStyle);
+        return blockStyle.alignment;
+      }
+
+      expect(await alignmentFor('left'), LineAlignment.left);
+      expect(await alignmentFor('right'), LineAlignment.right);
+      expect(await alignmentFor('justify'), LineAlignment.justify);
+    });
+
+    test('centres a block via margin-left/margin-right: auto when text-align is unset', () async {
+      cssParser.css['p'] = {'margin-left': 'auto', 'margin-right': 'auto'};
+      final element = XmlElement(XmlName.parts('p'));
+
+      final elementStyle = await ElementStyle.getElementStyle(element, null);
+      final blockStyle = await BlockStyle.getBlockStyle(element, elementStyle: elementStyle);
+
+      expect(blockStyle.alignment, LineAlignment.centre);
+    });
+
+    test('expands a single-value margin shorthand to all four sides', () async {
+      cssParser.css['p'] = {'margin': '10px'};
+      final element = XmlElement(XmlName.parts('p'));
+
+      final elementStyle = await ElementStyle.getElementStyle(element, null);
+      final blockStyle = await BlockStyle.getBlockStyle(element, elementStyle: elementStyle);
+
+      expect(blockStyle.topMargin, 10);
+      expect(blockStyle.bottomMargin, 10);
+      expect(blockStyle.leftMargin, 10);
+      expect(blockStyle.rightMargin, 10);
+    });
+
+    test('expands a two-value margin shorthand to vertical/horizontal pairs', () async {
+      cssParser.css['p'] = {'margin': '10px 20px'};
+      final element = XmlElement(XmlName.parts('p'));
+
+      final elementStyle = await ElementStyle.getElementStyle(element, null);
+      final blockStyle = await BlockStyle.getBlockStyle(element, elementStyle: elementStyle);
+
+      expect(blockStyle.topMargin, 10);
+      expect(blockStyle.bottomMargin, 10);
+      expect(blockStyle.leftMargin, 20);
+      expect(blockStyle.rightMargin, 20);
+    });
+
+    test('expands a three-value margin shorthand (top, sides, bottom)', () async {
+      cssParser.css['p'] = {'margin': '10px 20px 30px'};
+      final element = XmlElement(XmlName.parts('p'));
+
+      final elementStyle = await ElementStyle.getElementStyle(element, null);
+      final blockStyle = await BlockStyle.getBlockStyle(element, elementStyle: elementStyle);
+
+      expect(blockStyle.topMargin, 10);
+      expect(blockStyle.leftMargin, 20);
+      expect(blockStyle.rightMargin, 20);
+      expect(blockStyle.bottomMargin, 30);
+    });
+
+    test('expands a four-value margin shorthand (top, right, bottom, left)', () async {
+      cssParser.css['p'] = {'margin': '10px 20px 30px 40px'};
+      final element = XmlElement(XmlName.parts('p'));
+
+      final elementStyle = await ElementStyle.getElementStyle(element, null);
+      final blockStyle = await BlockStyle.getBlockStyle(element, elementStyle: elementStyle);
+
+      expect(blockStyle.topMargin, 10);
+      expect(blockStyle.rightMargin, 20);
+      expect(blockStyle.bottomMargin, 30);
+      expect(blockStyle.leftMargin, 40);
+    });
+
+    test('resolves percentage margins against the page canvas width', () async {
+      cssParser.css['p'] = {'margin-left': '10%', 'margin-right': '5%'};
+      final element = XmlElement(XmlName.parts('p'));
+
+      final elementStyle = await ElementStyle.getElementStyle(element, null);
+      final blockStyle = await BlockStyle.getBlockStyle(element, elementStyle: elementStyle);
+
+      // canvasWidth is 600 in this suite's setUp.
+      expect(blockStyle.leftMargin, 60);
+      expect(blockStyle.rightMargin, 30);
+    });
+
+    test('resolves percentage margin-top/margin-bottom against the page canvas height', () async {
+      cssParser.css['p'] = {'margin-top': '10%', 'margin-bottom': '5%'};
+      final element = XmlElement(XmlName.parts('p'));
+
+      final elementStyle = await ElementStyle.getElementStyle(element, null);
+      final blockStyle = await BlockStyle.getBlockStyle(element, elementStyle: elementStyle);
+
+      // canvasHeight is 800 in this suite's setUp.
+      expect(blockStyle.topMargin, 80);
+      expect(blockStyle.bottomMargin, 40);
+    });
+
+    test('resolves a percentage height against the page canvas height', () async {
+      cssParser.css['div'] = {'height': '25%'};
+      final element = XmlElement(XmlName.parts('div'));
+
+      final elementStyle = await ElementStyle.getElementStyle(element, null);
+      final blockStyle = await BlockStyle.getBlockStyle(element, elementStyle: elementStyle);
+
+      // canvasHeight is 800 in this suite's setUp.
+      expect(blockStyle.height, 200);
+    });
+  });
+
+  group('TableCellStyle padding shorthand', () {
+    test('expands a single-value padding shorthand to all four sides', () async {
+      cssParser.css['td'] = {'padding': '4px'};
+      final element = XmlElement(XmlName.parts('td'));
+
+      final elementStyle = await ElementStyle.getElementStyle(element, null);
+      final cellStyle = await TableCellStyle.getTableCellStyle(element, elementStyle: elementStyle);
+
+      expect(cellStyle.paddingTop, 4);
+      expect(cellStyle.paddingBottom, 4);
+      expect(cellStyle.paddingLeft, 4);
+      expect(cellStyle.paddingRight, 4);
+    });
+
+    test('expands a four-value padding shorthand (top, right, bottom, left)', () async {
+      cssParser.css['td'] = {'padding': '1px 2px 3px 4px'};
+      final element = XmlElement(XmlName.parts('td'));
+
+      final elementStyle = await ElementStyle.getElementStyle(element, null);
+      final cellStyle = await TableCellStyle.getTableCellStyle(element, elementStyle: elementStyle);
+
+      expect(cellStyle.paddingTop, 1);
+      expect(cellStyle.paddingRight, 2);
+      expect(cellStyle.paddingBottom, 3);
+      expect(cellStyle.paddingLeft, 4);
+    });
+
+    test('a specific padding-left overrides the shorthand value for that side', () async {
+      cssParser.css['td'] = {'padding': '4px', 'padding-left': '10px'};
+      final element = XmlElement(XmlName.parts('td'));
+
+      final elementStyle = await ElementStyle.getElementStyle(element, null);
+      final cellStyle = await TableCellStyle.getTableCellStyle(element, elementStyle: elementStyle);
+
+      expect(cellStyle.paddingLeft, 10);
+      expect(cellStyle.paddingTop, 4);
     });
   });
 }
