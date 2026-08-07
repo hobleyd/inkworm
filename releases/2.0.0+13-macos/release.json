@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 3,
+  "packageId": "au.com.sharpblue.inkworm",
+  "appName": "Inkworm",
+  "version": "2.0.0",
+  "buildNumber": 13,
+  "platform": "macos",
+  "channel": "stable",
+  "artifact": {
+    "kind": "zip",
+    "url": "https://hobleyd.github.io/inkworm/releases/2.0.0+13-macos/Inkworm-2.0.0-macos.zip",
+    "sha256": "32361aace43ca7c224fcb125a58ae88e5b761d0d7906892c626aaf90e934b11b",
+    "length": 28959422
+  },
+  "install": {
+    "strategy": "wholeBundleReplace"
+  },
+  "signature": {
+    "algorithm": "ed25519",
+    "publicKeyId": "release-65eb85ca77d001845cfd2508",
+    "value": "h8uSctL3XLCSn0RcKFIqzoHJe4/sqjWMu11a/UlVx2pyCGszUUYfe3PpAuzneSgkpj4Y7n9ZvM8FhZIq4MtCCw=="
+  },
+  "minimumUpdaterVersion": "2.0.0",
+  "generatedAt": "2026-08-07T03:19:50.717419Z"
+}
