@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "profileId": "cbc82f627d13300099dc7f4a2fe6a418",
+  "feedUrl": "https://hobleyd.github.io/inkworm/app-archive.json",
+  "activeKeyId": "release-65eb85ca77d001845cfd2508",
+  "publicKeys": {
+    "release-65eb85ca77d001845cfd2508": "5IVCgOxy1Ccda8xIREL2+QVANbtQUC50c7qvQOU56n8="
+  }
+}
