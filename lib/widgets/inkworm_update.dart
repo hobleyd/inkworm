@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:android_package_installer/android_package_installer.dart';
@@ -8,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 
+import '../models/update_recovery_store.dart';
 import '../models/version_check.dart';
 import '../providers/epub.dart';
 import '../providers/update.dart';
@@ -26,20 +28,46 @@ class _InkwormUpdate extends ConsumerState<InkwormUpdate> {
 
   static const String _appArchiveUrl = 'https://hobleyd.github.io/inkworm/app-archive.json';
 
+  // Must match the --package-id used by `dart run desktop_updater:package` in the release workflow,
+  // and the packageId bound into each signed release descriptor.
+  static const String _expectedPackageId = 'au.com.sharpblue.inkworm';
+
+  // Pinned Ed25519 public key(s) from desktop_updater.keys.json (release keygen). Only release
+  // descriptors and app-archive.json entries signed by the matching private key are trusted.
+  static const Map<String, String> _trustedReleasePublicKeys = {
+    'release-65eb85ca77d001845cfd2508': '5IVCgOxy1Ccda8xIREL2+QVANbtQUC50c7qvQOU56n8=',
+  };
+
   @override
   void initState() {
     super.initState();
     if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
+      unawaited(_initDesktopController());
+    }
+  }
+
+  Future<void> _initDesktopController() async {
+    final Directory supportDir = await getApplicationSupportDirectory();
+    final File recoveryFile = File(path.join(supportDir.path, 'desktop_updater_pending_install.json'));
+
+    if (!mounted) return;
+    setState(() {
       _desktopController = DesktopUpdaterController(
         appArchiveUrl: Uri.parse(_appArchiveUrl),
-        allowUnsignedMacOSUpdates: true,
+        expectedPackageId: _expectedPackageId,
+        trustedReleasePublicKeys: _trustedReleasePublicKeys,
+        recoveryStore: InkwormUpdateRecoveryStore(recoveryFile),
       );
-    }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
+      if (_desktopController == null) {
+        return const Center(child: CircularProgressIndicator());
+      }
+
       return ListenableBuilder(
         listenable: _desktopController!,
         builder: (context, _) {

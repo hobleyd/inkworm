@@ -1,0 +1,4 @@
+# Config for `dart run desktop_updater:release ...` (desktop_updater 3.x).
+# See https://pub.dev/packages/desktop_updater for the full schema.
+updates:
+  baseUrl: https://hobleyd.github.io/inkworm/

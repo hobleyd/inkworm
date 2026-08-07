@@ -182,6 +182,23 @@ jobs:
             --artifact-url "https://hobleyd.github.io/inkworm/releases/${VERSION}+${BUILD_NUMBER}-macos/${APP_NAME}-${VERSION}-macos.zip" \
             --install-strategy wholeBundleReplace
 
+      - name: Import release signing key
+        env:
+          DESKTOP_UPDATER_KEY_PASSPHRASE: ${{ secrets.DESKTOP_UPDATER_KEY_PASSPHRASE }}
+        run: |
+          echo "${{ secrets.DESKTOP_UPDATER_KEY_BUNDLE_B64 }}" | base64 --decode > "$RUNNER_TEMP/release-key.dukey"
+          dart run desktop_updater:release keys import \
+            --input "$RUNNER_TEMP/release-key.dukey" \
+            --passphrase-env DESKTOP_UPDATER_KEY_PASSPHRASE
+
+      - name: Sign release descriptor
+        run: |
+          VERSION="${{ needs.prepare.outputs.version }}"
+          BUILD_NUMBER="${{ needs.prepare.outputs.build_number }}"
+          dart run desktop_updater:release sign \
+            --release "dist/${VERSION}+${BUILD_NUMBER}-macos/release.json" \
+            --key-profile desktop_updater.keys.json
+
       - name: Upload distribution artifact
         uses: actions/upload-artifact@v4
         with:
@@ -236,6 +253,25 @@ jobs:
             --channel stable \
             --artifact-url "https://hobleyd.github.io/inkworm/releases/${VERSION}+${BUILD_NUMBER}-windows/${APP_NAME}-${VERSION}-windows.zip" \
             --install-strategy wholeDirectoryReplace
+
+      - name: Import release signing key
+        shell: bash
+        env:
+          DESKTOP_UPDATER_KEY_PASSPHRASE: ${{ secrets.DESKTOP_UPDATER_KEY_PASSPHRASE }}
+        run: |
+          echo "${{ secrets.DESKTOP_UPDATER_KEY_BUNDLE_B64 }}" | base64 --decode > "$RUNNER_TEMP/release-key.dukey"
+          dart run desktop_updater:release keys import \
+            --input "$RUNNER_TEMP/release-key.dukey" \
+            --passphrase-env DESKTOP_UPDATER_KEY_PASSPHRASE
+
+      - name: Sign release descriptor
+        shell: bash
+        run: |
+          VERSION="${{ needs.prepare.outputs.version }}"
+          BUILD_NUMBER="${{ needs.prepare.outputs.build_number }}"
+          dart run desktop_updater:release sign \
+            --release "dist/${VERSION}+${BUILD_NUMBER}-windows/release.json" \
+            --key-profile desktop_updater.keys.json
 
       - name: Upload distribution artifact
         uses: actions/upload-artifact@v4
@@ -296,6 +332,21 @@ jobs:
               --channel stable \
               --release-url "https://hobleyd.github.io/inkworm/releases/${VERSION}+${BUILD_NUMBER}-${PLATFORM}/release.json"
           done
+
+      - name: Import release signing key
+        env:
+          DESKTOP_UPDATER_KEY_PASSPHRASE: ${{ secrets.DESKTOP_UPDATER_KEY_PASSPHRASE }}
+        run: |
+          echo "${{ secrets.DESKTOP_UPDATER_KEY_BUNDLE_B64 }}" | base64 --decode > "$RUNNER_TEMP/release-key.dukey"
+          dart run desktop_updater:release keys import \
+            --input "$RUNNER_TEMP/release-key.dukey" \
+            --passphrase-env DESKTOP_UPDATER_KEY_PASSPHRASE
+
+      - name: Sign app-archive.json
+        run: |
+          dart run desktop_updater:release sign \
+            --app-archive deploy/app-archive.json \
+            --key-profile desktop_updater.keys.json
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
