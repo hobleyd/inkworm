@@ -317,6 +317,10 @@ jobs:
           if git show origin/gh-pages:app-archive.json > deploy/app-archive.json 2>/dev/null \
               && jq -e '.schemaVersion == 3' deploy/app-archive.json > /dev/null 2>&1; then
             echo "Using existing schema v3 app-archive.json from gh-pages"
+            # The published archive is signed from the previous run; upsert refuses to
+            # touch a signed archive, and we re-sign the whole thing below anyway.
+            jq 'del(.signature)' deploy/app-archive.json > deploy/app-archive.json.tmp
+            mv deploy/app-archive.json.tmp deploy/app-archive.json
           else
             rm -f deploy/app-archive.json
             echo "No compatible existing app-archive.json found; starting a new schema v3 index"
