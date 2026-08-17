@@ -5,7 +5,6 @@ import 'package:ordered_set/ordered_set.dart';
 import 'package:xml/xml.dart';
 
 import '../../models/element_size.dart';
-import '../../models/page_size.dart';
 import '../styles/element_style.dart';
 import '../styles/style.dart';
 import 'epub_parser.dart';
@@ -404,10 +403,12 @@ class CssParser {
       final cssFloatRegex = RegExp(r'^(-?\d+\.?\d*)([a-z%]+)$', caseSensitive: false);
       final match = cssFloatRegex.firstMatch(value.trim());
 
-      PageSize size = GetIt.instance.get<PageSize>();
       if (match != null) {
         return switch (match.group(2)){
-          "px" || "pt" => size.pixelDensity * double.parse(match.group(1)!),
+          // The canvas, and text metrics, are laid out in logical pixels throughout, so an absolute
+          // px/pt length maps 1:1 - it must not be scaled by PageSize.pixelDensity (devicePixelRatio).
+          // See the `height` handling in BlockStyle.getHeight for the same reasoning.
+          "px" || "pt" => double.parse(match.group(1)!),
           "em"         => preferredSize * double.parse(match.group(1)!),
           "%"          => preferredSize * (double.parse(match.group(1)!) / 100),
           _ => double.parse(match.group(1)!),

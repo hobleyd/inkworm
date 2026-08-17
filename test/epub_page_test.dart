@@ -927,7 +927,7 @@ void main() {
         expect(lines.sublist(lastIndentedLine + 1).every((line) => line.dropCapsIndent == 0), isTrue);
       });
 
-      test('applies manually extracted first-letter CSS and lays out the paragraph in seven content lines at 800px', () async {
+      test('applies manually extracted first-letter CSS and lays out the paragraph at 800px', () async {
         const String relevantDefaultCss = '''
 div {
   display: block;
@@ -954,7 +954,7 @@ i, cite, em, var, dfn {
 
         // The source EPUB uses a large decorated initial; we add `float: left` and
         // a tuned first-letter size here so the reduced fixture exercises the parser's
-        // drop-caps path and reproduces the expected 3-line wrap shape.
+        // drop-caps path.
         const String relevantBookCss = '''
 .element-container-single.element-bodymatter p.first-in-chapter.first-full-width span.first-letter {
   float: left;
@@ -993,7 +993,7 @@ i, cite, em, var, dfn {
 
         size.canvasWidth = 800;
         size.canvasHeight = 2000;
-        size.pixelDensity = 0.5;
+        size.pixelDensity = 1;
         size.leftIndent = 0;
         size.rightIndent = 0;
 
@@ -1017,19 +1017,18 @@ i, cite, em, var, dfn {
         final List<Line> lines = chapter.pages.single.lines.where((line) => line.elements.isNotEmpty).toList();
         final List<String> renderedLines = lines.map(lineText).toList();
 
-        expect(lines.length, 7);
+        expect(lines.length, 14);
 
         final WordElement firstWord = lines.first.elements.firstWhere((element) => element is WordElement) as WordElement;
         expect(firstWord.word.text, 'A');
         expect(firstWord.word.isDropCaps, isTrue);
         expect(renderedLines.first.startsWith('As I have often opined,'), isTrue);
 
-        expect(lines[1].dropCapsIndent, greaterThan(0));
-        expect(lines[2].dropCapsIndent, greaterThan(0));
-        expect(lines[3].dropCapsIndent, 0);
-        expect(lines[4].dropCapsIndent, 0);
-        expect(lines[5].dropCapsIndent, 0);
-        expect(lines[6].dropCapsIndent, 0);
+        // At correct (unscaled) sizing the 180% cap is only ~1.8x the line height, so no
+        // following line fits fully beneath it - none of them pick up a wraparound indent.
+        for (final line in lines) {
+          expect(line.dropCapsIndent, 0);
+        }
       });
 
       test('dropcaps nested inside a strong tag is detected and does not inflate maxAscent', () async {
@@ -1535,6 +1534,42 @@ ul ul { list-style-type: circle; }
         for (final line in spacerLines) {
           expect(line.lineHeight, 6, reason: 'declared px height must not be scaled by pixelDensity');
         }
+      });
+
+      test('a declared px paragraph margin keeps its value on a HiDPI display', () async {
+        // Regression test: CssParser.parseFloatCssValue scaled absolute px/pt CSS lengths by
+        // PageSize.pixelDensity (== devicePixelRatio, ~2-3 on a modern phone), but the canvas - page
+        // size, text metrics, everything else - is laid out in logical pixels throughout. A book
+        // using `margin-top: 15px` between paragraphs (a common Calibre-generated pattern) rendered
+        // with 30px+ of gap on real hardware, i.e. double (or triple) the space the book declared.
+        const String css = '''
+p { display: block; margin-top: 15px; margin-bottom: 0em }
+''';
+
+        const String chapterHtml = '''
+<html><body>
+<p>First paragraph text goes here for testing.</p>
+<p>Second paragraph text goes here for testing.</p>
+</body></html>
+''';
+
+        final CssParser cssParser = GetIt.instance.get<CssParser>();
+        cssParser.parseCss(css);
+
+        final PageSize size = GetIt.instance.get<PageSize>();
+        size.canvasWidth = 800;
+        size.canvasHeight = 600;
+        size.pixelDensity = 2;
+
+        final EpubParser parser = GetIt.instance.get<EpubParser>();
+        final EpubChapter chapter = EpubChapter(chapterNumber: 0);
+        await parser.parseChapterFromString(chapter, chapterHtml);
+
+        final List<Line> lines = chapter.pages.expand((page) => page.lines).where((line) => line.elements.isNotEmpty).toList();
+
+        expect(lines.length, 2);
+        final double gap = lines[1].yPosOnPage - (lines[0].yPosOnPage + lines[0].lineHeight);
+        expect(gap, 15, reason: 'declared px margin-top must not be scaled by pixelDensity');
       });
     });
 
