@@ -1092,6 +1092,51 @@ i, cite, em, var, dfn {
         }
       });
 
+      test('a float:left initial at the same font-size as the body text is not shifted off its line', () async {
+        // Real-world pattern from Kage Baker's "Sky Coyote": some books mark the first letter of a
+        // chapter with float:left purely to glue it to the rest of the word, without enlarging its
+        // font-size. isDropCaps is still set (float:left is the trigger), but dropCapsAdjust must stay
+        // 0 here - the formula used for genuine stick-up initials shifts by roughly a full line height,
+        // which would visually detach the letter from the text that follows it on the same line.
+        const String dropcapsCss = '''
+.dropcaps {
+  float: left;
+  font-size: 1em;
+}
+''';
+
+        const String chapterHtml = '''
+<html><body>
+<p class="nonindent"><span class="dropcaps">T</span>HE YEAR IS 1699 A.D., the place is South America.</p>
+</body></html>
+''';
+
+        final CssParser cssParser = GetIt.instance.get<CssParser>();
+        final EpubParser parser = GetIt.instance.get<EpubParser>();
+        final PageSize size = GetIt.instance.get<PageSize>();
+
+        size.canvasWidth = 800;
+        size.canvasHeight = 2000;
+        size.leftIndent = 0;
+        size.rightIndent = 0;
+
+        cssParser.parseCss(dropcapsCss);
+
+        final EpubChapter chapter = EpubChapter(chapterNumber: 0);
+        await parser.parseChapterFromString(chapter, chapterHtml);
+
+        final List<Line> lines = chapter.pages.single.lines.where((l) => l.elements.isNotEmpty).toList();
+
+        final WordElement dropCapsWord = lines.first.elements.firstWhere((e) => e is WordElement) as WordElement;
+        expect(dropCapsWord.word.text, 'T');
+        expect(dropCapsWord.word.isDropCaps, isTrue);
+        expect(dropCapsWord.dropCapsAdjust, 0);
+
+        // "T" and "HE" must land on the same line, not wrap apart.
+        final WordElement second = lines.first.elements.whereType<WordElement>().elementAt(1);
+        expect(second.word.text, 'HE');
+      });
+
       test('unitless "line-height: 0" is recognised as a drop caps hint just like "0em"', () async {
         // Real-world pattern from Elizabeth Bear's "Machine": a large stick-up initial
         // styled with a unitless zero line-height rather than "0em". Before parsing this

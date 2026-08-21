@@ -65,7 +65,11 @@ class BuildLine {
 
       if (!currentLine.isEmpty && currentLine.elements.first is WordElement) {
         final WordElement first = currentLine.elements.first as WordElement;
-        if (first.isDropCaps) {
+        // Only nudge the drop cap upward when it's actually taller than the surrounding text (a real
+        // stick-up initial). Some books mark a same-size first letter with float:left purely to keep it
+        // glued to the rest of the word; without this guard the formula still shifts it up by roughly a
+        // full line height, detaching it visually from the text that follows on the same line.
+        if (first.isDropCaps && first.height > currentLine.lineHeight) {
           (currentLine.elements.first as WordElement).dropCapsAdjust = currentLine.lineHeight - first.word.descent + 2;
         }
       }
