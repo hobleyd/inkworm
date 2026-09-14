@@ -243,4 +243,70 @@ void main() {
       expect(footnoteText, contains('attached footnote text'));
     });
   });
+
+  group('LinkHandler anchors without an href', () {
+    // Calibre-converted books (e.g. "Magic in the Shadows") sprinkle bare `<a></a>` markers between
+    // paragraphs, and use `<a id="...">` as the destination for their own #filepos references. Neither
+    // carries an href, which used to trip the `href!` assertion in LinkHandler.processElement.
+    String textOf(EpubChapter chapter) => allLineElements(chapter)
+        .map((el) => ((el.element as dynamic)?.text ?? '') as String)
+        .join();
+
+    test('a bare <a></a> marker between paragraphs is dropped rather than crashing', () async {
+      const String chapterHtml = """
+<html><body>
+<p>First paragraph.</p>
+<a>
+</a>
+<p>Second paragraph.</p>
+</body></html>
+""";
+
+      parser.bookArchive = buildArchive({});
+      parser.currentChapterIndex = 2;
+
+      final EpubChapter chapter = EpubChapter(chapterNumber: 2);
+      await parser.parseChapterFromString(chapter, chapterHtml);
+
+      expect(allLineElements(chapter).whereType<LinkElement>(), isEmpty);
+      // The whitespace-only anchor contributes nothing; only the two paragraphs' words survive.
+      expect(textOf(chapter).replaceAll(' ', ''), 'Firstparagraph.Secondparagraph.');
+    });
+
+    test('an <a id="..."> destination with real text renders its text instead of crashing', () async {
+      const String chapterHtml = """
+<html><body>
+<p><a id="filepos12408">Chapter One</a></p>
+</body></html>
+""";
+
+      parser.bookArchive = buildArchive({});
+      parser.currentChapterIndex = 2;
+
+      final EpubChapter chapter = EpubChapter(chapterNumber: 2);
+      await parser.parseChapterFromString(chapter, chapterHtml);
+
+      // No href means nothing to navigate to, so it must not become a tappable LinkElement.
+      expect(allLineElements(chapter).whereType<LinkElement>(), isEmpty);
+      expect(textOf(chapter), contains('Chapter'));
+    });
+
+    test('a footnote-shaped anchor with no href is a destination, not a footnote reference', () async {
+      const String chapterHtml = """
+<html><body>
+<p>Line with a marker <a id="fn1">1</a> in it.</p>
+</body></html>
+""";
+
+      parser.bookArchive = buildArchive({});
+      parser.currentChapterIndex = 2;
+
+      final EpubChapter chapter = EpubChapter(chapterNumber: 2);
+      await parser.parseChapterFromString(chapter, chapterHtml);
+
+      expect(chapter.pages.single.footnotes.where((l) => l.elements.isNotEmpty), isEmpty,
+          reason: 'an hrefless <a>1</a> has no target, so there is no footnote to pull in');
+      expect(textOf(chapter), contains('1'));
+    });
+  });
 }

@@ -39,10 +39,14 @@ class LinkHandler extends HtmlHandler {
       blockStyle.alignment = LineAlignment.justify;
     }
 
-    if (node.children.isNotEmpty) {
+    // Calibre-converted books litter the markup with bare `<a>\n</a>` anchors. Their only child is a
+    // whitespace-only text node, which the rest of the parser drops via `shouldProcess`; without this
+    // they render as a stray space between blocks.
+    if (node.children.isNotEmpty && node.firstChild!.shouldProcess) {
       LinkCache cache = GetIt.instance.get<LinkCache>();
       List<HtmlContent>? childElements = await node.firstChild!.handler?.processElement(node: node.firstChild!, parentBlockStyle: blockStyle, parentElementStyle: elementStyle);
-      String? href = node.getAttribute('href');
+      // An `<a>` with no href is an anchor destination rather than a link; it has no reference to follow.
+      String   href = node.getAttribute('href') ?? '';
       String?   id = node.getAttribute('id');
 
       // Sometimes the Link id is registered against the parent element.
@@ -63,9 +67,11 @@ class LinkHandler extends HtmlHandler {
 
           // Process Footnotes, if required.
           if (child is TextContent) {
-            var (fnFile, fnRef) = (href ?? '').splitReference;
+            var (fnFile, fnRef) = href.splitReference;
 
-            bool treatedAsFootnote = child.text.isFootnote || element.getAttribute('vertical-align') == "super";
+            // A footnote reference needs somewhere to point; an hrefless anchor whose text happens to be
+            // digits (`<a>1</a>`) is a destination, not a reference.
+            bool treatedAsFootnote = href.isNotEmpty && (child.text.isFootnote || element.getAttribute('vertical-align') == "super");
 
             // A cross-file link to a chapter that appears before the current one in the spine is a
             // back-reference (e.g. table of contents), not a footnote.
@@ -93,13 +99,13 @@ class LinkHandler extends HtmlHandler {
                   footnoteElements = await footnote.handler?.processElement(node: footnote,);
                 }
               }
-            } else if (fnFile.isNotEmpty && !(href?.contains('://') ?? true)) {
+            } else if (fnFile.isNotEmpty && !href.contains('://')) {
               // Internal cross-file link: resolve the chapter index for tap navigation.
               navigableChapter = parser.spineIndexForFile(fnFile);
             }
           }
 
-          LinkContent lc = LinkContent(blockStyle: blockStyle, elementStyle: elementStyle, src: child, href: href!, width: size.width, height: size.height, navigableChapter: navigableChapter);
+          LinkContent lc = LinkContent(blockStyle: blockStyle, elementStyle: elementStyle, src: child, href: href, width: size.width, height: size.height, navigableChapter: navigableChapter);
           if (footnoteElements?.isNotEmpty ?? false) {
             lc.addFootnotes(footnoteElements!);
           }
