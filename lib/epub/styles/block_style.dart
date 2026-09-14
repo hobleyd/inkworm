@@ -111,6 +111,13 @@ class BlockStyle extends Style {
           alignment = LineAlignment.centre;
         }
       }
+    } else if (alignmentAttribute == "left" && element is XmlElement && (element.localName == "body" || element.localName == "html")) {
+      // `left` is CSS's initial value, so a converter writing it on the document root is restating the
+      // default rather than asking for ragged-right - Calibre does exactly this on the class it gives
+      // <body>, which would otherwise unjustify an entire book. Read it as justify instead, and let that
+      // inherit normally. `left` on any other element is a real choice: it is honoured, and it still
+      // overrides this when a descendant asks for it.
+      alignment = LineAlignment.justify;
     } else {
       alignment = switch(alignmentAttribute) {
         "center" || "centre" => LineAlignment.centre,

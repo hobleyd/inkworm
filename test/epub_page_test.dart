@@ -540,6 +540,198 @@ void main() {
         }
       });
 
+      test('justifies paragraphs when text-align: left is only inherited from an ancestor', () async {
+        // Regression test for "The Rosie Result" by Graeme Simsion: Calibre puts `text-align: left` on
+        // the wrapper class it applies to <body>, and the paragraph classes never override it. `left` is
+        // CSS's initial value, so an ancestor carrying it says nothing about what the paragraph wants -
+        // treat it as unspecified and justify, the same as a book with no text-align at all.
+        const String calibreCss = '''
+.calibre {
+  display: block;
+  font-size: 1em;
+  text-align: left;
+  margin: 0 5pt;
+}
+.tx {
+  display: block;
+  font-size: 1em;
+  text-indent: 0;
+  margin: 0;
+}
+''';
+
+        const String chapterHtml = '''
+<html><body class="calibre">
+<p class="tx">By the following June, our situation had changed dramatically. We had relocated to a three-bedroom house in the inner-Melbourne suburb of Northcote, a short bicycle ride from the university.</p>
+</body></html>
+''';
+
+        final CssParser cssParser = GetIt.instance.get<CssParser>();
+        final EpubParser parser = GetIt.instance.get<EpubParser>();
+        final PageSize size = GetIt.instance.get<PageSize>();
+        size.canvasWidth = 378;
+        size.canvasHeight = 800;
+        size.leftIndent = 12;
+        size.rightIndent = 12;
+
+        cssParser.parseCss(calibreCss);
+
+        final EpubChapter chapter = EpubChapter(chapterNumber: 0);
+        await parser.parseChapterFromString(chapter, chapterHtml);
+
+        final List<Line> lines = chapter.pages.expand((page) => page.lines).where((line) => line.elements.isNotEmpty).toList();
+        expect(lines.length, greaterThan(1));
+
+        // Every line but the last is justified; the last line of a paragraph is always left.
+        for (final line in lines.take(lines.length - 1)) {
+          expect(line.alignment, LineAlignment.justify);
+        }
+        expect(lines.last.alignment, LineAlignment.left);
+      });
+
+      test('a left-aligned container still overrides a body that was read as justified', () async {
+        // Both halves of the rule at once: <body> carries Calibre's boilerplate `text-align: left`, which
+        // we read as justify, and a div inside it genuinely asks for `left`. The div must win for its own
+        // subtree while the paragraph outside it justifies.
+        const String mixedCss = '''
+.calibre {
+  display: block;
+  text-align: left;
+}
+.poem {
+  display: block;
+  text-align: left;
+}
+.tx {
+  display: block;
+  text-indent: 0;
+  margin: 0;
+}
+''';
+
+        const String chapterHtml = '''
+<html><body class="calibre">
+<p class="tx">By the following June, our situation had changed dramatically. We had relocated to a three-bedroom house in the inner-Melbourne suburb of Northcote, a short bicycle ride from the university.</p>
+<div class="poem">
+<p class="tx">By the following June, our situation had changed dramatically. We had relocated to a three-bedroom house in the inner-Melbourne suburb of Northcote, a short bicycle ride from the university.</p>
+</div>
+</body></html>
+''';
+
+        final CssParser cssParser = GetIt.instance.get<CssParser>();
+        final EpubParser parser = GetIt.instance.get<EpubParser>();
+        final PageSize size = GetIt.instance.get<PageSize>();
+        size.canvasWidth = 378;
+        size.canvasHeight = 4000;
+        size.leftIndent = 12;
+        size.rightIndent = 12;
+
+        cssParser.parseCss(mixedCss);
+
+        final EpubChapter chapter = EpubChapter(chapterNumber: 0);
+        await parser.parseChapterFromString(chapter, chapterHtml);
+
+        final List<Line> lines = chapter.pages.expand((page) => page.lines).where((line) => line.elements.isNotEmpty).toList();
+        // Both paragraphs hold the same text, so they wrap into the same number of lines.
+        expect(lines.length.isEven, isTrue);
+        final int half = lines.length ~/ 2;
+
+        final List<Line> bodyParagraph = lines.take(half).toList();
+        final List<Line> poemParagraph = lines.skip(half).toList();
+
+        for (final line in bodyParagraph.take(half - 1)) {
+          expect(line.alignment, LineAlignment.justify);
+        }
+        expect(bodyParagraph.last.alignment, LineAlignment.left);
+
+        for (final line in poemParagraph) {
+          expect(line.alignment, LineAlignment.left);
+        }
+      });
+
+      test('a container asking for text-align: left still passes it down to its paragraphs', () async {
+        // `left` set on any element other than the document root is a real choice, so it inherits the way
+        // CSS says it does: the paragraphs inside this div stay ragged-right rather than being justified.
+        const String poemCss = '''
+.poem {
+  display: block;
+  text-align: left;
+}
+.tx {
+  display: block;
+  text-indent: 0;
+  margin: 0;
+}
+''';
+
+        const String chapterHtml = '''
+<html><body>
+<div class="poem">
+<p class="tx">By the following June, our situation had changed dramatically. We had relocated to a three-bedroom house in the inner-Melbourne suburb of Northcote, a short bicycle ride from the university.</p>
+</div>
+</body></html>
+''';
+
+        final CssParser cssParser = GetIt.instance.get<CssParser>();
+        final EpubParser parser = GetIt.instance.get<EpubParser>();
+        final PageSize size = GetIt.instance.get<PageSize>();
+        size.canvasWidth = 378;
+        size.canvasHeight = 800;
+        size.leftIndent = 12;
+        size.rightIndent = 12;
+
+        cssParser.parseCss(poemCss);
+
+        final EpubChapter chapter = EpubChapter(chapterNumber: 0);
+        await parser.parseChapterFromString(chapter, chapterHtml);
+
+        final List<Line> lines = chapter.pages.expand((page) => page.lines).where((line) => line.elements.isNotEmpty).toList();
+        expect(lines.length, greaterThan(1));
+
+        for (final line in lines) {
+          expect(line.alignment, LineAlignment.left);
+        }
+      });
+
+      test('honours text-align: left when the element itself asks for it', () async {
+        const String raggedCss = '''
+.calibre {
+  display: block;
+  text-align: justify;
+}
+.poem {
+  display: block;
+  text-align: left;
+}
+''';
+
+        const String chapterHtml = '''
+<html><body class="calibre">
+<p class="poem">By the following June, our situation had changed dramatically. We had relocated to a three-bedroom house in the inner-Melbourne suburb of Northcote, a short bicycle ride from the university.</p>
+</body></html>
+''';
+
+        final CssParser cssParser = GetIt.instance.get<CssParser>();
+        final EpubParser parser = GetIt.instance.get<EpubParser>();
+        final PageSize size = GetIt.instance.get<PageSize>();
+        size.canvasWidth = 378;
+        size.canvasHeight = 800;
+        size.leftIndent = 12;
+        size.rightIndent = 12;
+
+        cssParser.parseCss(raggedCss);
+
+        final EpubChapter chapter = EpubChapter(chapterNumber: 0);
+        await parser.parseChapterFromString(chapter, chapterHtml);
+
+        final List<Line> lines = chapter.pages.expand((page) => page.lines).where((line) => line.elements.isNotEmpty).toList();
+        expect(lines.length, greaterThan(1));
+
+        for (final line in lines) {
+          expect(line.alignment, LineAlignment.left);
+        }
+      });
+
       test('does not leak margin-left/text-indent into the next paragraph when margins collapse', () async {
         // Regression test for the Simon & Schuster sign-up page in "Machine" by Elizabeth Bear: when the
         // previous paragraph's bottom margin and the next paragraph's top margin collapse (both > 0),
