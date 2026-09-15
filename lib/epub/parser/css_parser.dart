@@ -485,8 +485,9 @@ class CssParser {
   int _findMatchingBrace(String s, int openIndex) {
     int depth = 0;
     for (int i = openIndex; i < s.length; i++) {
-      if (s[i] == '{') depth++;
-      else if (s[i] == '}') {
+      if (s[i] == '{') {
+        depth++;
+      } else if (s[i] == '}') {
         depth--;
         if (depth == 0) return i;
       }

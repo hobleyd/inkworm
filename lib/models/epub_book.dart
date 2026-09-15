@@ -6,22 +6,16 @@ part 'epub_book.freezed.dart';
 
 @freezed
 class EpubBook with _$EpubBook {
-  @override
   String uri;
 
-  @override
   String author;
 
-  @override
   String title;
 
-  @override
   List<EpubChapter> chapters;
 
-  @override
   StackTrace? error;
 
-  @override
   String? errorDescription;
 
   EpubChapter operator [](int index) => chapters[index];

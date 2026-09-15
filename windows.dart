@@ -71,8 +71,8 @@ void _compile(String issPath) {
     if (result.exitCode != 0) {
       throw ProcessException(iscc, [issPath], 'iscc failed with exit code ${result.exitCode}', result.exitCode);
     }
-    print('Done.');
+    stdout.writeln('Done.');
   } catch (e, s) {
-    print('Failed: $e\n$s');
+    stderr.writeln('Failed: $e\n$s');
   }
 }

@@ -6,13 +6,17 @@ import '../../styles/table_row_style.dart';
 import '../html_content.dart';
 import 'table_cell.dart';
 
+// TableRow is genuinely mutable: its width is reconciled as cells are added and again once every
+// column in the row has been laid out, so it cannot take HtmlContent's immutable contract.
+// ignore: must_be_immutable
 class TableRow extends HtmlContent {
-  double _width;
+  late double _width;
   final Map<int, TableCell> row = {};
 
-  TableRow({required super.blockStyle, required super.elementStyle, required super.height, required double width})
-      : _width = width,
-        super(width: width);
+  TableRow({required super.blockStyle, required super.elementStyle, required super.height, required super.width}) {
+    // super.width reads the base field rather than the overridden getter below, which needs _width.
+    _width = super.width;
+  }
 
   Iterable<MapEntry<int, TableCell>> get entries => row.entries;
   TableRowStyle get rowStyle => blockStyle as TableRowStyle;

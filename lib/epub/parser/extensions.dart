@@ -118,7 +118,7 @@ extension CssDeclarationsExtension on CssDeclarations {
   CssDeclarations combine(CssDeclarations? declarations,) {
     return {
         ...this,
-        if (declarations != null) ...declarations,
+        ...?declarations,
     };
   }
 }

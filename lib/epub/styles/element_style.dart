@@ -104,6 +104,7 @@ class ElementStyle extends Style {
     );
   }
 
+  @override
   Future <Style> parseElement({required XmlNode element}) async {
     addSelectors(element);
     addDeclarations(_parser, element);
