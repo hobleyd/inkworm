@@ -18,7 +18,7 @@ flutter test --name "table"
 flutter analyze
 
 # Regenerate code (mocks, Riverpod providers, injectable config, freezed models)
-flutter pub run build_runner build --delete-conflicting-outputs
+dart run build_runner build
 
 # Run the app
 flutter run
