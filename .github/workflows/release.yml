@@ -6,6 +6,15 @@ on:
       - main
   workflow_dispatch:
 
+# Serialise every run of this workflow. Each run pushes the tag named after
+# pubspec.yaml's version and uploads to the GitHub Release of that name, so two
+# runs in flight fight over the same tag and can leave the signed
+# desktop_updater descriptor mismatched against the binaries beside it. Queue
+# rather than cancel, so a queued run still publishes once the first finishes.
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
 permissions:
   contents: write
 
