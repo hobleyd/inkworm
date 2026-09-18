@@ -253,18 +253,47 @@ jobs:
           fi
           xcrun stapler staple "$APP_PATH"
 
-      - name: Create DMG release
-        uses: lethja/create-dmg-action@v0.0.2
-        with:
-          name: 'inkworm'
-          srcdir: 'build/macos/Build/Products/Release/inkworm.app'
+      # create-dmg is called directly rather than through
+      # lethja/create-dmg-action, which derives *three* things from its one
+      # `name` input: the output file, `--volname`, and `--icon <name>.app` —
+      # and that last one names the bundle **inside** the volume, which Finder
+      # then has to find to position it. So the version can't be added to the
+      # file name without also claiming the app is called
+      # `inkworm-<version>.app`, which fails with "Can't set item ... (-10006)".
+      #
+      # The bundle name is resolved from disk rather than written down. The
+      # real directory is `Inkworm.app` (PRODUCT_NAME, case-preserved by
+      # APFS), not the lowercase path this workflow addresses it by elsewhere
+      # — the old `--icon inkworm.app` only matched because Finder compares
+      # names case-insensitively. See nightmail's release.yml for the same
+      # trap and fix.
+      - name: Create DMG
+        run: |
+          VERSION="${{ needs.prepare.outputs.version }}"
+          APP_DIR="build/macos/Build/Products/Release"
+          APP_BUNDLE_NAME=$(basename "$(ls -d "$APP_DIR"/*.app | head -1)")
+          if [ -z "$APP_BUNDLE_NAME" ]; then
+            echo "::error::no .app in $APP_DIR to build a DMG from" >&2
+            exit 1
+          fi
+          echo "Packaging $APP_BUNDLE_NAME as inkworm-$VERSION.dmg"
+          brew install create-dmg
+          create-dmg \
+            --volname "Inkworm $VERSION" \
+            --window-pos 200 120 \
+            --window-size 800 450 \
+            --icon-size 100 \
+            --icon "$APP_BUNDLE_NAME" 200 185 \
+            --app-drop-link 600 185 \
+            "inkworm-$VERSION.dmg" \
+            "$APP_DIR/$APP_BUNDLE_NAME"
 
       - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v0.1.15
         with:
           name: 'inkworm-${{ needs.prepare.outputs.version }}'
           tag_name: ${{ needs.prepare.outputs.version }}
-          files: 'inkworm.dmg'
+          files: 'inkworm-${{ needs.prepare.outputs.version }}.dmg'
 
       - name: Package release for desktop_updater
         run: |
