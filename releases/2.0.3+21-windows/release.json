@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 3,
+  "packageId": "au.com.sharpblue.inkworm",
+  "appName": "Inkworm",
+  "version": "2.0.3",
+  "buildNumber": 21,
+  "platform": "windows",
+  "channel": "stable",
+  "artifact": {
+    "kind": "zip",
+    "url": "https://hobleyd.github.io/inkworm/releases/2.0.3+21-windows/Inkworm-2.0.3-windows.zip",
+    "sha256": "81b237c2e14632a4bee8d0f25092824305038a5d75b67bf2b762ca033005fa7c",
+    "length": 19509877
+  },
+  "install": {
+    "strategy": "wholeDirectoryReplace"
+  },
+  "signature": {
+    "algorithm": "ed25519",
+    "publicKeyId": "release-65eb85ca77d001845cfd2508",
+    "value": "LyZvYvJog2SHx/+AvMc/7C13kHif62ok6AZeuDROEz9XZZj10WbgzNh3FOa0i4jjQ7A0pIrAn7bSnLg/s9YDAg=="
+  },
+  "minimumUpdaterVersion": "2.0.0",
+  "generatedAt": "2026-09-18T00:42:32.974359Z"
+}

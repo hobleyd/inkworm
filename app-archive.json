@@ -59,6 +59,14 @@
       "release": "https://hobleyd.github.io/inkworm/releases/2.0.3+20-macos/release.json"
     },
     {
+      "version": "2.0.3",
+      "buildNumber": 21,
+      "platform": "macos",
+      "channel": "stable",
+      "mandatory": false,
+      "release": "https://hobleyd.github.io/inkworm/releases/2.0.3+21-macos/release.json"
+    },
+    {
       "version": "1.0.0",
       "buildNumber": 12,
       "platform": "windows",
@@ -113,11 +121,19 @@
       "channel": "stable",
       "mandatory": false,
       "release": "https://hobleyd.github.io/inkworm/releases/2.0.3+20-windows/release.json"
+    },
+    {
+      "version": "2.0.3",
+      "buildNumber": 21,
+      "platform": "windows",
+      "channel": "stable",
+      "mandatory": false,
+      "release": "https://hobleyd.github.io/inkworm/releases/2.0.3+21-windows/release.json"
     }
   ],
   "signature": {
     "algorithm": "ed25519",
     "publicKeyId": "release-65eb85ca77d001845cfd2508",
-    "value": "aejSC7gVwFf6vU2zYKkPA4sxp9l9vCg5kPy014GRgQ4dfHH2RYvK8YfHJIDzUMr28xMXjWz8hoGDxQGD4n1fCA=="
+    "value": "f5K0OENXyIMWPpDDnHcdAEGIllJTkWh8jdb0lME58iN50H3PXfULVVz/qQohfca7/cnzTq1Th7UJbaEPoXDyCw=="
   }
 }
