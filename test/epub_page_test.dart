@@ -1375,6 +1375,54 @@ i, cite, em, var, dfn {
         expect(lines.first.lineHeight, lessThan(bodyFontSize * 2));
       });
 
+      test('a hyphen sharing a line with a large inline initial centres on its own text, not the whole line', () async {
+        // Real-world pattern from Kage Baker's "The Graveyard Game": the chapter-opening initial is
+        // just a plain large font-size span (no float:left, no line-height:0), so it is never flagged
+        // isDropCaps and its height legitimately sets the line's height. An em dash later on that same
+        // line must still centre on the height of the normal-sized text it sits next to, not on that
+        // inflated line height, or it renders visibly too high.
+        const String largeInitialCss = '''
+.bigletter {
+  font-size: 2em;
+}
+''';
+
+        const String chapterHtml = '''
+<html><body>
+<p class="noindent"><span class="bigletter">I</span><small>T WAS LIKE</small>&#8212;like I set out to find something.</p>
+</body></html>
+''';
+
+        final CssParser cssParser = GetIt.instance.get<CssParser>();
+        final EpubParser parser = GetIt.instance.get<EpubParser>();
+        final PageSize size = GetIt.instance.get<PageSize>();
+
+        size.canvasWidth = 800;
+        size.canvasHeight = 2000;
+        size.leftIndent = 0;
+        size.rightIndent = 0;
+
+        cssParser.parseCss(largeInitialCss);
+
+        final EpubChapter chapter = EpubChapter(chapterNumber: 0);
+        await parser.parseChapterFromString(chapter, chapterHtml);
+
+        final List<Line> lines = chapter.pages.single.lines.where((l) => l.elements.isNotEmpty).toList();
+
+        final WordElement bigLetter = lines.first.elements.firstWhere((e) => e is WordElement) as WordElement;
+        expect(bigLetter.word.text, 'I');
+        expect(bigLetter.word.isDropCaps, isFalse);
+
+        final HyphenSeparator hyphen = lines.first.elements.whereType<HyphenSeparator>().first;
+        final WordElement like = lines.first.elements.firstWhere((e) => e is WordElement && e.word.text == 'like') as WordElement;
+
+        // The hyphen must be measured/aligned like the body text it sits beside, not the
+        // oversized initial that happens to set the line's overall height.
+        expect(hyphen.ascent, closeTo(like.ascent, 0.001));
+        expect(hyphen.height, closeTo(like.height, 0.001));
+        expect(hyphen.ascent, lessThan(lines.first.lineHeight));
+      });
+
       test('embedded raw newlines mid-paragraph are collapsed to spaces instead of corrupting layout', () async {
         // Real-world pattern from a "Chicken Korma" recipe epub: the source text has literal
         // \n between sentences instead of <br/> or spaces. Left unhandled, the newline gets

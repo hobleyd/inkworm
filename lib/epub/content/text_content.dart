@@ -19,7 +19,7 @@ class TextContent extends HtmlContent {
 
   TextContent({required super.blockStyle, required super.elementStyle, required super.height, required super.width, required this.ascent, required this.descent, required this.text}) {
     elements.add(switch (text) {
-      '-' || '\u{2014}' => HyphenSeparator(blockStyle: blockStyle, elementStyle: elementStyle, height: height, width: width),
+      '-' || '\u{2014}' => HyphenSeparator(blockStyle: blockStyle, elementStyle: elementStyle, height: height, width: width, separatorAscent: ascent),
       ' '               => SpaceSeparator(blockStyle: blockStyle, elementStyle: elementStyle, height: height, width: width),
       '\u{00A0}'        => NonBreakingSpaceSeparator(blockStyle: blockStyle, elementStyle: elementStyle, height: height, width: width),
       _                 => WordElement(word: this, height: height, width: width)
