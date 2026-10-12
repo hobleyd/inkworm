@@ -33,6 +33,18 @@ jobs:
           VERSION_FULL=$(grep '^version:' pubspec.yaml | awk '{print $2}')
           echo "version=${VERSION_FULL%%+*}" >> $GITHUB_OUTPUT
 
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          architecture: x64
+          cache: false
+
+      # The whole suite runs here, once, and every build job needs this one -
+      # so a failing test stops the release before the tag moves or anything
+      # is built.
+      - run: dart run build_runner build --delete-conflicting-outputs
+      - run: flutter test
+
       - name: Push version tag
         uses: EndBug/latest-tag@latest
         with:
@@ -51,8 +63,6 @@ jobs:
           cache: false
 
       - run: dart run build_runner build --delete-conflicting-outputs
-      - run: flutter test test/css_parser_test.dart
-      - run: flutter test test/epub_page_test.dart
       - run: dart run flutter_launcher_icons
 
       - name: Create key.properties
@@ -95,8 +105,6 @@ jobs:
       - run: flutter config --enable-linux-desktop
       - run: flutter create --platforms=linux .
       - run: dart run build_runner build --delete-conflicting-outputs
-      - run: flutter test test/css_parser_test.dart
-      - run: flutter test test/epub_page_test.dart
       - run: flutter build linux --release
 
       - name: Prepare bundle assets
@@ -159,8 +167,6 @@ jobs:
       - run: flutter config --enable-macos-desktop
       - run: flutter pub get
       - run: dart run build_runner build --delete-conflicting-outputs
-      - run: flutter test test/css_parser_test.dart
-      - run: flutter test test/epub_page_test.dart
       - run: dart run flutter_launcher_icons
 
       # Only a push to main (or a same-repo PR) carries these secrets; a
@@ -355,8 +361,6 @@ jobs:
       - run: flutter create --platforms=windows .
       - run: flutter pub get
       - run: dart run build_runner build --delete-conflicting-outputs
-      - run: flutter test test/css_parser_test.dart
-      - run: flutter test test/epub_page_test.dart
       - run: dart run flutter_launcher_icons
       - run: flutter build windows --release --no-tree-shake-icons --build-number ${{ needs.prepare.outputs.build_number }}
       - run: dart run windows.dart
