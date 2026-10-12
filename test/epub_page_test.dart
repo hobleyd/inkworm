@@ -1533,6 +1533,36 @@ span.pagebreak-rw { width: 0; font-size: 0; line-height: 0; height: 0; visibilit
       });
 
 
+      test('"display: none" removes inline elements, and everything inside them, from the text', () async {
+        // The other common way of hiding print page numbers: as a span, or as a bare anchor.
+        const String pagebreakCss = '''
+.pagebreak { display: none; }
+.pagenum { display: none !important; }
+''';
+
+        const String chapterHtml = '''
+<html><body>
+<p>one <span class="pagebreak">11 <i>12</i></span>two <a id="page13" class="pagebreak">13</a>three <b class="pagenum">14</b>four <sup class="pagebreak">15</sup>five <span style="display: none">16</span>six <span style="display: inline">seven</span></p>
+</body></html>
+''';
+
+        final CssParser cssParser = GetIt.instance.get<CssParser>();
+        final EpubParser parser = GetIt.instance.get<EpubParser>();
+        final PageSize size = GetIt.instance.get<PageSize>();
+
+        size.canvasWidth = 800;
+        size.canvasHeight = 2000;
+
+        cssParser.parseCss(pagebreakCss);
+
+        final EpubChapter chapter = EpubChapter(chapterNumber: 0);
+        await parser.parseChapterFromString(chapter, chapterHtml);
+
+        final String fullText = chapter.pages.single.lines.where((l) => l.elements.isNotEmpty).map(lineText).join(' ');
+        expect(fullText, contains('one two three four five six seven'));
+        expect(fullText, isNot(contains(RegExp(r'\d'))));
+      });
+
       test('"visibility: hidden" text keeps its space in the line but is not painted', () async {
         const String chapterHtml = '''
 <html><body>

@@ -15,6 +15,7 @@ class ElementStyle extends Style {
   VerticalAlignment verticalAlignment = VerticalAlignment.none;
   bool? isDropCaps;
   bool isHidden = false;
+  bool isDisplayed = true;
 
   static double defaultFontSize = 12;
 
@@ -83,6 +84,12 @@ class ElementStyle extends Style {
     }
   }
 
+  void getDisplay(XmlNode element) {
+    // "display: none" removes the element, and everything inside it, from the layout altogether.
+    final String? display = _parser.getStringAttribute(element, this, "display")?.replaceAll('!important', '').trim();
+    isDisplayed = display != "none";
+  }
+
   void getVisibility(XmlNode element) {
     // Unlike "display: none", a hidden element still takes up its space in the layout - it just isn't
     // painted. visibility is inherited, so a child can make itself "visible" again.
@@ -121,6 +128,7 @@ class ElementStyle extends Style {
       copyWith(parentStyle as ElementStyle);
     }
 
+    getDisplay(element);
     getVisibility(element);
     getTextStyle(element);
     getAlignment(element);

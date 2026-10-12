@@ -137,7 +137,7 @@ class BlockStyle extends Style {
   void getDisplay(XmlNode element) {
     // Display is used to determine whether you want to see an element or not. In an interactive web-page
     // this can make sense; but in a book? But nonetheless, I've seen it used!
-    display = _parser.getStringAttribute(element, this, "display");
+    display = _parser.getStringAttribute(element, this, "display")?.replaceAll('!important', '').trim();
   }
 
   Future<void> getLineHeightMultiplier(XmlNode element) async {

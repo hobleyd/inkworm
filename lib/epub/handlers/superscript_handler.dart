@@ -24,6 +24,11 @@ class SuperscriptHandler extends HtmlHandler {
     List<HtmlContent> elements = [];
 
     ElementStyle elementStyle = await ElementStyle.getElementStyle(element, parentElementStyle);
+
+    if (!elementStyle.isDisplayed) {
+      return elements;
+    }
+
     BlockStyle     blockStyle = await   BlockStyle.getBlockStyle(element, elementStyle: elementStyle, parentStyle: parentBlockStyle,);
     elementStyle.verticalAlignment = VerticalAlignment.top;
 

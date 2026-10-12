@@ -28,6 +28,11 @@ class LinkHandler extends HtmlHandler {
     List<HtmlContent> elements = [];
 
     ElementStyle elementStyle = await ElementStyle.getElementStyle(element, parentElementStyle);
+
+    if (!elementStyle.isDisplayed) {
+      return elements;
+    }
+
     BlockStyle blockStyle     = await   BlockStyle.getBlockStyle(element, elementStyle: elementStyle, parentStyle: parentBlockStyle,);
 
     // TODO: I want to highlight footnotes, this will also highlight standard links, but see how it looks before making a decision. Given
