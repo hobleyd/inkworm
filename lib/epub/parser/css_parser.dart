@@ -141,6 +141,13 @@ class CssParser {
   double? getFontSize(XmlNode element, Style style, String attribute, double preferredSize) {
     String? fontSizeString = getStringAttribute(element, style, attribute);
     if (fontSizeString != null) {
+      // A unitless zero ("font-size: 0") is a valid length, and is how some publishers collapse
+      // markers they don't want shown (e.g. print page numbers). parseFloatCssValue would read it
+      // as an unrecognised keyword and fall back to the preferred size.
+      if (double.tryParse(fontSizeString.replaceAll('!important', '').trim()) == 0) {
+        return 0;
+      }
+
       final fontSize = parseFloatCssValue(fontSizeString, preferredSize);
       return fontSize;
     }

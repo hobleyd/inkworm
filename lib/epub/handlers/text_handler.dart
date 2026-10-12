@@ -19,6 +19,12 @@ class TextHandler extends HtmlHandler {
 
     List<HtmlContent> elements = [];
 
+    // Text at "font-size: 0" takes up no space at all, so there is nothing to lay out. Publishers use
+    // this (usually alongside "visibility: hidden") to keep print page numbers out of the flowing text.
+    if (parentElementStyle?.textStyle.fontSize == 0) {
+      return elements;
+    }
+
     final List<String> words = _splitString(_collapseNewlines(element.value));
 
     // Some (older, Calibre-converted) epubs use a block containing nothing but a &nbsp; as a paragraph

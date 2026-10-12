@@ -7,6 +7,8 @@ class HyphenSeparator extends Separator {
 
   @override
   void paint(Canvas c, double lineHeight, double xPos, double yPos) {
+    if (elementStyle.isHidden) return;
+
     // Centre on this run's own measured height, not the line's overall height - a line
     // sharing space with a drop cap (or any taller neighbour) has a much taller lineHeight
     // than the text this hyphen sits between, which would otherwise pull it up out of place.

@@ -1465,6 +1465,102 @@ Push the chicken to one side of the pan.</p>
         final String fullText = lines.map(lineText).join(' ');
         expect(fullText, contains('oil. Put the chicken'));
       });
+
+      test('print page-number markers hidden with "font-size: 0; visibility: hidden" are left out of the text', () async {
+        // Real-world pattern from Solvej Balle's "On the Calculation of Volume III" (Faber): the
+        // print edition's page numbers are embedded mid-sentence as pagebreak spans, and the
+        // stylesheet collapses them. Left unhandled, the numbers show up scattered through the text.
+        const String pagebreakCss = '''
+span.pagebreak-rw { width: 0; font-size: 0; line-height: 0; height: 0; visibility: hidden; }
+''';
+
+        const String chapterHtml = '''
+<html><body>
+<p>We laughed, and suddenly there was nothing <span class="pagebreak-rw" id="pagebreak-rw_4">4</span>remarkable about the situation.</p>
+</body></html>
+''';
+
+        final CssParser cssParser = GetIt.instance.get<CssParser>();
+        final EpubParser parser = GetIt.instance.get<EpubParser>();
+        final PageSize size = GetIt.instance.get<PageSize>();
+
+        size.canvasWidth = 800;
+        size.canvasHeight = 2000;
+
+        cssParser.parseCss(pagebreakCss);
+
+        final EpubChapter chapter = EpubChapter(chapterNumber: 0);
+        await parser.parseChapterFromString(chapter, chapterHtml);
+
+        final List<Line> lines = chapter.pages.single.lines.where((l) => l.elements.isNotEmpty).toList();
+        final String fullText = lines.map(lineText).join(' ');
+
+        expect(fullText, contains('nothing remarkable about'));
+        expect(fullText, isNot(contains('4')));
+
+        // The marker also carries "line-height: 0", which must not turn its neighbours into drop caps.
+        for (final line in lines) {
+          expect(line.elements.any((e) => e.isDropCaps), isFalse);
+        }
+      });
+
+      test('page-number markers stay hidden when the hiding rule is marked !important', () async {
+        const String pagebreakCss = '''
+.pagebreak { font-size: 0 !important; visibility: hidden !important; }
+''';
+
+        const String chapterHtml = '''
+<html><body>
+<p>with their memory intact. <span class="pagebreak">2</span></p>
+</body></html>
+''';
+
+        final CssParser cssParser = GetIt.instance.get<CssParser>();
+        final EpubParser parser = GetIt.instance.get<EpubParser>();
+        final PageSize size = GetIt.instance.get<PageSize>();
+
+        size.canvasWidth = 800;
+        size.canvasHeight = 2000;
+
+        cssParser.parseCss(pagebreakCss);
+
+        final EpubChapter chapter = EpubChapter(chapterNumber: 0);
+        await parser.parseChapterFromString(chapter, chapterHtml);
+
+        final String fullText = chapter.pages.single.lines.where((l) => l.elements.isNotEmpty).map(lineText).join(' ');
+        expect(fullText, contains('memory intact.'));
+        expect(fullText, isNot(contains('2')));
+      });
+
+
+      test('"visibility: hidden" text keeps its space in the line but is not painted', () async {
+        const String chapterHtml = '''
+<html><body>
+<p>one <span style="visibility: hidden">two <span style="visibility: visible">three</span></span> four</p>
+</body></html>
+''';
+
+        final EpubParser parser = GetIt.instance.get<EpubParser>();
+        final PageSize size = GetIt.instance.get<PageSize>();
+
+        size.canvasWidth = 800;
+        size.canvasHeight = 2000;
+
+        final EpubChapter chapter = EpubChapter(chapterNumber: 0);
+        await parser.parseChapterFromString(chapter, chapterHtml);
+
+        final List<WordElement> words = chapter.pages.single.lines.expand((l) => l.elements).whereType<WordElement>().toList();
+        WordElement word(String text) => words.firstWhere((w) => w.word.text == text);
+
+        expect(word('two').width, greaterThan(0));
+        expect(word('two').word.elementStyle.isHidden, isTrue);
+        expect(word('two').word.span.style?.color, Colors.transparent);
+
+        // visibility is inherited, but a descendant can switch itself back on.
+        expect(word('three').word.span.style?.color, Colors.black);
+        expect(word('one').word.span.style?.color, Colors.black);
+        expect(word('four').word.span.style?.color, Colors.black);
+      });
     });
 
     group('lists', () {

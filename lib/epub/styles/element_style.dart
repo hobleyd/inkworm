@@ -14,6 +14,7 @@ class ElementStyle extends Style {
 
   VerticalAlignment verticalAlignment = VerticalAlignment.none;
   bool? isDropCaps;
+  bool isHidden = false;
 
   static double defaultFontSize = 12;
 
@@ -82,6 +83,13 @@ class ElementStyle extends Style {
     }
   }
 
+  void getVisibility(XmlNode element) {
+    // Unlike "display: none", a hidden element still takes up its space in the layout - it just isn't
+    // painted. visibility is inherited, so a child can make itself "visible" again.
+    final String? visibility = _parser.getStringAttribute(element, this, "visibility")?.replaceAll('!important', '').trim();
+    isHidden = visibility == "hidden" || visibility == "collapse";
+  }
+
   void getTextStyle(XmlNode element) {
     final String? fontFamily = _parser.getFontAttribute(element, this, "font-family")?.replaceAll('"', '');
     final double? fontSize   = _parser.getFontSize(element, this, "font-size", defaultFontSize.toDouble());
@@ -90,7 +98,7 @@ class ElementStyle extends Style {
     final String? fontDecoration  = _parser.getStringAttribute(element, this, "text-decoration");
 
     textStyle = textStyle.copyWith(
-      color: Colors.black,
+      color: isHidden ? Colors.transparent : Colors.black,
       decoration: switch (fontDecoration) {
         "underline"    => TextDecoration.underline,
         "line-through" => TextDecoration.lineThrough,
@@ -113,6 +121,7 @@ class ElementStyle extends Style {
       copyWith(parentStyle as ElementStyle);
     }
 
+    getVisibility(element);
     getTextStyle(element);
     getAlignment(element);
     getDropCaps(element);
