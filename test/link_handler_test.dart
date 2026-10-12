@@ -244,6 +244,62 @@ void main() {
     });
   });
 
+  group('footnotes whose target is hidden', () {
+    String footnoteTextOf(EpubChapter chapter) => chapter.pages.single.footnotes
+        .expand((l) => l.elements)
+        .map((el) => ((el.element as dynamic)?.text ?? '') as String)
+        .join();
+
+    const String chapterHtml = '''
+<html><body>
+<p>Something worth a note<a id="n1ref" href="notes.html#n1">*</a> here.</p>
+</body></html>
+''';
+
+    test('a footnote reached through a hidden page-style anchor still shows, without the anchor text', () async {
+      GetIt.instance.get<CssParser>().parseCss('.pagebreak { display: none; }');
+
+      parser.bookArchive = buildArchive({
+        'notes.html': '<html><body><p><a id="n1" class="pagebreak">13</a>The footnote text.</p></body></html>',
+      });
+      parser.currentChapterIndex = 2;
+
+      final EpubChapter chapter = EpubChapter(chapterNumber: 2);
+      await parser.parseChapterFromString(chapter, chapterHtml);
+
+      expect(footnoteTextOf(chapter), contains('The footnote text.'));
+      expect(footnoteTextOf(chapter), isNot(contains('13')));
+    });
+
+    test('a pop-up style footnote hidden with "display: none" is still shown when its reference is followed', () async {
+      GetIt.instance.get<CssParser>().parseCss('.popup { display: none; }');
+
+      parser.bookArchive = buildArchive({
+        'notes.html': '<html><body><div id="n1" class="popup"><p>The <i>hidden</i> footnote text.</p></div></body></html>',
+      });
+      parser.currentChapterIndex = 2;
+
+      final EpubChapter chapter = EpubChapter(chapterNumber: 2);
+      await parser.parseChapterFromString(chapter, chapterHtml);
+
+      expect(footnoteTextOf(chapter), contains('The hidden footnote text.'));
+    });
+
+    test('a hidden footnote referenced from a <sup> is still shown', () async {
+      GetIt.instance.get<CssParser>().parseCss('.popup { display: none; }');
+
+      parser.bookArchive = buildArchive({
+        'notes.html': '<html><body><div id="n1" class="popup"><p>The hidden footnote text.</p></div></body></html>',
+      });
+      parser.currentChapterIndex = 2;
+
+      final EpubChapter chapter = EpubChapter(chapterNumber: 2);
+      await parser.parseChapterFromString(chapter, '<html><body><p>Body text<sup><a href="notes.html#n1">note</a></sup> continues.</p></body></html>');
+
+      expect(footnoteTextOf(chapter), contains('The hidden footnote text.'));
+    });
+  });
+
   group('LinkHandler anchors without an href', () {
     // Calibre-converted books (e.g. "Magic in the Shadows") sprinkle bare `<a></a>` markers between
     // paragraphs, and use `<a id="...">` as the destination for their own #filepos references. Neither

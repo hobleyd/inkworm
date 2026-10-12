@@ -33,18 +33,26 @@ class EpubParser {
         if (note.hasParent && note.parentElement!.name.local == 'p') {
           XmlElement parent = note.parentElement!;
           if (parent.hasParent && parent.parentElement!.name.local == 'section') {
-            return parent.parentElement;
+            return _shown(parent.parentElement!);
           }
 
-          return parent;
+          return _shown(parent);
         }
-        return note;
+        return _shown(note);
       }
 
     }
 
     return null;
 }
+
+  // Books that expect the reader to pop a note up when its reference is tapped hide the note itself with
+  // "display: none". We show footnotes on the page instead, so the note we were sent to has to be displayed
+  // regardless. Anything hidden inside it (a page-number anchor, say) stays hidden.
+  XmlElement _shown(XmlElement footnote) {
+    footnote.setAttribute('display', 'block');
+    return footnote;
+  }
 
   XmlDocument? getXmlDocument(String path) {
     try {

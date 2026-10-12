@@ -74,7 +74,8 @@ void main() {
       expect(cssParser.nonInheritableProperties, contains('margin-top'));
       expect(cssParser.nonInheritableProperties, contains('margin-bottom'));
       expect(cssParser.nonInheritableProperties, contains('height'));
-      expect(cssParser.nonInheritableProperties.length, 6);
+      expect(cssParser.nonInheritableProperties, contains('display'));
+      expect(cssParser.nonInheritableProperties.length, 7);
     });
   });
 
