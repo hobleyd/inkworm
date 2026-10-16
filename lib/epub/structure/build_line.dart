@@ -44,7 +44,9 @@ class BuildLine {
     // The first time through, we hit the else clause as we don't know yet, what we need.
     // But if we do need an adjustment, then we calculate it the second time through when
     // we know the actual height.
-    if (alignmentToBaselineRequired) {
+    // The adjustment only applies to an element sharing the image's line; if it is about to wrap,
+    // completeLine() clears the request instead.
+    if (alignmentToBaselineRequired && currentLine.willFitWidth(e)) {
       currentLine.baselineAdjust = currentLine.lineHeight - e.height;
       alignmentToBaselineRequired = false;
     } else if (e.verticalAlignment == VerticalAlignment.baseline && e.ascent == 0) {
@@ -95,6 +97,9 @@ class BuildLine {
   }
 
   void completeLine() {
+    // A baseline image that ended its line (e.g. a section-break ornament in its own paragraph) has
+    // nothing to align with; don't let the request leak onto the first element of the next line.
+    alignmentToBaselineRequired = false;
     currentLine.completeLine();
     notifyListeners();
   }

@@ -12,6 +12,7 @@ import 'package:inkworm/epub/content/html_content.dart';
 import 'package:inkworm/epub/content/image_content.dart';
 import 'package:inkworm/epub/structure/epub_chapter.dart';
 import 'package:inkworm/epub/content/link_content.dart';
+import 'package:inkworm/epub/content/paragraph_break.dart';
 import 'package:inkworm/epub/elements/image_element.dart';
 import 'package:inkworm/epub/elements/separators/non_breaking_space_separator.dart';
 import 'package:inkworm/epub/handlers/block_handler.dart';
@@ -247,6 +248,50 @@ void main() {
 
         expect(element.width, 40);
         expect(element.height, 30);
+      });
+
+      test('a baseline-aligned image on its own line does not add a blank line after the next paragraph\'s first line', () {
+        // Real-world pattern from Kage Baker's "Nell Gwynne's Scarlet Spy": a section-break ornament
+        // (<img style="vertical-align: baseline">) sits alone in its own paragraph, immediately followed
+        // by a text paragraph. The baseline adjustment the image asks for is meant for the next element
+        // on the *same* line; it must not carry over to the first element of the following paragraph.
+        final PageSize size = GetIt.instance.get<PageSize>();
+        size.canvasHeight = 2000;
+
+        final ElementStyle imageStyle = ElementStyle();
+        imageStyle.textStyle = style;
+        imageStyle.verticalAlignment = VerticalAlignment.baseline;
+
+        final ImageContent ornament = ImageContent(
+          blockStyle: blockStyle,
+          elementStyle: imageStyle,
+          image: 'ornament',
+          bytes: Uint8List(0),
+          width: 25,
+          height: 26,
+          requiredWidth: 25,
+          requiredHeight: 26,
+        );
+        final ParagraphBreak pb = ParagraphBreak(blockStyle: blockStyle, elementStyle: ElementStyle(), height: 0, width: 0);
+
+        buildPage.currentPage.pageHeight = size.canvasHeight;
+        buildPage.addContents([
+          ornament,
+          pb,
+          buildTextContent(text: 'HAVING BEEN LEFT to fend for themselves, the ladies spent an hour or two devising chitons out of the bed sheets. Fortunately Jane had a sewing kit in her reticule.', blockStyle: blockStyle, size: size),
+          pb,
+          buildTextContent(text: 'Lady Beatrice frowned.', blockStyle: blockStyle, size: size),
+          pb,
+        ], buildLine);
+
+        final List<Line> lines = buildPage.lines.where((l) => l.elements.isNotEmpty).toList();
+        expect(lines.length, greaterThanOrEqualTo(3));
+
+        // Each text line must start immediately after the previous one, with no extra gap.
+        for (int i = 1; i < lines.length - 1; i++) {
+          expect(lines[i].baselineAdjust, 0, reason: 'line $i: ${lineText(lines[i])}');
+          expect(lines[i + 1].yPosOnPage - lines[i].yPosOnPage, lines[i].lineHeight, reason: 'gap after line $i: ${lineText(lines[i])}');
+        }
       });
     });
 
