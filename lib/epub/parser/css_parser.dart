@@ -25,6 +25,10 @@ class CssParser {
     nonInheritableProperties.add("margin-right");
     nonInheritableProperties.add("margin-top");
     nonInheritableProperties.add("margin-bottom");
+    nonInheritableProperties.add("margin-block-start");
+    nonInheritableProperties.add("margin-block-end");
+    nonInheritableProperties.add("margin-inline-start");
+    nonInheritableProperties.add("margin-inline-end");
     nonInheritableProperties.add("height");
     nonInheritableProperties.add("display");
   }

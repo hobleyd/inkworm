@@ -17,7 +17,9 @@ abstract class Style {
   void addDeclarations(CssParser parser, XmlNode node) {
     if (node is XmlElement) {
       CssDeclarations matched = parser.matchClassSelectors(node, selectors);
-      declarations = declarations.combine(matched);
+      // The inline style is still read first by CssParser.getCSSAttributeValue; folding it in here as well lets
+      // it override aliased properties (e.g. an inline "margin" replacing a stylesheet margin-block-start).
+      declarations = declarations.combine(matched).combine(parser.getInlineStyle(node));
     }
   }
 

@@ -114,10 +114,31 @@ extension SelectorMapExtension on Map<String, CssDeclarations> {
   }
 }
 
+// In horizontal writing modes the logical margins are just other names for the physical ones, so whichever is
+// declared later in the cascade has to replace the other rather than sit alongside it (BlockStyle adds the two
+// together). Without this, a book's "margin: 0" can't cancel the margin-block-start/end that assets/default.css
+// gives elements such as blockquote.
+const Map<String, List<String>> _marginAliases = {
+  'margin':              ['margin-block-start', 'margin-block-end', 'margin-inline-start', 'margin-inline-end'],
+  'margin-top':          ['margin-block-start'],
+  'margin-bottom':       ['margin-block-end'],
+  'margin-left':         ['margin-inline-start'],
+  'margin-right':        ['margin-inline-end'],
+  'margin-block-start':  ['margin-top'],
+  'margin-block-end':    ['margin-bottom'],
+  'margin-inline-start': ['margin-left'],
+  'margin-inline-end':   ['margin-right'],
+};
+
 extension CssDeclarationsExtension on CssDeclarations {
   CssDeclarations combine(CssDeclarations? declarations,) {
+    final CssDeclarations result = {...this};
+    for (final String property in declarations?.keys ?? const <String>[]) {
+      _marginAliases[property]?.forEach(result.remove);
+    }
+
     return {
-        ...this,
+        ...result,
         ...?declarations,
     };
   }

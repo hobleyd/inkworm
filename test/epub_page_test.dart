@@ -777,6 +777,99 @@ void main() {
         }
       });
 
+      test('a book\'s margin shorthand overrides the default stylesheet\'s logical blockquote margins', () async {
+        // Real-world pattern from Kage Baker's "Nell Gwynne's Scarlet Spy": a letter is set as a run of
+        // nested blockquotes, each with "margin: 0 0 0 2em". assets/default.css gives blockquote
+        // margin-block-start/end: 1em and margin-inline-start/end: 40px; in horizontal text these are the
+        // same box edges as margin-top/bottom/left/right, so the book's later shorthand must replace them
+        // rather than be added to them, which left a large gap between every paragraph of the letter.
+        const String letterCss = '''
+blockquote {
+  display: block;
+  margin-block-start: 1em;
+  margin-block-end: 1em;
+  margin-inline-start: 40px;
+  margin-inline-end: 40px;
+}
+.calibre_15 {
+  display: block;
+  margin: 0 0 0 2em;
+}
+.calibre_16 {
+  display: block;
+  text-align: justify;
+  text-indent: 2em;
+  margin: 0 0 0 2em;
+}
+''';
+
+        const String chapterHtml = '''
+<html><body>
+<blockquote class="calibre_15"><blockquote class="calibre_16">My old Ludbridge,</blockquote></blockquote>
+<blockquote class="calibre_15"><blockquote class="calibre_16">I write to you from Sinietsch.</blockquote></blockquote>
+<blockquote class="calibre_15"><blockquote class="calibre_16">Having arrived here, I was able to locate directions.</blockquote></blockquote>
+</body></html>
+''';
+
+        final CssParser cssParser = GetIt.instance.get<CssParser>();
+        final EpubParser parser = GetIt.instance.get<EpubParser>();
+        final PageSize size = GetIt.instance.get<PageSize>();
+        size.canvasWidth = 800;
+        size.canvasHeight = 2000;
+        size.leftIndent = 0;
+        size.rightIndent = 0;
+
+        cssParser.parseCss(letterCss);
+
+        final EpubChapter chapter = EpubChapter(chapterNumber: 0);
+        await parser.parseChapterFromString(chapter, chapterHtml);
+
+        final List<Line> lines = chapter.pages.single.lines.where((l) => l.elements.isNotEmpty).toList();
+        expect(lines.length, 3);
+
+        // No vertical margin anywhere: each paragraph follows straight on from the previous one.
+        expect(lines[0].yPosOnPage, 0);
+        for (int i = 1; i < lines.length; i++) {
+          expect(lines[i].yPosOnPage - lines[i - 1].yPosOnPage, lines[i - 1].lineHeight, reason: 'gap before: ${lineText(lines[i])}');
+        }
+      });
+
+      test('a later logical margin overrides an earlier physical one for the same edge', () async {
+        const String css = '''
+p {
+  margin-top: 2em;
+}
+.tight {
+  margin-block-start: 0;
+}
+''';
+
+        const String chapterHtml = '''
+<html><body>
+<p class="tight">First.</p>
+<p class="tight">Second.</p>
+</body></html>
+''';
+
+        final CssParser cssParser = GetIt.instance.get<CssParser>();
+        final EpubParser parser = GetIt.instance.get<EpubParser>();
+        final PageSize size = GetIt.instance.get<PageSize>();
+        size.canvasWidth = 800;
+        size.canvasHeight = 2000;
+        size.leftIndent = 0;
+        size.rightIndent = 0;
+
+        cssParser.parseCss(css);
+
+        final EpubChapter chapter = EpubChapter(chapterNumber: 0);
+        await parser.parseChapterFromString(chapter, chapterHtml);
+
+        final List<Line> lines = chapter.pages.single.lines.where((l) => l.elements.isNotEmpty).toList();
+        expect(lines.length, 2);
+        expect(lines[0].yPosOnPage, 0);
+        expect(lines[1].yPosOnPage - lines[0].yPosOnPage, lines[0].lineHeight);
+      });
+
       test('does not leak margin-left/text-indent into the next paragraph when margins collapse', () async {
         // Regression test for the Simon & Schuster sign-up page in "Machine" by Elizabeth Bear: when the
         // previous paragraph's bottom margin and the next paragraph's top margin collapse (both > 0),
