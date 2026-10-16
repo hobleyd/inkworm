@@ -3,6 +3,7 @@ import 'package:xml/xml.dart';
 
 import '../../models/page_size.dart';
 import '../parser/css_parser.dart';
+import '../parser/extensions.dart';
 import 'element_style.dart';
 import 'style.dart';
 
@@ -158,29 +159,11 @@ class BlockStyle extends Style {
 
     String? margins = _parser.getStringAttribute(element, this, "margin");
     if (margins != null) {
-      List<String> parts = margins.split(RegExp(r'\s'));
-
-      if (parts.length == 1) {
-        bottomMarginString = parts[0];
-        topMarginString = parts[0];
-        leftMarginString = parts[0];
-        rightMarginString = parts[0];
-      } else if (parts.length == 2) {
-        topMarginString = parts[0];
-        bottomMarginString = parts[0];
-        leftMarginString = parts[1];
-        rightMarginString = parts[1];
-      } else if (parts.length == 3) {
-        topMarginString = parts[0];
-        leftMarginString = parts[1];
-        rightMarginString = parts[1];
-        bottomMarginString = parts[2];
-      } else if (parts.length == 4) {
-        topMarginString = parts[0];
-        rightMarginString = parts[1];
-        bottomMarginString = parts[2];
-        leftMarginString = parts[3];
-      }
+      final Map<String, String> sides = expandMarginShorthand(margins);
+      topMarginString    = sides['margin-top'];
+      rightMarginString  = sides['margin-right'];
+      bottomMarginString = sides['margin-bottom'];
+      leftMarginString   = sides['margin-left'];
     }
 
     // The more specific options here take precedence!

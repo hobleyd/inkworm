@@ -382,7 +382,7 @@ class CssParser {
       return {};
     }
 
-    final CssDeclarations declarations = {};
+    CssDeclarations declarations = {};
 
     // Split properties by semicolon and parse each one
     final props = properties.split(';');
@@ -393,7 +393,9 @@ class CssParser {
         if (parts.length == 2) {
           final key = parts[0].trim();
           final value = parts[1].trim();
-          declarations[key] = value;
+          // Combine one at a time so a later declaration in the same block overrides an aliased earlier one
+          // (e.g. "margin: 1em; margin-block-start: 0").
+          declarations = declarations.combine({key: value});
         }
         else {
           throw FormatException("CSS declarations not splitting into 2!\n$properties");

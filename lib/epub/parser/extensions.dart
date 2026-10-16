@@ -119,7 +119,8 @@ extension SelectorMapExtension on Map<String, CssDeclarations> {
 // together). Without this, a book's "margin: 0" can't cancel the margin-block-start/end that assets/default.css
 // gives elements such as blockquote.
 const Map<String, List<String>> _marginAliases = {
-  'margin':              ['margin-block-start', 'margin-block-end', 'margin-inline-start', 'margin-inline-end'],
+  'margin':              ['margin-top', 'margin-right', 'margin-bottom', 'margin-left',
+                          'margin-block-start', 'margin-block-end', 'margin-inline-start', 'margin-inline-end'],
   'margin-top':          ['margin-block-start'],
   'margin-bottom':       ['margin-block-end'],
   'margin-left':         ['margin-inline-start'],
@@ -130,11 +131,32 @@ const Map<String, List<String>> _marginAliases = {
   'margin-inline-end':   ['margin-right'],
 };
 
+/// Expands a CSS `margin` shorthand (one to four values) into its physical longhands.
+Map<String, String> expandMarginShorthand(String margin) {
+  final List<String> parts = margin.trim().split(RegExp(r'\s+'));
+  final (String top, String right, String bottom, String left) = switch (parts.length) {
+    1 => (parts[0], parts[0], parts[0], parts[0]),
+    2 => (parts[0], parts[1], parts[0], parts[1]),
+    3 => (parts[0], parts[1], parts[2], parts[1]),
+    _ => (parts[0], parts[1], parts[2], parts[3]),
+  };
+
+  return {'margin-top': top, 'margin-right': right, 'margin-bottom': bottom, 'margin-left': left};
+}
+
 extension CssDeclarationsExtension on CssDeclarations {
   CssDeclarations combine(CssDeclarations? declarations,) {
     final CssDeclarations result = {...this};
     for (final String property in declarations?.keys ?? const <String>[]) {
-      _marginAliases[property]?.forEach(result.remove);
+      if (!_marginAliases.containsKey(property)) continue;
+
+      // A longhand can only replace one side of an earlier shorthand once the shorthand is split into its sides.
+      // Longhands already present were declared after the shorthand, so they keep their values.
+      final String? shorthand = property != 'margin' ? result.remove('margin') : null;
+      if (shorthand != null) {
+        expandMarginShorthand(shorthand).forEach((side, value) => result.putIfAbsent(side, () => value));
+      }
+      _marginAliases[property]!.forEach(result.remove);
     }
 
     return {

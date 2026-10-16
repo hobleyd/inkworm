@@ -870,6 +870,67 @@ p {
         expect(lines[1].yPosOnPage - lines[0].yPosOnPage, lines[0].lineHeight);
       });
 
+      group('margin shorthand cascade', () {
+        Future<List<Line>> layout(String css) async {
+          const String chapterHtml = '''
+<html><body>
+<p class="x">First.</p>
+<p class="x">Second.</p>
+</body></html>
+''';
+
+          final CssParser cssParser = GetIt.instance.get<CssParser>();
+          final EpubParser parser = GetIt.instance.get<EpubParser>();
+          final PageSize size = GetIt.instance.get<PageSize>();
+          size.canvasWidth = 800;
+          size.canvasHeight = 2000;
+          size.leftIndent = 0;
+          size.rightIndent = 0;
+
+          cssParser.parseCss(css);
+
+          final EpubChapter chapter = EpubChapter(chapterNumber: 0);
+          await parser.parseChapterFromString(chapter, chapterHtml);
+
+          final List<Line> lines = chapter.pages.single.lines.where((l) => l.elements.isNotEmpty).toList();
+          expect(lines.length, 2);
+          return lines;
+        }
+
+        void expectNoVerticalMargin(List<Line> lines) {
+          expect(lines[0].yPosOnPage, 0);
+          expect(lines[1].yPosOnPage - lines[0].yPosOnPage, lines[0].lineHeight);
+        }
+
+        test('a later logical margin overrides one side of an earlier margin shorthand', () async {
+          expectNoVerticalMargin(await layout('''
+p { margin: 2em 0; }
+.x { margin-block-start: 0; margin-block-end: 0; }
+'''));
+        });
+
+        test('a logical margin after a margin shorthand in the same rule overrides that side', () async {
+          expectNoVerticalMargin(await layout('''
+.x { margin: 2em 0; margin-block-start: 0; margin-block-end: 0; }
+'''));
+        });
+
+        test('a later margin shorthand overrides an earlier physical longhand', () async {
+          expectNoVerticalMargin(await layout('''
+p { margin-top: 2em; margin-bottom: 2em; }
+.x { margin: 0; }
+'''));
+        });
+
+        test('the sides a later logical margin leaves alone keep the shorthand\'s value', () async {
+          final List<Line> lines = await layout('''
+p { margin: 0 0 0 30px; }
+.x { margin-block-start: 0; }
+''');
+          expect(lines[0].leftIndents, greaterThanOrEqualTo(30));
+        });
+      });
+
       test('does not leak margin-left/text-indent into the next paragraph when margins collapse', () async {
         // Regression test for the Simon & Schuster sign-up page in "Machine" by Elizabeth Bear: when the
         // previous paragraph's bottom margin and the next paragraph's top margin collapse (both > 0),
