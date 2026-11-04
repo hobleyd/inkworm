@@ -29,18 +29,12 @@ void main() async {
   Logger.level = Level.error;
 
   if (Platform.isMacOS || Platform.isLinux || Platform.isWindows) {
-    await windowManager.ensureInitialized();
-
-    WindowOptions windowOptions = WindowOptions(
-      center: false,
-      backgroundColor: Colors.transparent,
-      skipTaskbar: false,
-      titleBarStyle: TitleBarStyle.normal,
-    );
-    windowManager.waitUntilReadyToShow(windowOptions, () async {
-      await windowManager.show();
-      await windowManager.focus();
-    });
+    final window = WindowManager.instance.getCurrent();
+    if (window != null) {
+      window.backgroundColor = Colors.transparent.toNative();
+      window.show();
+      window.focus();
+    }
   }
 
   runApp(ProviderScope(

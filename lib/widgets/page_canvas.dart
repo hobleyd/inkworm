@@ -31,19 +31,19 @@ class PageCanvas extends ConsumerStatefulWidget {
   ConsumerState<PageCanvas> createState() => _PageCanvas();
 }
 
-class _PageCanvas extends ConsumerState<PageCanvas> with WindowListener {
+class _PageCanvas extends ConsumerState<PageCanvas> {
   static const EdgeInsets _pagePadding = EdgeInsets.only(top: 6, bottom: 6);
   static const double _handleRadius = 8;
   static const double _handleTouchRadius = 22; // larger hit target for handles
 
   static bool get _isDesktop => Platform.isMacOS || Platform.isLinux || Platform.isWindows;
 
-  // Linux-only fallback: how long the window size must be stable before we
-  // repaginate there. On macOS/Windows, WindowListener.onWindowResized() below
-  // is the authoritative "resize finished" signal; Linux doesn't emit that
-  // event, so for it we infer settling from a quiet period between
-  // LayoutBuilder rebuilds instead. That inference is noisier than the native
-  // signal — repagination's own CPU load can delay a rebuild long enough to
+  // How long the window size must be stable before we repaginate. The native
+  // window reports a WindowResizedEvent for every size change during a drag,
+  // with no separate "resize finished" event, so on macOS/Windows we infer
+  // settling from a quiet period between those events. On Linux we infer it
+  // from a quiet period between LayoutBuilder rebuilds instead. That is
+  // noisier — repagination's own CPU load can delay a rebuild long enough to
   // look like a settle mid-drag — which is why it isn't used on macOS/Windows.
   static const Duration _resizeSettleDelay = Duration(milliseconds: 400);
 
@@ -51,6 +51,9 @@ class _PageCanvas extends ConsumerState<PageCanvas> with WindowListener {
   int lastPageNumber = -1;
 
   Timer? _resizeDebounce;
+
+  Window? _window;
+  ListenerId? _windowListenerId;
 
   // True while a resize-triggered repagination is running. Guards against
   // starting a second one on top of it (Epub.repaginate/resetBook doesn't
@@ -132,24 +135,30 @@ class _PageCanvas extends ConsumerState<PageCanvas> with WindowListener {
     });
   }
 
-  // Authoritative "resize finished" signal on macOS/Windows — see the class-level
-  // comment on _resizeSettleDelay for why this is preferred over the debounce
-  // there.
-  @override
-  void onWindowResized() {
-    if (!mounted) return;
-    _repaginateForNewSize(ref.read(epubProvider).uri);
+  // Resize-settle signal on macOS/Windows — see the class-level comment on
+  // _resizeSettleDelay for why this is preferred over the LayoutBuilder
+  // debounce there.
+  void _onWindowEvent(WindowEvent event) {
+    if (event is! WindowResizedEvent || Platform.isLinux) return;
+    _resizeDebounce?.cancel();
+    _resizeDebounce = Timer(_resizeSettleDelay, () {
+      if (!mounted) return;
+      _repaginateForNewSize(ref.read(epubProvider).uri);
+    });
   }
 
   @override
   void initState() {
     super.initState();
-    if (_isDesktop) windowManager.addListener(this);
+    if (_isDesktop) {
+      _window = WindowManager.instance.getCurrent();
+      _windowListenerId = _window?.addListener(_onWindowEvent);
+    }
   }
 
   @override
   void dispose() {
-    if (_isDesktop) windowManager.removeListener(this);
+    if (_windowListenerId != null) _window?.removeListener(_windowListenerId!);
     _resizeDebounce?.cancel();
     super.dispose();
   }
@@ -215,7 +224,7 @@ class _PageCanvas extends ConsumerState<PageCanvas> with WindowListener {
                   pageSize.update(canvasWidth: newWidth, canvasHeight: newHeight);
 
                   // Linux fallback only — macOS/Windows repaginate from
-                  // onWindowResized() instead (see its override above).
+                  // native resize events instead (see _onWindowEvent above).
                   if (!isFirstLayout && Platform.isLinux) {
                     _resizeDebounce?.cancel();
                     _resizeDebounce = Timer(_resizeSettleDelay, () {
