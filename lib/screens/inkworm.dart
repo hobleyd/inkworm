@@ -95,8 +95,9 @@ class _Inkworm extends ConsumerState<Inkworm> {
       case "macos":
         await _handleMacOSIntent();
         break;
+      case "ios":
       case "windows":
-        await _handleWindowsIntent();
+        await _handleFileChannelIntent();
         break;
       case "linux":
         await _handleLinuxIntent();
@@ -154,9 +155,11 @@ class _Inkworm extends ConsumerState<Inkworm> {
     });
   }
 
-  Future<void> _handleWindowsIntent() async {
+  // Windows and iOS: the runner answers the file the app was launched with and
+  // reports later ones over _fileChannel.
+  Future<void> _handleFileChannelIntent() async {
     // 1. Get the file path passed on the command line at launch (the common
-    //    case: user double-clicks an .epub or uses "Open with…").
+    //    case: user double-clicks an .epub or uses "Open with…"/"Open in…").
     try {
       final String? path = await _fileChannel.invokeMethod('getOpenedFile');
       if (path != null && path.isNotEmpty) {
@@ -167,7 +170,7 @@ class _Inkworm extends ConsumerState<Inkworm> {
     }
 
     // 2. Listen for files opened while the app is already running.
-    //    The C++ side posts these via setMethodCallHandler.
+    //    The native side posts these via setMethodCallHandler.
     _fileChannel.setMethodCallHandler((call) async {
       if (call.method == 'fileOpened') {
         final String? path = call.arguments;
