@@ -54,18 +54,23 @@ class _Inkworm extends ConsumerState<Inkworm> {
       }
 
       EpubBook book = ref.watch(epubProvider);
+      final Widget body = Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (Platform.isAndroid) ClockBar(),
+          Expanded(
+            child: book.error != null || book.errorDescription != null ? FatalError() : PageCanvas(),
+          ),
+          ProgressBar(),
+        ],
+      );
+
+      // Android runs immersive with its own ClockBar. Elsewhere keep the page
+      // clear of the status bar, camera cutout, home indicator and rounded
+      // screen corners (all zero on desktop).
       return Scaffold(
         appBar: null,
-        body: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (Platform.isAndroid) ClockBar(),
-            Expanded(
-              child: book.error != null || book.errorDescription != null ? FatalError() : PageCanvas(),
-            ),
-            ProgressBar(),
-          ],
-        ),
+        body: Platform.isAndroid ? body : SafeArea(child: body),
       );
     });
   }
