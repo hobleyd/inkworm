@@ -17,4 +17,5 @@ An ePub reader, written in Flutter, that supports pagination. Built to support P
 - **Bulleted and numbered lists** — `<ul>`/`<ol>` render with proper markers (bullets, numbers, letters, or roman numerals) and hanging indentation.
 - **Open ePubs from other apps** — files can be opened directly or shared in from another app (e.g. a browser or file manager) via the OS "Open with"/share intent.
 - **In-app update checks** — the app checks for and can install newer builds (an archive manifest on desktop, GitHub releases on Android).
+- **iOS via TestFlight** — iPhone and iPad builds are distributed through TestFlight.
 
