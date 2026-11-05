@@ -21,8 +21,9 @@ import UIKit
   }
 }
 
-// Receives ePubs handed over by other apps ("Open in…" / share sheet) and
-// passes them to Dart over the same channel protocol as the Windows runner:
+// Receives ePubs handed over by other apps ("Open in…" / share sheet, or an
+// inkworm://open URL from Paladin) and passes them to Dart over the same
+// channel protocol as the Windows runner:
 // getOpenedFile answers the file the app was launched with, and fileOpened
 // reports files opened while it is already running.
 class FileOpenHandler: NSObject, FlutterSceneLifeCycleDelegate {
@@ -56,7 +57,7 @@ class FileOpenHandler: NSObject, FlutterSceneLifeCycleDelegate {
   }
 
   private func open(_ contexts: Set<UIOpenURLContext>) -> Bool {
-    guard let url = contexts.map(\.url).first(where: { $0.isFileURL && $0.pathExtension.lowercased() == "epub" }),
+    guard let url = contexts.lazy.compactMap({ self.epub(for: $0.url) }).first,
           let path = keep(url) else {
       return false
     }
@@ -67,6 +68,34 @@ class FileOpenHandler: NSObject, FlutterSceneLifeCycleDelegate {
       pendingPath = path
     }
     return true
+  }
+
+  // An ePub handed over directly, or inkworm://open?file=Book.epub naming one
+  // a sibling app (Paladin) has dropped in the shared App Group container. Any
+  // app can open an inkworm:// URL, so only a bare file name is honoured.
+  private func epub(for url: URL) -> URL? {
+    if url.isFileURL {
+      return url.pathExtension.lowercased() == "epub" ? url : nil
+    }
+
+    guard url.scheme?.lowercased() == "inkworm", url.host == "open",
+          let name = URLComponents(url: url, resolvingAgainstBaseURL: false)?
+            .queryItems?.first(where: { $0.name == "file" })?.value,
+          name == (name as NSString).lastPathComponent, name != "..",
+          name.lowercased().hasSuffix(".epub"),
+          let handover = FileOpenHandler.handoverDirectory() else {
+      return nil
+    }
+
+    let file = handover.appendingPathComponent(name)
+    return FileManager.default.fileExists(atPath: file.path) ? file : nil
+  }
+
+  static let appGroup = "group.au.com.sharpblue.books"
+
+  static func handoverDirectory() -> URL? {
+    return FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroup)?
+      .appendingPathComponent("Handover", isDirectory: true)
   }
 
   // iOS hands over a copy in Documents/Inbox, and would rename a repeat copy
@@ -88,7 +117,7 @@ class FileOpenHandler: NSObject, FlutterSceneLifeCycleDelegate {
         try fileManager.removeItem(at: destination)
       }
       try fileManager.copyItem(at: url, to: destination)
-      if url.path.contains("/Inbox/") {
+      if url.path.contains("/Inbox/") || url.deletingLastPathComponent().standardizedFileURL == FileOpenHandler.handoverDirectory()?.standardizedFileURL {
         try? fileManager.removeItem(at: url)
       }
       return destination.path
