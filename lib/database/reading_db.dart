@@ -15,11 +15,23 @@ class ReadingDB extends _$ReadingDB {
   late Database _inkworm;
   late String _databasePath;
 
+  // iOS moves the app's container (/…/Containers/Data/Application/<UUID>/) when
+  // the app is updated or reinstalled, so an absolute book path saved before
+  // then no longer exists: reopening the last book fails, and its reading
+  // progress is lost. Store paths relative to the container instead, and
+  // resolve them against wherever it is now.
+  static final RegExp _iosContainer = RegExp(r'^.*/Containers/Data/Application/[0-9A-Fa-f-]{36}/');
+  String? _containerRoot;
+
   String get dbPath => _databasePath;
 
   @override
   Future<Database> build() async {
     sqfliteFfiInit();
+
+    if (Platform.isIOS) {
+      _containerRoot = (await getApplicationDocumentsDirectory()).parent.path;
+    }
 
     _inkworm = await databaseFactoryFfi.openDatabase(await _getDatabasePath(),
         options: OpenDatabaseOptions(
@@ -31,7 +43,8 @@ class ReadingDB extends _$ReadingDB {
             onCreate: (db, version) {
               _createTables(db, 0, version);
             },
-            onOpen: (db) {
+            onOpen: (db) async {
+              await _relativiseContainerPaths(db);
             },
             onUpgrade: (db, oldVersion, newVersion) {
               _createTables(db, oldVersion, newVersion);
@@ -76,6 +89,26 @@ class ReadingDB extends _$ReadingDB {
     return;
   }
 
+  String _storedPath(String path) => _containerRoot == null ? path : path.replaceFirst(_iosContainer, '');
+
+  String _resolvedPath(String path) => _containerRoot == null || path.isEmpty || path.startsWith('/') ? path : '$_containerRoot/$path';
+
+  // Rewrites history saved with absolute paths (before paths were stored
+  // relative to the container) so it survives the container moving.
+  Future<void> _relativiseContainerPaths(Database db) async {
+    if (_containerRoot == null) return;
+
+    final rows = await db.query('reading_history', where: "path like '/%'", orderBy: 'rowid');
+    for (final row in rows) {
+      final String path = row['path'] as String;
+      final String stored = _storedPath(path);
+      if (stored == path) continue;
+
+      await db.insert('reading_history', {...row, 'path': stored}, conflictAlgorithm: ConflictAlgorithm.replace);
+      await db.delete('reading_history', where: 'path = ?', whereArgs: [path]);
+    }
+  }
+
   Future _enableForeignKeys(Database db) async {
     await db.execute('PRAGMA foreign_keys = ON;');
   }
@@ -117,7 +150,7 @@ class ReadingDB extends _$ReadingDB {
 
   Future<ReadingProgress> getReadingProgress(String? path) async {
     List<Map<String, dynamic>> rows = path != null
-      ? await query(table: 'reading_history', where: 'path = ?', whereArgs: [path])
+      ? await query(table: 'reading_history', where: 'path = ?', whereArgs: [_storedPath(path)])
       : await query(table: 'reading_history', orderBy: 'rowid desc');
 
     if (rows.isEmpty) {
@@ -127,7 +160,7 @@ class ReadingDB extends _$ReadingDB {
 
       return result;
     }
-    return ReadingProgress.fromMap(rows.first);
+    return ReadingProgress.fromMap({...rows.first, 'path': _resolvedPath(rows.first['path'])});
   }
 
   Future<void> setDefaultFontSize(int fontSize) async {
@@ -135,7 +168,7 @@ class ReadingDB extends _$ReadingDB {
   }
 
   Future<void> setProgress(ReadingProgress progress) async {
-    await _inkworm.insert('reading_history', progress.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+    await _inkworm.insert('reading_history', {...progress.toMap(), 'path': _storedPath(progress.book)}, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
   Future<int> insert({ required String table, required Map<String, dynamic> rows, ConflictAlgorithm? conflictAlgorithm }) async {

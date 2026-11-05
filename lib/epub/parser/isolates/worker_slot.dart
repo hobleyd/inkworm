@@ -88,8 +88,13 @@ class WorkerSlot {
     inbox.listen((dynamic msg) async {
       if (msg is WorkerMessage) {
         staticUIPort = msg.uiPort;
-        final result = await msg.request.process(parentPort);
-        msg.replyPort.send(result);
+        // Always reply, or the coordinator waits on replyPort forever.
+        try {
+          final result = await msg.request.process(parentPort);
+          msg.replyPort.send(result);
+        } catch (error, stackTrace) {
+          msg.replyPort.send(IsolateParseResponse(error: error.toString(), stacktrace: stackTrace.toString()));
+        }
       }
     });
   }

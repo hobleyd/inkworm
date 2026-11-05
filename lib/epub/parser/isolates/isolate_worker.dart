@@ -46,7 +46,17 @@ class IsolateWorker {
     final ReceivePort receivePort = ReceivePort();
     receivePort.listen(_onMessageReceived);
 
-    await Isolate.spawn(_startIsolate, receivePort.sendPort);
+    // Anything thrown in the coordinator (including the unawaited chapter
+    // parsing) would otherwise kill it silently and leave the UI waiting on
+    // "Analysing the eBook" forever. Isolate errors arrive as [error, stack].
+    final ReceivePort errorPort = ReceivePort();
+    errorPort.listen((dynamic error) {
+      final List<dynamic> details = error as List<dynamic>;
+      listener.onError(details[0].toString(), details[1]?.toString() ?? '');
+      errorPort.close();
+    });
+
+    await Isolate.spawn(_startIsolate, receivePort.sendPort, onError: errorPort.sendPort);
   }
 
   static Future<void> _createPool(SendPort uiPort) async {

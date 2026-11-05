@@ -111,7 +111,8 @@ class Epub extends _$Epub implements IsolateListener {
     var bookState = ref.read(bookStateManagementProvider);
 
     _epubRequest.update(pageSize: size);
-    if (bookState.hasNone(BookState.details) && _worker == null) {
+    // Nothing to open yet (no book has ever been read): wait for resetBook.
+    if (bookState.hasNone(BookState.details) && _worker == null && state.uri.isNotEmpty) {
       _worker ??= IsolateWorker(listener: this);
     }
 
