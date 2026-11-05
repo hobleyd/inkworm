@@ -37,14 +37,18 @@ class _PageCanvas extends ConsumerState<PageCanvas> {
   static const double _handleTouchRadius = 22; // larger hit target for handles
 
   static bool get _isDesktop => Platform.isMacOS || Platform.isLinux || Platform.isWindows;
+  static bool get _hasNativeResizeEvents => Platform.isMacOS || Platform.isWindows;
 
-  // How long the window size must be stable before we repaginate. The native
+  // How long the canvas size must be stable before we repaginate. The native
   // window reports a WindowResizedEvent for every size change during a drag,
   // with no separate "resize finished" event, so on macOS/Windows we infer
-  // settling from a quiet period between those events. On Linux we infer it
-  // from a quiet period between LayoutBuilder rebuilds instead. That is
-  // noisier — repagination's own CPU load can delay a rebuild long enough to
-  // look like a settle mid-drag — which is why it isn't used on macOS/Windows.
+  // settling from a quiet period between those events. Elsewhere (Linux,
+  // mobile) we infer it from a quiet period between LayoutBuilder rebuilds
+  // instead. That is noisier — repagination's own CPU load can delay a rebuild
+  // long enough to look like a settle mid-drag — which is why it isn't used on
+  // macOS/Windows. On mobile the canvas changes on rotation, and when a font
+  // size change resizes the ProgressBar (and Android's ClockBar), which happens
+  // after Settings is popped since the canvas isn't laid out under it.
   static const Duration _resizeSettleDelay = Duration(milliseconds: 400);
 
   final pageSize = GetIt.instance.get<PageSize>();
@@ -61,8 +65,9 @@ class _PageCanvas extends ConsumerState<PageCanvas> {
   bool _repaginationInFlight = false;
 
   // Set when a resize settles while a repagination triggered by an earlier
-  // resize is still running; retried once that one finishes so the book ends
-  // up laid out for the final size rather than a stale intermediate one.
+  // resize, or any other parse of the book, is still running; retried once
+  // that one finishes so the book ends up laid out for the final size rather
+  // than a stale intermediate one.
   bool _repaginatePending = false;
 
   // The PageSize the book is currently paginated for. Starts at 0x0 so the
@@ -118,7 +123,12 @@ class _PageCanvas extends ConsumerState<PageCanvas> {
     }
 
     final BookState bookState = ref.read(bookStateManagementProvider);
-    if (bookState.hasNone(BookState.complete)) return; // still on the initial open/parse
+    if (bookState.hasNone(BookState.complete)) {
+      // Still on the initial open, or reparsing after a font size change;
+      // retry once that finishes (see the listener in initState).
+      _repaginatePending = true;
+      return;
+    }
 
     _repaginationInFlight = true;
     final double targetWidth = pageSize.canvasWidth;
@@ -139,7 +149,7 @@ class _PageCanvas extends ConsumerState<PageCanvas> {
   // _resizeSettleDelay for why this is preferred over the LayoutBuilder
   // debounce there.
   void _onWindowEvent(WindowEvent event) {
-    if (event is! WindowResizedEvent || Platform.isLinux) return;
+    if (event is! WindowResizedEvent || !_hasNativeResizeEvents) return;
     _resizeDebounce?.cancel();
     _resizeDebounce = Timer(_resizeSettleDelay, () {
       if (!mounted) return;
@@ -150,6 +160,12 @@ class _PageCanvas extends ConsumerState<PageCanvas> {
   @override
   void initState() {
     super.initState();
+    ref.listenManual(bookStateManagementProvider, (previous, next) {
+      if (_repaginatePending && !_repaginationInFlight && next.hasAny(BookState.complete)) {
+        _repaginatePending = false;
+        _repaginateForNewSize(ref.read(epubProvider).uri);
+      }
+    });
     if (_isDesktop) {
       _window = WindowManager.instance.getCurrent();
       _windowListenerId = _window?.addListener(_onWindowEvent);
@@ -223,9 +239,9 @@ class _PageCanvas extends ConsumerState<PageCanvas> {
                   final bool isFirstLayout = pageSize.canvasWidth == 0 || pageSize.canvasHeight == 0;
                   pageSize.update(canvasWidth: newWidth, canvasHeight: newHeight);
 
-                  // Linux fallback only — macOS/Windows repaginate from
-                  // native resize events instead (see _onWindowEvent above).
-                  if (!isFirstLayout && Platform.isLinux) {
+                  // macOS/Windows repaginate from native resize events
+                  // instead (see _onWindowEvent above).
+                  if (!isFirstLayout && !_hasNativeResizeEvents) {
                     _resizeDebounce?.cancel();
                     _resizeDebounce = Timer(_resizeSettleDelay, () {
                       if (!mounted) return;
