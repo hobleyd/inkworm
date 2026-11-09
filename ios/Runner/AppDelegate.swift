@@ -13,11 +13,15 @@ import UIKit
   }
 
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
-    GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
-
+    // Register ahead of the generated plugins: scene events go to each in turn
+    // until one claims them, and receive_sharing_intent claims every launch
+    // URL, so an inkworm:// URL that cold-launched the app never reached us and
+    // the last book read was reopened instead.
     if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "InkwormFileOpen") {
       fileOpenHandler = FileOpenHandler(registrar: registrar)
     }
+
+    GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
   }
 }
 
